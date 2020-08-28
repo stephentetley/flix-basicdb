@@ -38,7 +38,16 @@ namespace BasicDb/Internal/Prim {
             case _: ##java.sql.SQLException => Err(Generic("closeConnection"))
         }
 
-    pub def commitConnection(conn: ##java.sql.Connection): Result[Unit, System.Error] & Impure = 
+    pub def setAutoCommit(conn: ##java.sql.Connection, autoCommit: Bool): Result[Unit, System.Error] & Impure = 
+        import java.sql.Connection.setAutoCommit(Bool);
+        try {
+            conn.setAutoCommit(autoCommit);
+            Ok()
+        } catch {
+            case _: ##java.sql.SQLException => Err(Generic("setAutoCommit"))
+        }
+
+    pub def commit(conn: ##java.sql.Connection): Result[Unit, System.Error] & Impure = 
         import java.sql.Connection.commit();
         try {
             conn.commit();
@@ -73,6 +82,15 @@ namespace BasicDb/Internal/Prim {
             Ok(ans)
         } catch {
             case _: ##java.sql.SQLException => Err(Generic("executeStatement"))
+        }
+
+    pub def prepareStatement(conn: ##java.sql.Connection, sql: String): Result[##java.sql.PreparedStatement, System.Error] & Impure = 
+        import java.sql.Connection.prepareStatement(String);
+        try {
+            let ans = conn.prepareStatement(sql);
+            Ok(ans)
+        } catch {
+            case _: ##java.sql.SQLException => Err(Generic("prepareStatement"))
         }
 
 }    
