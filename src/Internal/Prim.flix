@@ -84,6 +84,16 @@ namespace BasicDb/Internal/Prim {
             case _: ##java.sql.SQLException => Err(Generic("executeStatement"))
         }
 
+    pub def executeQuery(stmt: ##java.sql.Statement, sql: String): Result[##java.sql.ResultSet, System.Error] & Impure = 
+        import java.sql.Statement.executeQuery(String);
+        try {
+            let ans = stmt.executeQuery(sql);
+            Ok(ans)
+        } catch {
+            case _: ##java.sql.SQLException => Err(Generic("executeQuery"))
+        }
+
+
     pub def prepareStatement(conn: ##java.sql.Connection, sql: String): Result[##java.sql.PreparedStatement, System.Error] & Impure = 
         import java.sql.Connection.prepareStatement(String);
         try {

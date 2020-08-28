@@ -1,7 +1,9 @@
 use BasicDb.DbMonad;
+use BasicDb.ResultsMonad;
+use BasicDb.RowEvaluator;
 use BasicDb.RowWriter;
 
-use BasicDb/DbMonad.{runSQLite, execute, prepareStatement, setAutoCommit, commit, writeRow};
+use BasicDb/DbMonad.{runSQLite, execute, prepareStatement, setAutoCommit, commit, writeRow, evalResults};
 
 
 def test1(): DbMonad[Bool] = 
@@ -15,12 +17,20 @@ def test1(): DbMonad[Bool] =
     let* _      = writeRow(stmt, dbmsWriter("MonetDB", 2002));
     let* _      = writeRow(stmt, dbmsWriter("PostgresSQL", 1996));
     let* _      = commit();
+    let* _      = evalResults("SELECT * from dbms", BasicDb/ResultsMonad.allRowsX(dbmsEval()));
     return(true)
 
 def dbmsWriter(name: String, year: Int32): RowWriter[Unit] = 
     use BasicDb/RowWriter.{flatMap, return, putString!, putInt32!};
     let* _ = putString!(0,  name);
     let* _ = putInt32!( 1,  year);
+    return()
+
+def dbmsEval(): RowEvaluator[Unit] = 
+    use BasicDb/RowEvaluator.{flatMap, return, getString, getInt32, liftAction};
+    let* name   = getString(0);
+    let* year   = getInt32(1);
+    let* _      = liftAction(_ -> Console.printLine(name + ", " + Int32.toString(year)));
     return()
 
 

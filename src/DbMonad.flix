@@ -20,8 +20,15 @@ use BasicDb.DbMonad.{DbMonad};
 use BasicDb.PreparedStatement;
 use BasicDb.PreparedStatement.{PreparedStatement};
 
+use BasicDb.ResultsMonad;
+use BasicDb.ResultsMonad.{ResultsMonad};
+
 use BasicDb.RowWriter;
 use BasicDb.RowWriter.{RowWriter};
+
+use BasicDb.Statement;
+use BasicDb.Statement.{Statement};
+
 
 
 namespace BasicDb {
@@ -29,6 +36,10 @@ namespace BasicDb {
     pub opaque type DbMonad[a] = ##java.sql.Connection ~> Result[a, System.Error]
 
     pub opaque type PreparedStatement = ##java.sql.PreparedStatement
+    
+    pub opaque type Statement = ##java.sql.Statement
+
+    pub opaque type ResultSet = ##java.sql.ResultSet
 
 }
 
@@ -121,6 +132,10 @@ namespace BasicDb/DbMonad {
         use BasicDb/Internal/Prim.{commit};
         liftConnectionPrim(x -> x.commit())
 
+    pub def createStatement(): DbMonad[Statement] =
+        use BasicDb/Internal/Prim.{createStatement};
+        liftConnectionPrim(x1 -> { let ans = x1.createStatement(); Result.map(Statement, ans)})
+
     pub def prepareStatement(sql: String): DbMonad[PreparedStatement] =
         use BasicDb/Internal/Prim.{prepareStatement};
         liftConnectionPrim(x1 -> { let ans = x1.prepareStatement(sql); Result.map(PreparedStatement, ans)})
@@ -133,6 +148,12 @@ namespace BasicDb/DbMonad {
         let* n = liftActionResult(_ -> BasicDb/Internal/PreparedStatement.executeUpdate(stmt1));
         return(n)
 
+    pub def evalResults(sql: String, mf: ResultsMonad[a]): DbMonad[a] = 
+        let* stmt   = liftConnectionPrim(x1 -> BasicDb/Internal/Prim.createStatement(x1));
+        let* rs     = liftActionResult(_ -> BasicDb/Internal/Prim.executeQuery(stmt, sql));
+        let* ans    = liftActionResult(_ -> BasicDb/ResultsMonad.runResultsMonad(mf, rs));
+        let* _      = liftActionResult(_ -> BasicDb/Internal/ResultSet.close(rs));
+        return(ans)
 
 }
 
