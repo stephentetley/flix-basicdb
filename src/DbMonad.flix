@@ -79,6 +79,9 @@ namespace BasicDb/DbMonad {
     pub def return(x: a): DbMonad[a] = 
         DbMonad(_ -> Ok(x) as & Impure)
 
+    pub def throwError(msg: String): DbMonad[a] =
+        DbMonad(_ -> Err(System/Error.Generic(msg)) as & Impure)
+
     pub def map(fn: a -> b, ma: DbMonad[a]): DbMonad[b] = 
         DbMonad(conn -> 
             match apply1(ma, conn) { 
@@ -193,12 +196,15 @@ namespace BasicDb/DbMonad {
         liftActionResult(_ -> f(rs1))
 
 
+    pub def firstRow(rs: ResultSet, eval: RowEvaluator[a]): DbMonad[a] = 
+        let* more   = rsNext(rs);
+        if (more) rsEval(rs, eval) else throwError("firstRow - resultset is empty")
+
     pub def allRows(rs: ResultSet, eval: RowEvaluator[a]): DbMonad[List[a]] = 
         let RowEvaluator(f) = eval;
         let ResultSet(rs1) = rs;        
         liftActionResult(_ -> allRowsHelper(rs1, f, e -> Err(e), xs -> Ok(xs)))
 
-        
     /// Start with `next`
     /// This is optimized to avoid repeated unwrapping.
     def allRowsHelper(rs: ##java.sql.ResultSet, 
