@@ -241,5 +241,47 @@ namespace BasicDb/DbMonad {
         }
 
 
+    pub def mapM(mf: a -> DbMonad[b], xs: List[a]): DbMonad[List[b]] =
+        DbMonad(conn ->
+            mapMHelper(conn, mf, xs, e -> Err(e), ys -> Ok(ys))
+        )
+
+    ///
+    /// Helper function for `mapM`.
+    ///
+    def mapMHelper(conn: ##java.sql.Connection, 
+                   mf: a -> DbMonad[b], 
+                   xs: List[a], 
+                   fk: System.Error -> Result[List[b], System.Error], 
+                   sk: List[b] -> Result[List[b], System.Error]): Result[List[b], System.Error] & Impure =
+        match xs {
+            case Nil => sk(Nil)
+            case x :: rs => {
+                let ma = mf(x);
+                match apply1(ma, conn) {
+                    case Err(e) => fk(e)
+                    case Ok(x1) => mapMHelper(conn, mf, rs, fk, ks -> sk(x1 :: ks))
+                }
+            }
+        }
+
+    pub def mapX(mf: a -> DbMonad[b], xs: List[a]): DbMonad[Unit] =
+        DbMonad(conn ->
+            mapXHelper(conn, mf, xs, e -> Err(e), _ -> Ok())
+        )
+
+    def mapXHelper(conn: ##java.sql.Connection, mf: a -> DbMonad[b], xs: List[a], fk: System.Error -> Result[Unit, System.Error], sk: Unit -> Result[Unit, System.Error]): Result[Unit, System.Error] & Impure =
+        match xs {
+            case Nil => sk()
+            case x :: rs => {
+                let ma = mf(x);
+                match apply1(ma, conn) {
+                    case Err(e) => fk(e)
+                    case Ok(_) => mapXHelper(conn, mf, rs, fk, sk)
+                }
+            }
+        }
+
+
 }
 
