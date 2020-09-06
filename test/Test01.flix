@@ -4,7 +4,7 @@ use BasicDb.RowEvaluator;
 use BasicDb.PreparedStatementSetter;
 
 use BasicDb/DbMonad.{runSQLite, execute, createStatement, prepareStatement, 
-        setAutoCommit, commit, executeUpdate, executeQuery, allRowsX, rsClose};
+        setAutoCommit, commit, psExecuteUpdate, executeQuery, allRowsX, rsClose};
 
 
 def test1(): DbMonad[Bool] = 
@@ -13,10 +13,10 @@ def test1(): DbMonad[Bool] =
     let* _      = execute("CREATE TABLE IF NOT EXISTS dbms (name text PRIMARY KEY NOT NULL, year int);");
     let* pstmt  = prepareStatement("INSERT INTO dbms(name, year) VALUES(?,?)");
     let* _      = setAutoCommit(false);
-    let* _      = executeUpdate(pstmt, setPStmt!("SQLite", 2000));
-    let* _      = executeUpdate(pstmt, setPStmt!("DuckDB", 2019));
-    let* _      = executeUpdate(pstmt, setPStmt!("MonetDB", 2002));
-    let* _      = executeUpdate(pstmt, setPStmt!("PostgresSQL", 1996));
+    let* _      = psExecuteUpdate(pstmt, setPStmt!("SQLite", 2000));
+    let* _      = psExecuteUpdate(pstmt, setPStmt!("DuckDB", 2019));
+    let* _      = psExecuteUpdate(pstmt, setPStmt!("MonetDB", 2002));
+    let* _      = psExecuteUpdate(pstmt, setPStmt!("PostgresSQL", 1996));
     let* _      = commit();
     let* stmt   = createStatement();
     let* rs     = executeQuery(stmt, "SELECT name, year FROM dbms ORDER BY year");

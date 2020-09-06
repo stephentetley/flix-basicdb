@@ -34,6 +34,27 @@ namespace BasicDb/Internal/PreparedStatement {
             case _: ##java.sql.SQLException => Err(Generic("SQLException.clearParameters"))
         }
 
+
+    pub def executeQuery(x: ##java.sql.PreparedStatement): Result[##java.sql.ResultSet, System.Error] & Impure =
+        import java.sql.PreparedStatement.executeQuery();
+        try {
+            let ans = x.executeQuery();
+            Ok(ans)
+        } catch {
+            case _: ##java.sql.SQLException => Err(Generic("PreparedStatement.executeUpdate"))
+        }
+
+    pub def executeUpdate(x: ##java.sql.PreparedStatement): Result[Int32, System.Error] & Impure =
+        import java.sql.PreparedStatement.executeUpdate();
+        try {
+            let ans = x.executeUpdate();
+            Ok(ans)
+        } catch {
+            case _: ##java.sql.SQLException => Err(Generic("PreparedStatement.executeUpdate"))
+        }
+
+
+
     pub def setNull!(x: ##java.sql.PreparedStatement, ix: Int32, sqlType: Int32): Result[Unit, System.Error] & Impure =
         import java.sql.PreparedStatement.setNull(Int32, Int32);
         try {
@@ -115,15 +136,6 @@ namespace BasicDb/Internal/PreparedStatement {
             case _: ##java.sql.SQLException => Err(Generic("SQLException"))
         }
 
-
-    pub def executeUpdate(x: ##java.sql.PreparedStatement): Result[Int32, System.Error] & Impure =
-        import java.sql.PreparedStatement.executeUpdate();
-        try {
-            let ans = x.executeUpdate();
-            Ok(ans)
-        } catch {
-            case _: ##java.sql.SQLException => Err(Generic("PreparedStatement.executeUpdate"))
-        }
 
 
 }

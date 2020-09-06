@@ -135,27 +135,44 @@ namespace BasicDb/DbMonad {
         use BasicDb/Internal/Prim.{commit};
         liftConnectionPrim(x -> x.commit())
 
+
     pub def createStatement(): DbMonad[Statement] =
         use BasicDb/Internal/Prim.{createStatement};
         liftConnectionPrim(x1 -> { let ans = x1.createStatement(); Result.map(Statement, ans)})
+
+
+
+    pub def executeQuery(stmt: Statement, sql: String): DbMonad[ResultSet] =
+        let Statement(stmt1) = stmt;
+        let* rs = liftActionResult(_ -> BasicDb/Internal/Prim.executeQuery(stmt1, sql));
+        return(ResultSet(rs))
+
+    pub def executeUpdate(stmt: Statement, sql: String): DbMonad[Int32] =
+        let Statement(stmt1) = stmt;
+        let* n = liftActionResult(_ -> BasicDb/Internal/Prim.executeUpdate(stmt1, sql));
+        return(n)
+
+
 
     pub def prepareStatement(sql: String): DbMonad[PreparedStatement] =
         use BasicDb/Internal/Prim.{prepareStatement};
         liftConnectionPrim(x1 -> { let ans = x1.prepareStatement(sql); Result.map(PreparedStatement, ans)})
 
+    pub def psExecuteQuery(stmt: PreparedStatement, setter: PreparedStatementSetter[a]): DbMonad[ResultSet] =
+        let PreparedStatementSetter(setter1) = setter;
+        let PreparedStatement(stmt1) = stmt;
+        let* _  = liftActionResult(_ -> BasicDb/Internal/PreparedStatement.clearParameters!(stmt1));
+        let* _  = liftActionResult(_ -> setter1(stmt1));
+        let* rs = liftActionResult(_ -> BasicDb/Internal/PreparedStatement.executeQuery(stmt1));
+        return(ResultSet(rs))
 
-    pub def executeUpdate(stmt: PreparedStatement, setter: PreparedStatementSetter[a]): DbMonad[Int32] =
+    pub def psExecuteUpdate(stmt: PreparedStatement, setter: PreparedStatementSetter[a]): DbMonad[Int32] =
         let PreparedStatementSetter(setter1) = setter;
         let PreparedStatement(stmt1) = stmt;
         let* _ = liftActionResult(_ -> BasicDb/Internal/PreparedStatement.clearParameters!(stmt1));
         let* _ = liftActionResult(_ -> setter1(stmt1));
         let* n = liftActionResult(_ -> BasicDb/Internal/PreparedStatement.executeUpdate(stmt1));
         return(n)
-
-    pub def executeQuery(stmt: Statement, sql: String): DbMonad[ResultSet] =
-        let Statement(stmt1) = stmt;
-        let* rs = liftActionResult(_ -> BasicDb/Internal/Prim.executeQuery(stmt1, sql));
-        return(ResultSet(rs))
 
 
     /// ResultSet

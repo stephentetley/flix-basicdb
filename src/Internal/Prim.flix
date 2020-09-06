@@ -93,6 +93,15 @@ namespace BasicDb/Internal/Prim {
             case _: ##java.sql.SQLException => Err(Generic("executeQuery"))
         }
 
+    pub def executeUpdate(stmt: ##java.sql.Statement, sql: String): Result[Int32, System.Error] & Impure = 
+        import java.sql.Statement.executeUpdate(String);
+        try {
+            let ans = stmt.executeUpdate(sql);
+            Ok(ans)
+        } catch {
+            case _: ##java.sql.SQLException => Err(Generic("executeUpdate"))
+        }
+
 
     pub def prepareStatement(conn: ##java.sql.Connection, sql: String): Result[##java.sql.PreparedStatement, System.Error] & Impure = 
         import java.sql.Connection.prepareStatement(String);
