@@ -3,7 +3,8 @@ use BasicDb.ResultsMonad;
 use BasicDb.RowEvaluator;
 use BasicDb.PreparedStatementSetter;
 
-use BasicDb/DbMonad.{runSQLite, execute, prepareStatement, setAutoCommit, commit, executeUpdate, evalResults};
+use BasicDb/DbMonad.{runSQLite, execute, createStatement, prepareStatement, 
+        setAutoCommit, commit, executeUpdate, executeQuery, allRowsX, rsClose};
 
 
 def test1(): DbMonad[Bool] = 
@@ -17,7 +18,10 @@ def test1(): DbMonad[Bool] =
     let* _      = executeUpdate(pstmt, setPStmt!("MonetDB", 2002));
     let* _      = executeUpdate(pstmt, setPStmt!("PostgresSQL", 1996));
     let* _      = commit();
-    let* _      = evalResults("SELECT name, year FROM dbms ORDER BY year", BasicDb/ResultsMonad.allRowsX(dbmsEval()));
+    let* stmt   = createStatement();
+    let* rs     = executeQuery(stmt, "SELECT name, year FROM dbms ORDER BY year");
+    let* _      = allRowsX(rs, rsEvalRow());
+    let* _      = rsClose(rs);
     return(true)
 
 def setPStmt!(name: String, year: Int32): PreparedStatementSetter[Unit] = 
@@ -26,7 +30,7 @@ def setPStmt!(name: String, year: Int32): PreparedStatementSetter[Unit] =
     let* _ = putInt32!( 1,  year);
     return()
 
-def dbmsEval(): RowEvaluator[Unit] = 
+def rsEvalRow(): RowEvaluator[Unit] = 
     use BasicDb/RowEvaluator.{flatMap, return, getString, getInt32, liftAction};
     let* name   = getString(0);
     let* year   = getInt32(1);

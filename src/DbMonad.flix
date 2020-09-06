@@ -20,11 +20,14 @@ use BasicDb.DbMonad.{DbMonad};
 use BasicDb.PreparedStatement;
 use BasicDb.PreparedStatement.{PreparedStatement};
 
-use BasicDb.ResultsMonad;
-use BasicDb.ResultsMonad.{ResultsMonad};
-
 use BasicDb.PreparedStatementSetter;
 use BasicDb.PreparedStatementSetter.{PreparedStatementSetter};
+
+use BasicDb.ResultSet;
+use BasicDb.ResultSet.{ResultSet};
+
+use BasicDb.RowEvaluator;
+use BasicDb.RowEvaluator.{RowEvaluator};
 
 use BasicDb.Statement;
 use BasicDb.Statement.{Statement};
@@ -140,6 +143,7 @@ namespace BasicDb/DbMonad {
         use BasicDb/Internal/Prim.{prepareStatement};
         liftConnectionPrim(x1 -> { let ans = x1.prepareStatement(sql); Result.map(PreparedStatement, ans)})
 
+
     pub def executeUpdate(stmt: PreparedStatement, setter: PreparedStatementSetter[a]): DbMonad[Int32] =
         let PreparedStatementSetter(setter1) = setter;
         let PreparedStatement(stmt1) = stmt;
@@ -148,12 +152,71 @@ namespace BasicDb/DbMonad {
         let* n = liftActionResult(_ -> BasicDb/Internal/PreparedStatement.executeUpdate(stmt1));
         return(n)
 
-    pub def evalResults(sql: String, mf: ResultsMonad[a]): DbMonad[a] = 
-        let* stmt   = liftConnectionPrim(x1 -> BasicDb/Internal/Prim.createStatement(x1));
-        let* rs     = liftActionResult(_ -> BasicDb/Internal/Prim.executeQuery(stmt, sql));
-        let* ans    = liftActionResult(_ -> BasicDb/ResultsMonad.runResultsMonad(mf, rs));
-        let* _      = liftActionResult(_ -> BasicDb/Internal/ResultSet.close(rs));
-        return(ans)
+    pub def executeQuery(stmt: Statement, sql: String): DbMonad[ResultSet] =
+        let Statement(stmt1) = stmt;
+        let* rs = liftActionResult(_ -> BasicDb/Internal/Prim.executeQuery(stmt1, sql));
+        return(ResultSet(rs))
+
+
+    /// ResultSet
+
+    pub def rsClose(rs: ResultSet): DbMonad[Unit] =
+        use BasicDb/Internal/ResultSet.{close};
+        let ResultSet(rs1) = rs;
+        liftActionResult(_ -> rs1.close())
+ 
+    pub def rsNext(rs: ResultSet): DbMonad[Bool] =
+        use BasicDb/Internal/ResultSet.{next};
+        let ResultSet(rs1) = rs;
+        liftActionResult(_ -> rs1.next())
+
+    pub def rsEval(rs: ResultSet, eval: RowEvaluator[a]): DbMonad[a] =
+        let RowEvaluator(f) = eval;
+        let ResultSet(rs1) = rs;
+        liftActionResult(_ -> f(rs1))
+
+
+    pub def allRows(rs: ResultSet, eval: RowEvaluator[a]): DbMonad[List[a]] = 
+        let RowEvaluator(f) = eval;
+        let ResultSet(rs1) = rs;        
+        liftActionResult(_ -> allRowsHelper(rs1, f, e -> Err(e), xs -> Ok(xs)))
+
+        
+    /// Start with `next`
+    /// This is optimized to avoid repeated unwrapping.
+    def allRowsHelper(rs: ##java.sql.ResultSet, 
+                      eval: ##java.sql.ResultSet ~> Result[a, System.Error],
+                      fk: System.Error -> Result[List[a], System.Error],
+                      sk: List[a] -> Result[List[a], System.Error]): Result[List[a], System.Error] & Impure = 
+        use BasicDb/Internal/ResultSet.{next};                      
+        match rs.next() {
+            case Ok(false) => sk(Nil)
+            case Ok(true) => match rs.eval() {
+                case Ok(x) => allRowsHelper(rs, eval, fk, ks -> sk(x :: ks))
+                case Err(e) => fk(e)
+            }
+            case Err(e) => fk(e)
+        }
+
+    pub def allRowsX(rs: ResultSet, eval: RowEvaluator[a]): DbMonad[Unit] = 
+        let RowEvaluator(f) = eval;
+        let ResultSet(rs1) = rs;        
+        liftActionResult(_ -> allRowsXHelper(rs1, f, e -> Err(e)))
+
+    /// Start with `next`
+    def allRowsXHelper(rs: ##java.sql.ResultSet, 
+                      eval: ##java.sql.ResultSet ~> Result[a, System.Error],
+                      fk: System.Error -> Result[Unit, System.Error]): Result[Unit, System.Error] & Impure = 
+        use BasicDb/Internal/ResultSet.{next};                      
+        match rs.next() {
+            case Ok(false) => Ok()
+            case Ok(true) => match rs.eval() {
+                case Ok(_) => allRowsXHelper(rs, eval, fk)
+                case Err(e) => fk(e)
+            }
+            case Err(e) => fk(e)
+        }
+
 
 }
 
