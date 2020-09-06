@@ -23,8 +23,8 @@ use BasicDb.PreparedStatement.{PreparedStatement};
 use BasicDb.ResultsMonad;
 use BasicDb.ResultsMonad.{ResultsMonad};
 
-use BasicDb.RowWriter;
-use BasicDb.RowWriter.{RowWriter};
+use BasicDb.PreparedStatementSetter;
+use BasicDb.PreparedStatementSetter.{PreparedStatementSetter};
 
 use BasicDb.Statement;
 use BasicDb.Statement.{Statement};
@@ -36,7 +36,7 @@ namespace BasicDb {
     pub opaque type DbMonad[a] = ##java.sql.Connection ~> Result[a, System.Error]
 
     pub opaque type PreparedStatement = ##java.sql.PreparedStatement
-    
+
     pub opaque type Statement = ##java.sql.Statement
 
     pub opaque type ResultSet = ##java.sql.ResultSet
@@ -140,11 +140,11 @@ namespace BasicDb/DbMonad {
         use BasicDb/Internal/Prim.{prepareStatement};
         liftConnectionPrim(x1 -> { let ans = x1.prepareStatement(sql); Result.map(PreparedStatement, ans)})
 
-    pub def writeRow(stmt: PreparedStatement, mx: RowWriter[a]): DbMonad[Int32] =
-        let RowWriter(mf) = mx;
+    pub def executeUpdate(stmt: PreparedStatement, setter: PreparedStatementSetter[a]): DbMonad[Int32] =
+        let PreparedStatementSetter(setter1) = setter;
         let PreparedStatement(stmt1) = stmt;
         let* _ = liftActionResult(_ -> BasicDb/Internal/PreparedStatement.clearParameters!(stmt1));
-        let* _ = liftActionResult(_ -> mf(stmt1));
+        let* _ = liftActionResult(_ -> setter1(stmt1));
         let* n = liftActionResult(_ -> BasicDb/Internal/PreparedStatement.executeUpdate(stmt1));
         return(n)
 
