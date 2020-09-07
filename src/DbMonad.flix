@@ -282,6 +282,97 @@ namespace BasicDb/DbMonad {
             }
         }
 
+    pub def sequence(xs: List[DbMonad[a]]): DbMonad[List[a]] =
+        DbMonad(conn ->
+            sequenceHelper(conn, xs, e -> Err(e), ks -> Ok(ks))
+        )
+
+    ///
+    /// Helper function for `sequence`.
+    ///
+    def sequenceHelper(conn: ##java.sql.Connection, xs: List[DbMonad[a]], fk: System.Error -> Result[List[a], System.Error], sk: List[a] -> Result[List[a], System.Error]): Result[List[a], System.Error] & Impure =
+        match xs {
+            case Nil => sk(Nil)
+            case mx :: rs => match apply1(mx, conn) {
+                case Err(e) => fk(e)
+                case Ok(x) => sequenceHelper(conn, rs, fk, ks -> sk(x :: ks))
+            }
+        }
+
+    ///
+    /// Returns `(v1 :: v2 :: ... v :: vn)` if each of `f(xs_i)` is successful.
+    /// Otherwise fails with the first error encountered.
+    ///
+    /// `traverse` is a synonym for `mapM`.
+    ///
+    pub def traverse(f: a -> DbMonad[b], xs: List[a]): DbMonad[List[b]] = mapM(f, xs)
+
+    ///
+    /// `traverseX` is a synonym for `mapX`.
+    ///
+    pub def traverseX(f: a -> DbMonad[b], xs: List[a]): DbMonad[Unit] = mapX(f, xs)
+
+    ///
+    /// `forM` is `mapM` with its arguments flipped.
+    ///
+    pub def forM(xs: List[a], f: a -> DbMonad[b]): DbMonad[List[b]] = mapM(f, xs)
+
+    ///
+    /// `forX` is `mapX` with its arguments flipped.
+    ///
+    pub def forX(xs: List[a], f: a -> DbMonad[b]): DbMonad[Unit] = mapX(f, xs)
+
+
+    pub def foldM(mf: (b, a) -> DbMonad[b], start: b, xs: List[a]): DbMonad[b] =
+        DbMonad(conn ->
+            foldMHelper(conn, mf, start, xs, e -> Err(e), ac -> Ok(ac))
+        )
+
+    def foldMHelper(conn: ##java.sql.Connection, 
+                    mf: (b, a) -> DbMonad[b], 
+                    acc: b, 
+                    xs: List[a], 
+                    fk: System.Error -> Result[b, System.Error], 
+                    sk: b -> Result[b, System.Error]): Result[b, System.Error] & Impure =
+        match xs {
+            case Nil => sk(acc)
+            case x :: rs => {
+                let ma = mf(acc, x);
+                match apply1(ma, conn) {
+                    case Err(e) => fk(e)
+                    case Ok(acc1) => foldMHelper(conn, mf, acc1, rs, fk, sk)
+                }
+            }
+        }
+
+    pub def mapAccumM(mf: (ac, a) -> DbMonad[(ac, b)], start: ac, xs: List[a]): DbMonad[(ac, List[b])] =
+        DbMonad(conn ->
+            mapAccumMHelper(conn, mf, start, xs, e -> Err(e), (ac, ks) -> Ok((ac, ks)))
+        )
+
+    def mapAccumMHelper(conn: ##java.sql.Connection,
+                        mf: (ac, a) -> DbMonad[(ac, b)],
+                        ac: ac,
+                        xs: List[a],
+                        fk: System.Error -> Result[(ac, List[b]), System.Error],
+                        sk: (ac, List[b]) -> Result[(ac, List[b]), System.Error]): Result[(ac, List[b]), System.Error] & Impure =
+        match xs {
+            case Nil => sk(ac, Nil)
+            case x :: rs => {
+                let ma = mf(ac, x);
+                match apply1(ma, conn) {
+                    case Err(e) => fk(e)
+                    case Ok((ac1, x1)) => mapAccumMHelper(conn, mf, ac1, rs, fk, (ac2, ks) -> sk(ac2, x1 :: ks))
+                }
+            }
+        }
+
+    ///
+    /// `mapAccumX` is a synonym for `foldM`.
+    ///
+    pub def mapAccumX(mf: (ac, a) -> DbMonad[ac], start: ac, xs: List[a]): DbMonad[ac] = foldM(mf, start, xs)
+
+
 
 }
 
