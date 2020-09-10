@@ -48,6 +48,15 @@ namespace BasicDb/Internal/ResultSet {
             case _: ##java.sql.SQLException => Err(Generic("ResultSet.getString"))
         }
 
+    pub def getStringByLabel(x: ##java.sql.ResultSet, label: String): Result[String, System.Error] & Impure =
+        import java.sql.ResultSet.getString(String);
+        try {
+            let ans = x.getString(label);
+            Ok(ans)
+        } catch {
+            case _: ##java.sql.SQLException => Err(Generic("ResultSet.getStringByLabel"))
+        }
+
     pub def getBool(x: ##java.sql.ResultSet, ix: Int32): Result[Bool, System.Error] & Impure =
         import java.sql.ResultSet.getBoolean(Int32);
         try {

@@ -84,68 +84,30 @@ namespace BasicDb/RowEvaluator {
     pub def getString(ix: Int32): RowEvaluator[String] =
         liftPrim(x -> BasicDb/Internal/ResultSet.getString(x, ix + 1))
 
-    // pub def putBool!(ix: Int32, b: Bool): RowEvaluator[Unit] =
-    //     liftPrim(x -> BasicDb/Internal/PreparedStatement.setBool!(x, ix + 1, b))
+    pub def getStringByLabel(label: String): RowEvaluator[String] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getStringByLabel(x, label))
 
-    // pub def putInt8!(ix: Int32, n: Int8): RowEvaluator[Unit] =
-    //     liftPrim(x -> BasicDb/Internal/PreparedStatement.setInt8!(x, ix + 1, n))
+    // See Javadocs for how bool is interpreted...
+    pub def getBool(ix: Int32): RowEvaluator[Bool] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getBool(x, ix + 1))
 
-    // pub def putInt16!(ix: Int32, n: Int16): RowEvaluator[Unit] =
-    //     liftPrim(x -> BasicDb/Internal/PreparedStatement.setInt16!(x, ix + 1, n))
+    pub def getInt8(ix: Int32): RowEvaluator[Int8] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getInt8(x, ix + 1))
+
+    pub def getInt16(ix: Int32): RowEvaluator[Int16] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getInt16(x, ix + 1))
 
     pub def getInt32(ix: Int32): RowEvaluator[Int32] =
         liftPrim(x -> BasicDb/Internal/ResultSet.getInt32(x, ix + 1))
 
-    // pub def putInt64!(ix: Int32, n: Int64): RowEvaluator[Unit] =
-    //     liftPrim(x -> BasicDb/Internal/PreparedStatement.setInt64!(x, ix + 1, n))
+    pub def getInt64(ix: Int32): RowEvaluator[Int64] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getInt64(x, ix + 1))
 
-    // pub def putFloat32!(ix: Int32, n: Float32): RowEvaluator[Unit] =
-    //     liftPrim(x -> BasicDb/Internal/PreparedStatement.setFloat32!(x, ix + 1, n))
+    pub def getFloat32(ix: Int32): RowEvaluator[Float32] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getFloat32(x, ix + 1))
 
-    // pub def putFloat64!(ix: Int32, n: Float64): RowEvaluator[Unit] =
-    //     liftPrim(x -> BasicDb/Internal/PreparedStatement.setFloat64!(x, ix + 1, n))
-
-
-
-    // pub def putOptionString!(ix: Int32, x: Option[String]): RowEvaluator[Unit] = match x {
-    //     case Some(s) => putString!(ix, s)
-    //     case None => putNull!(ix)
-    // }
-
-    // pub def putOptionBool!(ix: Int32, x: Option[Bool]): RowEvaluator[Unit] = match x {
-    //     case Some(b) => putBool!(ix, b)
-    //     case None => putNull!(ix)
-    // }
-
-    // pub def putOptionInt8!(ix: Int32, x: Option[Int8]): RowEvaluator[Unit] = match x {
-    //     case Some(n) => putInt8!(ix, n)
-    //     case None => putNull!(ix)
-    // }
-
-    // pub def putOptionInt16!(ix: Int32, x: Option[Int16]): RowEvaluator[Unit] = match x {
-    //     case Some(n) => putInt16!(ix, n)
-    //     case None => putNull!(ix)
-    // }
-
-    // pub def putOptionInt32!(ix: Int32, x: Option[Int32]): RowEvaluator[Unit] = match x {
-    //     case Some(n) => putInt32!(ix, n)
-    //     case None => putNull!(ix)
-    // }
-
-    // pub def putOptionInt64!(ix: Int32, x: Option[Int64]): RowEvaluator[Unit] = match x {
-    //     case Some(n) => putInt64!(ix, n)
-    //     case None => putNull!(ix)
-    // }
-
-    // pub def putOptionFloat32!(ix: Int32, x: Option[Float32]): RowEvaluator[Unit] = match x {
-    //     case Some(n) => putFloat32!(ix, n)
-    //     case None => putNull!(ix)
-    // }
-
-    // pub def putOptionFloat64!(ix: Int32, x: Option[Float64]): RowEvaluator[Unit] = match x {
-    //     case Some(n) => putFloat64!(ix, n)
-    //     case None => putNull!(ix)
-    // }
+    pub def getFloat64(ix: Int32): RowEvaluator[Float64] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getFloat64(x, ix + 1))
 
 
     ///
@@ -153,7 +115,9 @@ namespace BasicDb/RowEvaluator {
     ///
     /// Returns an error if either `o1` or `o2` are errors.
     ///
-    pub def lift2(f: (t1, t2) -> u & ef, o1: RowEvaluator[t1], o2: RowEvaluator[t2]): RowEvaluator[u] =
+    pub def lift2(f: (t1, t2) -> u & ef, 
+                  o1: RowEvaluator[t1], 
+                  o2: RowEvaluator[t2]): RowEvaluator[u] =
         ap(map(f, o1), o2)
 
     ///
@@ -161,7 +125,10 @@ namespace BasicDb/RowEvaluator {
     ///
     /// Returns an error if any of `o1`, `o2` and `o3` are errors.
     ///
-    pub def lift3(f: (t1, t2, t3) -> u & ef, o1: RowEvaluator[t1], o2: RowEvaluator[t2], o3: RowEvaluator[t3]): RowEvaluator[u] =
+    pub def lift3(f: (t1, t2, t3) -> u & ef, 
+                  o1: RowEvaluator[t1], 
+                  o2: RowEvaluator[t2], 
+                  o3: RowEvaluator[t3]): RowEvaluator[u] =
         ap(lift2(f, o1, o2), o3)
 
     ///
@@ -169,7 +136,11 @@ namespace BasicDb/RowEvaluator {
     ///
     /// Returns an error if any of `o1`, `o2`, `o3` and `o4` are errors.
     ///
-    pub def lift4(f: (t1, t2, t3, t4) -> u & ef, o1: RowEvaluator[t1], o2: RowEvaluator[t2], o3: RowEvaluator[t3], o4: RowEvaluator[t4]): RowEvaluator[u] =
+    pub def lift4(f: (t1, t2, t3, t4) -> u & ef, 
+                  o1: RowEvaluator[t1], 
+                  o2: RowEvaluator[t2], 
+                  o3: RowEvaluator[t3], 
+                  o4: RowEvaluator[t4]): RowEvaluator[u] =
         ap(lift3(f, o1, o2, o3), o4)
 
     ///
@@ -177,7 +148,12 @@ namespace BasicDb/RowEvaluator {
     ///
     /// Returns an error if any of `o1`, `o2`, ... `o5` are errors.
     ///
-    pub def lift5(f: (t1, t2, t3, t4, t5) -> u & ef, o1: RowEvaluator[t1], o2: RowEvaluator[t2], o3: RowEvaluator[t3], o4: RowEvaluator[t4], o5: RowEvaluator[t5]): RowEvaluator[u] =
+    pub def lift5(f: (t1, t2, t3, t4, t5) -> u & ef, 
+                  o1: RowEvaluator[t1], 
+                  o2: RowEvaluator[t2], 
+                  o3: RowEvaluator[t3], 
+                  o4: RowEvaluator[t4], 
+                  o5: RowEvaluator[t5]): RowEvaluator[u] =
         ap(lift4(f, o1, o2, o3, o4), o5)
 
     ///
@@ -185,7 +161,13 @@ namespace BasicDb/RowEvaluator {
     ///
     /// Returns an error if any of `o1`, `o2`, ... `o6` are errors.
     ///
-    pub def lift6(f: (t1, t2, t3, t4, t5, t6) -> u & ef, o1: RowEvaluator[t1], o2: RowEvaluator[t2], o3: RowEvaluator[t3], o4: RowEvaluator[t4], o5: RowEvaluator[t5], o6: RowEvaluator[t6]): RowEvaluator[u] =
+    pub def lift6(f: (t1, t2, t3, t4, t5, t6) -> u & ef, 
+                  o1: RowEvaluator[t1], 
+                  o2: RowEvaluator[t2], 
+                  o3: RowEvaluator[t3],
+                  o4: RowEvaluator[t4], 
+                  o5: RowEvaluator[t5], 
+                  o6: RowEvaluator[t6]): RowEvaluator[u] =
         ap(lift5(f, o1, o2, o3, o4, o5), o6)
 
     ///
@@ -193,7 +175,14 @@ namespace BasicDb/RowEvaluator {
     ///
     /// Returns an error if any of `o1`, `o2`, ... `o7` are errors.
     ///
-    pub def lift7(f: (t1, t2, t3, t4, t5, t6, t7) -> u & ef, o1: RowEvaluator[t1], o2: RowEvaluator[t2], o3: RowEvaluator[t3], o4: RowEvaluator[t4], o5: RowEvaluator[t5], o6: RowEvaluator[t6], o7: RowEvaluator[t7]): RowEvaluator[u] =
+    pub def lift7(f: (t1, t2, t3, t4, t5, t6, t7) -> u & ef, 
+                  o1: RowEvaluator[t1], 
+                  o2: RowEvaluator[t2], 
+                  o3: RowEvaluator[t3], 
+                  o4: RowEvaluator[t4], 
+                  o5: RowEvaluator[t5], 
+                  o6: RowEvaluator[t6], 
+                  o7: RowEvaluator[t7]): RowEvaluator[u] =
         ap(lift6(f, o1, o2, o3, o4, o5, o6), o7)
 
     ///
@@ -201,7 +190,15 @@ namespace BasicDb/RowEvaluator {
     ///
     /// Returns an error if any of `o1`, `o2`, ... `o8` are errors.
     ///
-    pub def lift8(f: (t1, t2, t3, t4, t5, t6, t7, t8) -> u & ef, o1: RowEvaluator[t1], o2: RowEvaluator[t2], o3: RowEvaluator[t3], o4: RowEvaluator[t4], o5: RowEvaluator[t5], o6: RowEvaluator[t6], o7: RowEvaluator[t7], o8: RowEvaluator[t8]): RowEvaluator[u] =
+    pub def lift8(f: (t1, t2, t3, t4, t5, t6, t7, t8) -> u & ef, 
+                  o1: RowEvaluator[t1], 
+                  o2: RowEvaluator[t2], 
+                  o3: RowEvaluator[t3], 
+                  o4: RowEvaluator[t4], 
+                  o5: RowEvaluator[t5], 
+                  o6: RowEvaluator[t6], 
+                  o7: RowEvaluator[t7], 
+                  o8: RowEvaluator[t8]): RowEvaluator[u] =
         ap(lift7(f, o1, o2, o3, o4, o5, o6, o7), o8)
 
     ///
@@ -209,7 +206,16 @@ namespace BasicDb/RowEvaluator {
     ///
     /// Returns an error if any of `o1`, `o2`, ... `o9` are errors.
     ///
-    pub def lift9(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9) -> u & ef, o1: RowEvaluator[t1], o2: RowEvaluator[t2], o3: RowEvaluator[t3], o4: RowEvaluator[t4], o5: RowEvaluator[t5], o6: RowEvaluator[t6], o7: RowEvaluator[t7], o8: RowEvaluator[t8], o9: RowEvaluator[t9]): RowEvaluator[u] =
+    pub def lift9(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9) -> u & ef, 
+                  o1: RowEvaluator[t1], 
+                  o2: RowEvaluator[t2], 
+                  o3: RowEvaluator[t3], 
+                  o4: RowEvaluator[t4], 
+                  o5: RowEvaluator[t5], 
+                  o6: RowEvaluator[t6], 
+                  o7: RowEvaluator[t7], 
+                  o8: RowEvaluator[t8], 
+                  o9: RowEvaluator[t9]): RowEvaluator[u] =
         ap(lift8(f, o1, o2, o3, o4, o5, o6, o7, o8), o9)
 
     ///
@@ -217,7 +223,17 @@ namespace BasicDb/RowEvaluator {
     ///
     /// Returns an error if any of `o1`, `o2`, ... `o10` are errors.
     ///
-    pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u & ef, o1: RowEvaluator[t1], o2: RowEvaluator[t2], o3: RowEvaluator[t3], o4: RowEvaluator[t4], o5: RowEvaluator[t5], o6: RowEvaluator[t6], o7: RowEvaluator[t7], o8: RowEvaluator[t8], o9: RowEvaluator[t9], o10: RowEvaluator[t10]): RowEvaluator[u] =
+    pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u & ef, 
+                   o1: RowEvaluator[t1], 
+                   o2: RowEvaluator[t2], 
+                   o3: RowEvaluator[t3], 
+                   o4: RowEvaluator[t4], 
+                   o5: RowEvaluator[t5], 
+                   o6: RowEvaluator[t6], 
+                   o7: RowEvaluator[t7], 
+                   o8: RowEvaluator[t8], 
+                   o9: RowEvaluator[t9], 
+                   o10: RowEvaluator[t10]): RowEvaluator[u] =
         ap(lift9(f, o1, o2, o3, o4, o5, o6, o7, o8, o9), o10)
 
 
@@ -234,7 +250,9 @@ namespace BasicDb/RowEvaluator {
     ///
     /// Returns an error if evaluating any of `o1`, `o2` and `o3` is an error.
     ///
-    pub def tuple3(o1: RowEvaluator[t1], o2: RowEvaluator[t2], o3: RowEvaluator[t3]): RowEvaluator[(t1, t2, t3)] =
+    pub def tuple3(o1: RowEvaluator[t1], 
+                   o2: RowEvaluator[t2], 
+                   o3: RowEvaluator[t3]): RowEvaluator[(t1, t2, t3)] =
         lift3((x1, x2, x3) -> (x1, x2, x3), o1, o2, o3)
 
     ///
@@ -242,7 +260,10 @@ namespace BasicDb/RowEvaluator {
     ///
     /// Returns an error if evaluating any of `o1`, `o2`, `o3` and `o4` is an error.
     ///
-    pub def tuple4(o1: RowEvaluator[t1], o2: RowEvaluator[t2], o3: RowEvaluator[t3], o4: RowEvaluator[t4]): RowEvaluator[(t1, t2, t3, t4)]  =
+    pub def tuple4(o1: RowEvaluator[t1], 
+                   o2: RowEvaluator[t2], 
+                   o3: RowEvaluator[t3], 
+                   o4: RowEvaluator[t4]): RowEvaluator[(t1, t2, t3, t4)]  =
         lift4((x1, x2, x3, x4) -> (x1, x2, x3, x4), o1, o2, o3, o4)
 
     ///
@@ -250,7 +271,11 @@ namespace BasicDb/RowEvaluator {
     ///
     /// Returns an error if evaluating any of `o1`, `o2`, ... `o5` is an error.
     ///
-    pub def tuple5(o1: RowEvaluator[t1], o2: RowEvaluator[t2], o3: RowEvaluator[t3], o4: RowEvaluator[t4], o5: RowEvaluator[t5]): RowEvaluator[(t1, t2, t3, t4, t5)]  =
+    pub def tuple5(o1: RowEvaluator[t1], 
+                   o2: RowEvaluator[t2], 
+                   o3: RowEvaluator[t3], 
+                   o4: RowEvaluator[t4], 
+                   o5: RowEvaluator[t5]): RowEvaluator[(t1, t2, t3, t4, t5)]  =
         lift5((x1, x2, x3, x4, x5) -> (x1, x2, x3, x4, x5), o1, o2, o3, o4, o5)
 
     ///
@@ -258,7 +283,12 @@ namespace BasicDb/RowEvaluator {
     ///
     /// Returns an error if evaluating any of `o1`, `o2`, ... `o6` is an error.
     ///
-    pub def tuple6(o1: RowEvaluator[t1], o2: RowEvaluator[t2], o3: RowEvaluator[t3], o4: RowEvaluator[t4], o5: RowEvaluator[t5], o6: RowEvaluator[t6]): RowEvaluator[(t1, t2, t3, t4, t5, t6)]  =
+    pub def tuple6(o1: RowEvaluator[t1], 
+                   o2: RowEvaluator[t2], 
+                   o3: RowEvaluator[t3], 
+                   o4: RowEvaluator[t4], 
+                   o5: RowEvaluator[t5], 
+                   o6: RowEvaluator[t6]): RowEvaluator[(t1, t2, t3, t4, t5, t6)]  =
         lift6((x1, x2, x3, x4, x5, x6) -> (x1, x2, x3, x4, x5, x6), o1, o2, o3, o4, o5, o6)
 
     ///
@@ -266,32 +296,66 @@ namespace BasicDb/RowEvaluator {
     ///
     /// Returns an error if evaluating any of `o1`, `o2`, ... `o7` is an error.
     ///
-    pub def tuple7(o1: RowEvaluator[t1], o2: RowEvaluator[t2], o3: RowEvaluator[t3], o4: RowEvaluator[t4], o5: RowEvaluator[t5], o6: RowEvaluator[t6], o7: RowEvaluator[t7]): RowEvaluator[(t1, t2, t3, t4, t5, t6, t7)]  =
-        lift7((x1, x2, x3, x4, x5, x6, x7) -> (x1, x2, x3, x4, x5, x6, x7), o1, o2, o3, o4, o5, o6, o7)
+    pub def tuple7(o1: RowEvaluator[t1], 
+                   o2: RowEvaluator[t2], 
+                   o3: RowEvaluator[t3], 
+                   o4: RowEvaluator[t4], 
+                   o5: RowEvaluator[t5], 
+                   o6: RowEvaluator[t6], 
+                   o7: RowEvaluator[t7]): RowEvaluator[(t1, t2, t3, t4, t5, t6, t7)]  =
+        lift7((x1, x2, x3, x4, x5, x6, x7) -> (x1, x2, x3, x4, x5, x6, x7), 
+                o1, o2, o3, o4, o5, o6, o7)
 
     ///
     /// Returns a 8 element tuple with the results of applying the evaluators `o1`, `o2`, ... `o8`.
     ///
     /// Returns an error if evaluating any of `o1`, `o2`, ... `o8` is an error.
     ///
-    pub def tuple8(o1: RowEvaluator[t1], o2: RowEvaluator[t2], o3: RowEvaluator[t3], o4: RowEvaluator[t4], o5: RowEvaluator[t5], o6: RowEvaluator[t6], o7: RowEvaluator[t7], o8: RowEvaluator[t8]): RowEvaluator[(t1, t2, t3, t4, t5, t6, t7, t8)]  =
-        lift8((x1, x2, x3, x4, x5, x6, x7, x8) -> (x1, x2, x3, x4, x5, x6, x7, x8), o1, o2, o3, o4, o5, o6, o7, o8)
+    pub def tuple8(o1: RowEvaluator[t1], 
+                   o2: RowEvaluator[t2], 
+                   o3: RowEvaluator[t3], 
+                   o4: RowEvaluator[t4], 
+                   o5: RowEvaluator[t5], 
+                   o6: RowEvaluator[t6], 
+                   o7: RowEvaluator[t7], 
+                   o8: RowEvaluator[t8]): RowEvaluator[(t1, t2, t3, t4, t5, t6, t7, t8)]  =
+        lift8((x1, x2, x3, x4, x5, x6, x7, x8) -> (x1, x2, x3, x4, x5, x6, x7, x8), 
+                o1, o2, o3, o4, o5, o6, o7, o8)
 
     ///
     /// Returns a 9 element tuple with the results of applying the evaluators `o1`, `o2`, ... `o9`.
     ///
     /// Returns an error if evaluating any of `o1`, `o2`, ... `o9` is an error.
     ///
-    pub def tuple9(o1: RowEvaluator[t1], o2: RowEvaluator[t2], o3: RowEvaluator[t3], o4: RowEvaluator[t4], o5: RowEvaluator[t5], o6: RowEvaluator[t6], o7: RowEvaluator[t7], o8: RowEvaluator[t8], o9: RowEvaluator[t9]): RowEvaluator[(t1, t2, t3, t4, t5, t6, t7, t8, t9)]  =
-        lift9((x1, x2, x3, x4, x5, x6, x7, x8, x9) -> (x1, x2, x3, x4, x5, x6, x7, x8, x9), o1, o2, o3, o4, o5, o6, o7, o8, o9)
+    pub def tuple9(o1: RowEvaluator[t1], 
+                   o2: RowEvaluator[t2], 
+                   o3: RowEvaluator[t3], 
+                   o4: RowEvaluator[t4], 
+                   o5: RowEvaluator[t5], 
+                   o6: RowEvaluator[t6], 
+                   o7: RowEvaluator[t7], 
+                   o8: RowEvaluator[t8], 
+                   o9: RowEvaluator[t9]): RowEvaluator[(t1, t2, t3, t4, t5, t6, t7, t8, t9)]  =
+        lift9((x1, x2, x3, x4, x5, x6, x7, x8, x9) -> (x1, x2, x3, x4, x5, x6, x7, x8, x9), 
+                o1, o2, o3, o4, o5, o6, o7, o8, o9)
 
     ///
     /// Returns a 10 element tuple with the results of applying the evaluators `o1`, `o2`, ... `o10`.
     ///
     /// Returns an error if evaluating any of `o1`, `o2`, ... `o10` is an error.
     ///
-    pub def tuple10(o1: RowEvaluator[t1], o2: RowEvaluator[t2], o3: RowEvaluator[t3], o4: RowEvaluator[t4], o5: RowEvaluator[t5], o6: RowEvaluator[t6], o7: RowEvaluator[t7], o8: RowEvaluator[t8], o9: RowEvaluator[t9], o10: RowEvaluator[t10]): RowEvaluator[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)]  =
-        lift10((x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) -> (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10), o1, o2, o3, o4, o5, o6, o7, o8, o9, o10)
+    pub def tuple10(o1: RowEvaluator[t1], 
+                    o2: RowEvaluator[t2], 
+                    o3: RowEvaluator[t3], 
+                    o4: RowEvaluator[t4], 
+                    o5: RowEvaluator[t5], 
+                    o6: RowEvaluator[t6], 
+                    o7: RowEvaluator[t7], 
+                    o8: RowEvaluator[t8], 
+                    o9: RowEvaluator[t9], 
+                    o10: RowEvaluator[t10]): RowEvaluator[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)]  =
+        lift10((x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) -> (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10), 
+                o1, o2, o3, o4, o5, o6, o7, o8, o9, o10)
 
 
 }
