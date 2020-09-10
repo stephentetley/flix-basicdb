@@ -66,6 +66,15 @@ namespace BasicDb/Internal/ResultSet {
             case _: ##java.sql.SQLException => Err(Generic("ResultSet.getBool"))
         }
 
+    pub def getBoolByLabel(x: ##java.sql.ResultSet, label: String): Result[Bool, System.Error] & Impure =
+        import java.sql.ResultSet.getBoolean(String);
+        try {
+            let ans = x.getBoolean(label);
+            Ok(ans)
+        } catch {
+            case _: ##java.sql.SQLException => Err(Generic("ResultSet.getBoolByLabel"))
+        }
+
     pub def getInt8(x: ##java.sql.ResultSet, ix: Int32): Result[Int8, System.Error] & Impure =
         import java.sql.ResultSet.getByte(Int32);
         try {
@@ -73,6 +82,15 @@ namespace BasicDb/Internal/ResultSet {
             Ok(ans)
         } catch {
             case _: ##java.sql.SQLException => Err(Generic("ResultSet.getInt8"))
+        }
+
+    pub def getInt8ByLabel(x: ##java.sql.ResultSet, label: String): Result[Int8, System.Error] & Impure =
+        import java.sql.ResultSet.getByte(String);
+        try {
+            let ans = x.getByte(label);
+            Ok(ans)
+        } catch {
+            case _: ##java.sql.SQLException => Err(Generic("ResultSet.getInt8ByLabel"))
         }
 
     pub def getInt16(x: ##java.sql.ResultSet, ix: Int32): Result[Int16, System.Error] & Impure =
@@ -84,6 +102,15 @@ namespace BasicDb/Internal/ResultSet {
             case _: ##java.sql.SQLException => Err(Generic("ResultSet.getInt16"))
         }
 
+    pub def getInt16ByLabel(x: ##java.sql.ResultSet, label: String): Result[Int16, System.Error] & Impure =
+        import java.sql.ResultSet.getShort(String);
+        try {
+            let ans = x.getShort(label);
+            Ok(ans)
+        } catch {
+            case _: ##java.sql.SQLException => Err(Generic("ResultSet.getInt16ByLabel"))
+        }
+
     pub def getInt32(x: ##java.sql.ResultSet, ix: Int32): Result[Int32, System.Error] & Impure =
         import java.sql.ResultSet.getInt(Int32);
         try {
@@ -91,6 +118,15 @@ namespace BasicDb/Internal/ResultSet {
             Ok(ans)
         } catch {
             case _: ##java.sql.SQLException => Err(Generic("ResultSet.getInt32"))
+        }
+
+    pub def getInt32ByLabel(x: ##java.sql.ResultSet, label: String): Result[Int32, System.Error] & Impure =
+        import java.sql.ResultSet.getInt(String);
+        try {
+            let ans = x.getInt(label);
+            Ok(ans)
+        } catch {
+            case _: ##java.sql.SQLException => Err(Generic("ResultSet.getInt32ByLabel"))
         }
 
     pub def getInt64(x: ##java.sql.ResultSet, ix: Int32): Result[Int64, System.Error] & Impure =
@@ -102,6 +138,15 @@ namespace BasicDb/Internal/ResultSet {
             case _: ##java.sql.SQLException => Err(Generic("ResultSet.getInt64"))
         }
 
+    pub def getInt64ByLabel(x: ##java.sql.ResultSet, label: String): Result[Int64, System.Error] & Impure =
+        import java.sql.ResultSet.getLong(String);
+        try {
+            let ans = x.getLong(label);
+            Ok(ans)
+        } catch {
+            case _: ##java.sql.SQLException => Err(Generic("ResultSet.getInt64ByLabel"))
+        }
+
     pub def getFloat32(x: ##java.sql.ResultSet, ix: Int32): Result[Float32, System.Error] & Impure =
         import java.sql.ResultSet.getFloat(Int32);
         try {
@@ -109,6 +154,15 @@ namespace BasicDb/Internal/ResultSet {
             Ok(ans)
         } catch {
             case _: ##java.sql.SQLException => Err(Generic("ResultSet.getFloat32"))
+        }
+
+    pub def getFloat32ByLabel(x: ##java.sql.ResultSet, label: String): Result[Float32, System.Error] & Impure =
+        import java.sql.ResultSet.getFloat(String);
+        try {
+            let ans = x.getFloat(label);
+            Ok(ans)
+        } catch {
+            case _: ##java.sql.SQLException => Err(Generic("ResultSet.getFloat32ByLabel"))
         }
 
     pub def getFloat64(x: ##java.sql.ResultSet, ix: Int32): Result[Float64, System.Error] & Impure =
@@ -120,7 +174,14 @@ namespace BasicDb/Internal/ResultSet {
             case _: ##java.sql.SQLException => Err(Generic("ResultSet.getFloat64"))
         }
 
-
+    pub def getFloat64ByLabel(x: ##java.sql.ResultSet, label: String): Result[Float64, System.Error] & Impure =
+        import java.sql.ResultSet.getDouble(String);
+        try {
+            let ans = x.getDouble(label);
+            Ok(ans)
+        } catch {
+            case _: ##java.sql.SQLException => Err(Generic("ResultSet.getFloat64ByLabel"))
+        }
 
 
 }
