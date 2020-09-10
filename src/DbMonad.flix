@@ -111,6 +111,19 @@ namespace BasicDb/DbMonad {
 
     pub def flatMap(fn: a -> DbMonad[b], ma: DbMonad[a]): DbMonad[b] = bind(ma, fn)
 
+
+    pub def alt(ma: DbMonad[a], mb: DbMonad[a]): DbMonad[a] =
+        DbMonad(conn -> 
+            match apply1(ma, conn) { 
+                case Ok(a) => Ok(a)
+                case Err(_) => apply1(mb, conn)
+            }
+        )
+
+    pub def optional(ma: DbMonad[a]): DbMonad[Option[a]] = 
+        alt(map(Some, ma), return(None))
+
+
     def liftConnectionPrim(fn: ##java.sql.Connection ~> Result[a, System.Error]): DbMonad[a] = 
         DbMonad(conn -> fn(conn))
 
