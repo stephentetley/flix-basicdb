@@ -283,7 +283,11 @@ namespace BasicDb/DbMonad {
             mapXHelper(conn, mf, xs, e -> Err(e), _ -> Ok())
         )
 
-    def mapXHelper(conn: ##java.sql.Connection, mf: a -> DbMonad[b], xs: List[a], fk: System.Error -> Result[Unit, System.Error], sk: Unit -> Result[Unit, System.Error]): Result[Unit, System.Error] & Impure =
+    def mapXHelper(conn: ##java.sql.Connection, 
+                   mf: a -> DbMonad[b], 
+                   xs: List[a], 
+                   fk: System.Error -> Result[Unit, System.Error], 
+                   sk: Unit -> Result[Unit, System.Error]): Result[Unit, System.Error] & Impure =
         match xs {
             case Nil => sk()
             case x :: rs => {
@@ -294,6 +298,54 @@ namespace BasicDb/DbMonad {
                 }
             }
         }
+
+    pub def mapWithIndexM(mf: (a, Int32) -> DbMonad[b], xs: List[a]): DbMonad[List[b]] =
+        DbMonad(conn ->
+            mapWithIndexMHelper(conn, mf, 0, xs, e -> Err(e), ys -> Ok(ys))
+        )
+
+    ///
+    /// Helper function for `mapM`.
+    ///
+    def mapWithIndexMHelper(conn: ##java.sql.Connection, 
+                            mf: (a, Int32) -> DbMonad[b], 
+                            ix : Int32, 
+                            xs: List[a], 
+                            fk: System.Error -> Result[List[b], System.Error], 
+                            sk: List[b] -> Result[List[b], System.Error]): Result[List[b], System.Error] & Impure =
+        match xs {
+            case Nil => sk(Nil)
+            case x :: rs => {
+                let ma = mf(x, ix);
+                match apply1(ma, conn) {
+                    case Err(e) => fk(e)
+                    case Ok(x1) => mapWithIndexMHelper(conn, mf, ix + 1, rs, fk, ks -> sk(x1 :: ks))
+                }
+            }
+        }
+
+    pub def mapWithIndexX(mf: (a, Int32) -> DbMonad[b], xs: List[a]): DbMonad[Unit] =
+        DbMonad(conn ->
+            mapWithIndexXHelper(conn, mf, 0, xs, e -> Err(e), _ -> Ok())
+        )
+
+    def mapWithIndexXHelper(conn: ##java.sql.Connection, 
+                            mf: (a, Int32) -> DbMonad[b],
+                            ix: Int32, 
+                            xs: List[a], 
+                            fk: System.Error -> Result[Unit, System.Error], 
+                            sk: Unit -> Result[Unit, System.Error]): Result[Unit, System.Error] & Impure =
+        match xs {
+            case Nil => sk()
+            case x :: rs => {
+                let ma = mf(x, ix);
+                match apply1(ma, conn) {
+                    case Err(e) => fk(e)
+                    case Ok(_) => mapWithIndexXHelper(conn, mf, ix + 1, rs, fk, sk)
+                }
+            }
+        }
+
 
     pub def sequence(xs: List[DbMonad[a]]): DbMonad[List[a]] =
         DbMonad(conn ->
