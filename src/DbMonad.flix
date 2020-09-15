@@ -82,6 +82,22 @@ namespace BasicDb/DbMonad {
     pub def throwError(msg: String): DbMonad[a] =
         DbMonad(_ -> Err(System/Error.Generic(msg)) as & Impure)
 
+
+    pub def catchError(ma: DbMonad[a], handle: System.Error -> DbMonad[a]): DbMonad[a] =
+        DbMonad(conn -> match apply1(ma, conn) { 
+            case Ok(a) => Ok(a)
+            case Err(e) => apply1(handle(e), conn)
+        })
+
+    
+
+
+    pub def mapError(f: System.Error -> System.Error, ma: DbMonad[a]): DbMonad[a] =
+        DbMonad(conn -> match apply1(ma, conn) { 
+            case Ok(a) => Ok(a)
+            case Err(e) => Err(f(e))
+        })
+
     /// Needs to allow allow effects (e.g create / access arrays)
     pub def map(fn: a -> b & ef, ma: DbMonad[a]): DbMonad[b] = 
         DbMonad(conn -> 
@@ -123,6 +139,86 @@ namespace BasicDb/DbMonad {
 
     pub def optional(ma: DbMonad[a]): DbMonad[Option[a]] = 
         alt(map(Some, ma), return(None))
+
+    pub def tryWithDefault(ma: DbMonad[a], d: a): DbMonad[a] = 
+        alt(ma, return(d))
+
+    pub def testM(ma: DbMonad[a]): DbMonad[Bool] =
+        DbMonad(conn -> 
+            match apply1(ma, conn) { 
+                case Ok(_) => Ok(true)
+                case Err(_) => Ok(false)
+            }
+        )
+
+    ///
+    /// Expose the result of operation `ma`.
+    ///
+    /// By definition this never fails.
+    ///
+    pub def result(ma: DbMonad[a]): DbMonad[Result[a, System.Error]] = 
+        DbMonad(conn -> 
+            let ans = apply1(ma, conn);
+            Ok(ans)
+        )
+
+    pub def guard(x: Bool): DbMonad[Unit] = 
+        match x { 
+            case true => return()
+            case false => throwError("guard")
+        }
+
+    pub def whenTrue(x: Bool, ma: DbMonad[Unit]): DbMonad[Unit] = 
+        match x { 
+            case true => ma
+            case false => return()
+        }
+
+    pub def whenFalse(x: Bool, ma: DbMonad[Unit]): DbMonad[Unit] = 
+        match x { 
+            case true => return()
+            case false => ma
+        }
+
+    pub def whenTrueM(mx: DbMonad[Bool], ma: DbMonad[Unit]): DbMonad[Unit] = 
+        bind(mx, x -> whenTrue(x, ma))
+
+    pub def whenFalseM(mx: DbMonad[Bool], ma: DbMonad[Unit]): DbMonad[Unit] = 
+        bind(mx, x -> whenFalse(x, ma))
+
+
+    pub def whenSome(x: Option[a], f: a -> DbMonad[Unit]): DbMonad[Unit] = 
+        match x { 
+            case Some(a) => f(a)
+            case None => return()
+        }
+
+    pub def whenNone(x: Option[a], ma: DbMonad[Unit]): DbMonad[Unit] = 
+        match x { 
+            case Some(_) => return()
+            case None => ma
+        }
+
+    pub def whenSomeM(mx: DbMonad[Option[a]], f: a -> DbMonad[Unit]): DbMonad[Unit] = 
+        bind(mx, x -> whenSome(x, f))
+            
+
+    pub def whenNoneM(mx: DbMonad[Option[a]], ma: DbMonad[Unit]): DbMonad[Unit] = 
+        bind(mx, x -> whenNone(x, ma))
+
+
+    pub def ifSomeM(mx: DbMonad[Option[a]], mthen: a -> DbMonad[b], melse: DbMonad[b]): DbMonad[b] = 
+        bind(mx, x -> match x { 
+            case Some(a) => mthen(a)
+            case None => melse
+        })
+            
+
+    pub def ifNoneM(mx: DbMonad[Option[a]], mthen: DbMonad[b], melse: DbMonad[b]): DbMonad[b] = 
+        bind(mx, x -> match x { 
+            case Some(_) => mthen
+            case None => melse
+        })
 
 
     def liftConnectionPrim(fn: ##java.sql.Connection ~> Result[a, System.Error]): DbMonad[a] = 
