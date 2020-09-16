@@ -118,6 +118,26 @@ namespace BasicDb/DbMonad {
             }
         )
 
+    pub def seqLeft(ma: DbMonad[a], mb: DbMonad[b]): DbMonad[a] = 
+        DbMonad(conn -> 
+            match apply1(ma, conn) { 
+                case Ok(a) => match apply1(mb, conn) {
+                    case Ok(_) => Ok(a)
+                    case Err(e) => Err(e)
+                }
+                case Err(e) => Err(e)
+            }
+        )
+
+    pub def seqRight(ma: DbMonad[a], mb: DbMonad[b]): DbMonad[b] = 
+        DbMonad(conn -> 
+            match apply1(ma, conn) { 
+                case Ok(_) => apply1(mb, conn)
+                case Err(e) => Err(e)
+            }
+        )
+
+
     pub def bind(ma: DbMonad[a], fn: a -> DbMonad[b]): DbMonad[b] = 
         DbMonad(conn -> 
             match apply1(ma, conn) { 
@@ -127,6 +147,18 @@ namespace BasicDb/DbMonad {
         )
 
     pub def flatMap(fn: a -> DbMonad[b], ma: DbMonad[a]): DbMonad[b] = bind(ma, fn)
+
+
+    pub def kleisliLeft(f1: a -> DbMonad[b], f2: b -> DbMonad[c], x: a): DbMonad[c] =
+        DbMonad(conn -> 
+            match apply1(f1(x), conn) { 
+                case Ok(b) => apply1(f2(b), conn)
+                case Err(e) => Err(e)
+            }
+        )
+
+    pub def kleisliRight(f1: b -> DbMonad[c], f2: a -> DbMonad[b], x: a): DbMonad[c] =
+        kleisliLeft(f2, f1, x)
 
 
     pub def alt(ma: DbMonad[a], mb: DbMonad[a]): DbMonad[a] =
@@ -533,6 +565,39 @@ namespace BasicDb/DbMonad {
     /// `mapAccumX` is a synonym for `foldM`.
     ///
     pub def mapAccumX(mf: (ac, a) -> DbMonad[ac], start: ac, xs: List[a]): DbMonad[ac] = foldM(mf, start, xs)
+
+    /// Alias for `seqRight`
+    pub def *>(p1: DbMonad[a], p2: DbMonad[b]): DbMonad[b] = seqRight(p1, p2)
+
+    /// Alias for `seqLeft`
+    pub def <*(p1: DbMonad[a], p2: DbMonad[b]): DbMonad[a] = seqLeft(p1, p2)
+
+    pub def <!>(p1: DbMonad[a], p2: DbMonad[a]): DbMonad[a] =
+        alt(p1, p2)
+
+    // Haskell's <$>
+    pub def <&>(f: a -> b, p2: DbMonad[a]): DbMonad[b] =
+        map(f, p2)
+
+    pub def <&(x: b, p2: DbMonad[a]): DbMonad[b] =
+        p2 *> return(x)
+
+    /// Alias for `bind`
+    pub def >>=(ma: DbMonad[a], k: a -> DbMonad[b]): DbMonad[b] = bind(ma, k)
+
+    /// Alias for `flatMap` (flipped `bind`)
+    pub def =<<(k: a -> DbMonad[b], ma: DbMonad[a]): DbMonad[b] = flatMap(k, ma)
+
+
+    // Haskell's ap <*>
+    pub def <*>(mf: DbMonad[a -> b], p2: DbMonad[a]): DbMonad[b] =
+        ap(mf, p2)
+
+    /// Alias for `kleisliLeft`
+    pub def >=>(f1: a -> DbMonad[b], f2: b -> DbMonad[c]): a -> DbMonad[c] = x -> kleisliLeft(f1, f2, x)
+
+    /// Alias for `kleisliRight`
+    pub def <=<(f1: b -> DbMonad[c], f2: a -> DbMonad[b]): a -> DbMonad[c] = x -> kleisliRight(f1, f2, x)
 
 
     ///
