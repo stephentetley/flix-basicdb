@@ -31,9 +31,9 @@ def setPStmt!(name: String, year: Int32): PreparedStatementSetter[Unit] =
     return()
 
 def rsEvalRow(): RowEvaluator[Unit] = 
-    use BasicDb/RowEvaluator.{flatMap, return, getString, getInt32, liftAction};
-    let* name   = getString(0);
-    let* year   = getInt32(1);
+    use BasicDb/RowEvaluator.{flatMap, return, getStringAt, getInt32At, liftAction};
+    let* name   = getStringAt(0);
+    let* year   = getInt32At(1);
     let* _      = liftAction(_ -> Console.printLine(name + ", " + Int32.toString(year)));
     return()
 

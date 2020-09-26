@@ -572,6 +572,7 @@ namespace BasicDb/DbMonad {
     /// Alias for `seqLeft`
     pub def <*(p1: DbMonad[a], p2: DbMonad[b]): DbMonad[a] = seqLeft(p1, p2)
 
+    /// Haskell's <|>
     pub def <!>(p1: DbMonad[a], p2: DbMonad[a]): DbMonad[a] =
         alt(p1, p2)
 

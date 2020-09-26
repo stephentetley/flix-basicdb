@@ -81,55 +81,55 @@ namespace BasicDb/RowEvaluator {
     // // so FactIO's API indexes from 0.
 
     
-    pub def getString(ix: Int32): RowEvaluator[String] =
-        liftPrim(x -> BasicDb/Internal/ResultSet.getString(x, ix + 1))
+    pub def getStringAt(ix: Int32): RowEvaluator[String] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getStringAt(x, ix + 1))
 
-    pub def getStringByLabel(label: String): RowEvaluator[String] =
-        liftPrim(x -> BasicDb/Internal/ResultSet.getStringByLabel(x, label))
-
-    // See Javadocs for how a bool value is interpreted...
-    pub def getBool(ix: Int32): RowEvaluator[Bool] =
-        liftPrim(x -> BasicDb/Internal/ResultSet.getBool(x, ix + 1))
+    pub def getStringNamed(label: String): RowEvaluator[String] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getStringNamed(x, label))
 
     // See Javadocs for how a bool value is interpreted...
-    pub def getBoolByLabel(label: String): RowEvaluator[Bool] =
-        liftPrim(x -> BasicDb/Internal/ResultSet.getBoolByLabel(x, label))
+    pub def getBoolAt(ix: Int32): RowEvaluator[Bool] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getBoolAt(x, ix + 1))
 
-    pub def getInt8(ix: Int32): RowEvaluator[Int8] =
-        liftPrim(x -> BasicDb/Internal/ResultSet.getInt8(x, ix + 1))
+    // See Javadocs for how a bool value is interpreted...
+    pub def getBoolNamed(label: String): RowEvaluator[Bool] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getBoolNamed(x, label))
 
-    pub def getInt8ByLabel(label: String): RowEvaluator[Int8] =
-        liftPrim(x -> BasicDb/Internal/ResultSet.getInt8ByLabel(x, label))
+    pub def getInt8At(ix: Int32): RowEvaluator[Int8] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getInt8At(x, ix + 1))
 
-    pub def getInt16(ix: Int32): RowEvaluator[Int16] =
-        liftPrim(x -> BasicDb/Internal/ResultSet.getInt16(x, ix + 1))
+    pub def getInt8Named(label: String): RowEvaluator[Int8] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getInt8Named(x, label))
 
-    pub def getInt16ByLabel(label: String): RowEvaluator[Int16] =
-        liftPrim(x -> BasicDb/Internal/ResultSet.getInt16ByLabel(x, label))
+    pub def getInt16At(ix: Int32): RowEvaluator[Int16] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getInt16At(x, ix + 1))
 
-    pub def getInt32(ix: Int32): RowEvaluator[Int32] =
-        liftPrim(x -> BasicDb/Internal/ResultSet.getInt32(x, ix + 1))
+    pub def getInt16Named(label: String): RowEvaluator[Int16] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getInt16Named(x, label))
 
-    pub def getInt32ByLabel(label: String): RowEvaluator[Int32] =
-        liftPrim(x -> BasicDb/Internal/ResultSet.getInt32ByLabel(x, label))
+    pub def getInt32At(ix: Int32): RowEvaluator[Int32] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getInt32At(x, ix + 1))
 
-    pub def getInt64(ix: Int32): RowEvaluator[Int64] =
-        liftPrim(x -> BasicDb/Internal/ResultSet.getInt64(x, ix + 1))
+    pub def getInt32Named(label: String): RowEvaluator[Int32] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getInt32Named(x, label))
 
-    pub def getInt64ByLabel(label: String): RowEvaluator[Int64] =
-        liftPrim(x -> BasicDb/Internal/ResultSet.getInt64ByLabel(x, label))
+    pub def getInt64At(ix: Int32): RowEvaluator[Int64] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getInt64At(x, ix + 1))
 
-    pub def getFloat32(ix: Int32): RowEvaluator[Float32] =
-        liftPrim(x -> BasicDb/Internal/ResultSet.getFloat32(x, ix + 1))
+    pub def getInt64Named(label: String): RowEvaluator[Int64] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getInt64Named(x, label))
+
+    pub def getFloat32At(ix: Int32): RowEvaluator[Float32] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getFloat32At(x, ix + 1))
     
-    pub def getFloat32ByLabel(label: String): RowEvaluator[Float32] =
-        liftPrim(x -> BasicDb/Internal/ResultSet.getFloat32ByLabel(x, label))
+    pub def getFloat32Named(label: String): RowEvaluator[Float32] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getFloat32Named(x, label))
 
-    pub def getFloat64(ix: Int32): RowEvaluator[Float64] =
-        liftPrim(x -> BasicDb/Internal/ResultSet.getFloat64(x, ix + 1))
+    pub def getFloat64At(ix: Int32): RowEvaluator[Float64] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getFloat64At(x, ix + 1))
 
-    pub def getFloat64ByLabel(label: String): RowEvaluator[Float64] =
-        liftPrim(x -> BasicDb/Internal/ResultSet.getFloat64ByLabel(x, label))
+    pub def getFloat64Named(label: String): RowEvaluator[Float64] =
+        liftPrim(x -> BasicDb/Internal/ResultSet.getFloat64Named(x, label))
 
     ///
     /// Applies the binary function `f` to the values in `o1` and `o2`.
