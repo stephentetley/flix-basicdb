@@ -25,9 +25,9 @@ def test1(): DbMonad[Bool] =
     return(true)
 
 def setPStmt!(name: String, year: Int32): PreparedStatementSetter[Unit] = 
-    use BasicDb/PreparedStatementSetter.{flatMap, return, putString!, putInt32!};
-    let* _ = putString!(0,  name);
-    let* _ = putInt32!( 1,  year);
+    use BasicDb/PreparedStatementSetter.{flatMap, return, putStringAt!, putInt32At!};
+    let* _ = putStringAt!(0,  name);
+    let* _ = putInt32At!( 1,  year);
     return()
 
 def rsEvalRow(): RowEvaluator[Unit] = 

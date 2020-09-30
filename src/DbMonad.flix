@@ -484,7 +484,10 @@ namespace BasicDb/DbMonad {
     ///
     /// Helper function for `sequence`.
     ///
-    def sequenceHelper(conn: ##java.sql.Connection, xs: List[DbMonad[a]], fk: System.Error -> Result[List[a], System.Error], sk: List[a] -> Result[List[a], System.Error]): Result[List[a], System.Error] & Impure =
+    def sequenceHelper(conn: ##java.sql.Connection,
+                       xs: List[DbMonad[a]],
+                       fk: System.Error -> Result[List[a], System.Error],
+                       sk: List[a] -> Result[List[a], System.Error]): Result[List[a], System.Error] & Impure =
         match xs {
             case Nil => sk(Nil)
             case mx :: rs => match apply1(mx, conn) {
