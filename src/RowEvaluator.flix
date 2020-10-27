@@ -56,6 +56,25 @@ namespace BasicDb/RowEvaluator {
             }
         )
 
+    pub def seqLeft(ma: RowEvaluator[a], mb: RowEvaluator[b]): RowEvaluator[a] = 
+        RowEvaluator(r ->
+            match apply1(ma, r) { 
+                case Ok(a) => match apply1(mb, r) {
+                    case Ok(_) => Ok(a)
+                    case Err(e) => Err(e)
+                }
+                case Err(e) => Err(e)
+            }
+        )
+
+    pub def seqRight(ma: RowEvaluator[a], mb: RowEvaluator[b]): RowEvaluator[b] = 
+        RowEvaluator(r ->
+            match apply1(ma, r) { 
+                case Ok(_) => apply1(mb, r)
+                case Err(e) => Err(e)
+            }
+        )
+
     pub def bind(x: RowEvaluator[a], k: a -> RowEvaluator[b]): RowEvaluator[b] =
         RowEvaluator(r ->
             match apply1(x, r) {
@@ -66,6 +85,17 @@ namespace BasicDb/RowEvaluator {
 
     pub def flatMap(k: a -> RowEvaluator[b], x: RowEvaluator[a]): RowEvaluator[b] = bind(x, k)
 
+    pub def kleisliLeft(f1: a -> RowEvaluator[b], f2: b -> RowEvaluator[c], x: a): RowEvaluator[c] =
+        RowEvaluator(r -> 
+            match apply1(f1(x), r) { 
+                case Ok(b) => apply1(f2(b), r)
+                case Err(e) => Err(e)
+            }
+        )
+
+    pub def kleisliRight(f1: b -> RowEvaluator[c], f2: a -> RowEvaluator[b], x: a): RowEvaluator[c] =
+        kleisliLeft(f2, f1, x)
+        
     def liftPrim(ask: ##java.sql.ResultSet ~> Result[a, System.Error]): RowEvaluator[a] =
         RowEvaluator(r -> ask(r))
 
@@ -378,6 +408,39 @@ namespace BasicDb/RowEvaluator {
         lift10((x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) -> (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10), 
                 o1, o2, o3, o4, o5, o6, o7, o8, o9, o10)
 
+    /// Alias for `seqRight`
+    pub def *>(p1: RowEvaluator[a], p2: RowEvaluator[b]): RowEvaluator[b] = seqRight(p1, p2)
+
+    /// Alias for `seqLeft`
+    pub def <*(p1: RowEvaluator[a], p2: RowEvaluator[b]): RowEvaluator[a] = seqLeft(p1, p2)
+
+    // Haskell's <$>
+    pub def <&>(f: a -> b, p2: RowEvaluator[a]): RowEvaluator[b] =
+        map(f, p2)
+
+    pub def <&(x: b, p2: RowEvaluator[a]): RowEvaluator[b] =
+        p2 *> return(x)
+
+    /// Alias for `bind`
+    pub def >>=(ma: RowEvaluator[a], k: a -> RowEvaluator[b]): RowEvaluator[b] = 
+        bind(ma, k)
+
+    /// Alias for `flatMap` (flipped `bind`)
+    pub def =<<(k: a -> RowEvaluator[b], ma: RowEvaluator[a]): RowEvaluator[b] = 
+        flatMap(k, ma)
+
+
+    // Haskell's ap <*>
+    pub def <*>(mf: RowEvaluator[a -> b], p2: RowEvaluator[a]): RowEvaluator[b] =
+        ap(mf, p2)
+
+    /// Alias for `kleisliLeft`
+    pub def >=>(f1: a -> RowEvaluator[b], f2: b -> RowEvaluator[c]): a -> RowEvaluator[c] = 
+        x -> kleisliLeft(f1, f2, x)
+
+    /// Alias for `kleisliRight`
+    pub def <=<(f1: b -> RowEvaluator[c], f2: a -> RowEvaluator[b]): a -> RowEvaluator[c] = 
+        x -> kleisliRight(f1, f2, x)
 
 }
 
