@@ -569,6 +569,30 @@ namespace BasicDb/DbMonad {
     ///
     pub def mapAccumX(mf: (ac, a) -> DbMonad[ac], start: ac, xs: List[a]): DbMonad[ac] = foldM(mf, start, xs)
 
+
+    pub def filterMapM(mf: a -> DbMonad[Option[b]], xs: List[a]): DbMonad[List[b]] =
+        DbMonad(conn ->
+            filterMapMHelper(conn, mf, xs, e -> Err(e), ks -> Ok(ks))
+        )
+
+    ///
+    /// Helper function for `filterMapM`.
+    ///
+    def filterMapMHelper(conn: ##java.sql.Connection,
+                         mf: a -> DbMonad[Option[b]],
+                         xs: List[a],
+                         fk: System.Error -> Result[List[b], System.Error],
+                         sk: List[b] -> Result[List[b], System.Error]): Result[List[b], System.Error] & Impure =
+        match xs {
+            case Nil => sk(Nil)
+            case x :: rs => match apply1(mf(x), conn) {
+                case Err(e) => fk(e)
+                case Ok(None) => filterMapMHelper(conn, mf, rs, fk, sk)
+                case Ok(Some(x)) => filterMapMHelper(conn, mf, rs, fk, ks -> sk(x :: ks))
+            }
+        }
+
+
     /// Alias for `seqRight`
     pub def *>(p1: DbMonad[a], p2: DbMonad[b]): DbMonad[b] = seqRight(p1, p2)
 
