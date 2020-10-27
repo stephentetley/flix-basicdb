@@ -259,6 +259,9 @@ namespace BasicDb/DbMonad {
     pub def liftAction(fn: Unit ~> a): DbMonad[a] = 
         DbMonad(_ -> { let a = fn(); Ok(a) })
 
+    pub def liftResult(fn: Unit -> Result[a, System.Error]): DbMonad[a] = 
+        DbMonad(_ -> { fn() as & Impure })
+
     pub def liftActionResult(fn: Unit ~> Result[a, System.Error]): DbMonad[a] = 
         DbMonad(_ -> fn())
 
@@ -588,7 +591,7 @@ namespace BasicDb/DbMonad {
             case x :: rs => match apply1(mf(x), conn) {
                 case Err(e) => fk(e)
                 case Ok(None) => filterMapMHelper(conn, mf, rs, fk, sk)
-                case Ok(Some(x)) => filterMapMHelper(conn, mf, rs, fk, ks -> sk(x :: ks))
+                case Ok(Some(ans)) => filterMapMHelper(conn, mf, rs, fk, ks -> sk(ans :: ks))
             }
         }
 
