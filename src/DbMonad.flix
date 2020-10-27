@@ -588,10 +588,15 @@ namespace BasicDb/DbMonad {
                          sk: List[b] -> Result[List[b], System.Error]): Result[List[b], System.Error] & Impure =
         match xs {
             case Nil => sk(Nil)
-            case x :: rs => match apply1(mf(x), conn) {
-                case Err(e) => fk(e)
-                case Ok(None) => filterMapMHelper(conn, mf, rs, fk, sk)
-                case Ok(Some(ans)) => filterMapMHelper(conn, mf, rs, fk, ks -> sk(ans :: ks))
+            case x :: rs => {
+                let ma = mf(x); 
+                match apply1(ma, conn) {
+                    case Err(e) => fk(e)
+                    case Ok(ans) => match ans { 
+                        case None => filterMapMHelper(conn, mf, rs, fk, sk)
+                        case Some(a1) => filterMapMHelper(conn, mf, rs, fk, ks -> sk(a1 :: ks))
+                    }
+                }
             }
         }
 
