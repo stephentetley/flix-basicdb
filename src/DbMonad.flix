@@ -200,42 +200,42 @@ namespace BasicDb/DbMonad {
             case false => throwError("guard")
         }
 
-    pub def whenTrue(x: Bool, ma: DbMonad[Unit]): DbMonad[Unit] = 
+    pub def whenTrue(x: Bool, ma: DbMonad[a]): DbMonad[Option[a]] = 
         match x { 
-            case true => ma
-            case false => return()
+            case true => map(Some, ma)
+            case false => return(None)
         }
 
-    pub def whenFalse(x: Bool, ma: DbMonad[Unit]): DbMonad[Unit] = 
+    pub def whenFalse(x: Bool, ma: DbMonad[a]): DbMonad[Option[a]] = 
         match x { 
-            case true => return()
-            case false => ma
+            case true => return(None)
+            case false => map(Some, ma)
         }
 
-    pub def whenTrueM(mx: DbMonad[Bool], ma: DbMonad[Unit]): DbMonad[Unit] = 
+    pub def whenTrueM(mx: DbMonad[Bool], ma: DbMonad[a]): DbMonad[Option[a]] = 
         bind(mx, x -> whenTrue(x, ma))
 
-    pub def whenFalseM(mx: DbMonad[Bool], ma: DbMonad[Unit]): DbMonad[Unit] = 
+    pub def whenFalseM(mx: DbMonad[Bool], ma: DbMonad[a]): DbMonad[Option[a]] = 
         bind(mx, x -> whenFalse(x, ma))
 
 
-    pub def whenSome(x: Option[a], f: a -> DbMonad[Unit]): DbMonad[Unit] = 
+    pub def whenSome(x: Option[a], f: a -> DbMonad[b]): DbMonad[Option[b]] = 
         match x { 
-            case Some(a) => f(a)
-            case None => return()
+            case Some(a) => map(Some, f(a))
+            case None => return(None)
         }
 
-    pub def whenNone(x: Option[a], ma: DbMonad[Unit]): DbMonad[Unit] = 
+    pub def whenNone(x: Option[a], ma: DbMonad[b]): DbMonad[Option[b]] = 
         match x { 
-            case Some(_) => return()
-            case None => ma
+            case Some(_) => return(None)
+            case None => map(Some, ma)
         }
 
-    pub def whenSomeM(mx: DbMonad[Option[a]], f: a -> DbMonad[Unit]): DbMonad[Unit] = 
+    pub def whenSomeM(mx: DbMonad[Option[a]], f: a -> DbMonad[b]): DbMonad[Option[b]] = 
         bind(mx, x -> whenSome(x, f))
             
 
-    pub def whenNoneM(mx: DbMonad[Option[a]], ma: DbMonad[Unit]): DbMonad[Unit] = 
+    pub def whenNoneM(mx: DbMonad[Option[a]], ma: DbMonad[b]): DbMonad[Option[b]] = 
         bind(mx, x -> whenNone(x, ma))
 
 
