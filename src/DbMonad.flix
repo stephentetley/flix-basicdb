@@ -83,6 +83,13 @@ namespace BasicDb/DbMonad {
         DbMonad(_ -> Err(System/Error.Generic(msg)) as & Impure)
 
 
+    pub def swapError(msg: String, ma: DbMonad[a]): DbMonad[a] =
+        DbMonad(conn -> match apply1(ma, conn) { 
+            case Ok(a) => Ok(a)
+            case Err(_) => Err(System/Error.Generic(msg) as & Impure)
+        })
+
+
     pub def catchError(ma: DbMonad[a], handle: System.Error -> DbMonad[a]): DbMonad[a] =
         DbMonad(conn -> match apply1(ma, conn) { 
             case Ok(a) => Ok(a)
@@ -304,7 +311,10 @@ namespace BasicDb/DbMonad {
 
     pub def prepareStatement(sql: String): DbMonad[PreparedStatement] =
         use BasicDb/Internal/Prim.{prepareStatement};
-        liftConnectionPrim(x1 -> { let ans = x1.prepareStatement(sql); Result.map(PreparedStatement, ans)})
+        swapError(
+            "prepareStatement(`${sql}`)"
+            , liftConnectionPrim(x1 -> { let ans = x1.prepareStatement(sql); Result.map(PreparedStatement, ans)})
+        )
 
     pub def psExecuteQuery(stmt: PreparedStatement, setter: PreparedStatementSetter[a]): DbMonad[ResultSet] =
         let PreparedStatementSetter(setter1) = setter;
