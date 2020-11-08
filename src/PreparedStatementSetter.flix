@@ -69,6 +69,17 @@ namespace BasicDb/PreparedStatementSetter {
     def liftPrim(update: ##java.sql.PreparedStatement ~> Result[a, System.Error]): PreparedStatementSetter[a] =
         PreparedStatementSetter(r -> update(r))
 
+
+    pub def liftAction(fn: Unit ~> a): PreparedStatementSetter[a] = 
+        PreparedStatementSetter(_ -> { let a = fn(); Ok(a) })
+
+    pub def liftResult(fn: Unit -> Result[a, System.Error]): PreparedStatementSetter[a] = 
+        PreparedStatementSetter(_ -> { fn() as & Impure })
+
+    pub def liftActionResult(fn: Unit ~> Result[a, System.Error]): PreparedStatementSetter[a] = 
+        PreparedStatementSetter(_ -> fn())
+
+
     // Note - the primitive setX! functions index from 1, we add 1 to calls
     // so FactIO's API indexes from 0.
 
