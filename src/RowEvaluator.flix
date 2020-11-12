@@ -102,7 +102,10 @@ namespace BasicDb/RowEvaluator {
 
     pub def liftAction(fn: Unit ~> a): RowEvaluator[a] =
         RowEvaluator(_ -> let x = fn(); Ok(x))
-
+    
+    pub def liftResult(fn: Unit -> Result[a, System.Error]): RowEvaluator[a] = 
+        RowEvaluator(_ -> { fn() as & Impure })
+        
     pub def liftActionResult(fn: Unit ~> Result[a, System.Error]): RowEvaluator[a] =
         RowEvaluator(_ -> fn())
 
