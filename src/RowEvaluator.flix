@@ -96,6 +96,24 @@ namespace BasicDb/RowEvaluator {
     pub def kleisliRight(f1: b -> RowEvaluator[c], f2: a -> RowEvaluator[b], x: a): RowEvaluator[c] =
         kleisliLeft(f2, f1, x)
         
+    pub def optional(x: RowEvaluator[a]): RowEvaluator[Option[a]] =
+        RowEvaluator(r ->
+            match apply1(x, r) {
+                case Ok(a) => Ok(Some(a))
+                case Err(_) => Ok(None)
+            }
+        )
+
+
+    pub def alt(ma: RowEvaluator[a], mb: RowEvaluator[a]): RowEvaluator[a] =
+        RowEvaluator(r ->
+            match apply1(ma, r) {
+                case Ok(a) => Ok(a)
+                case Err(_) => apply1(mb, r) 
+            }
+        )
+
+        
     def liftPrim(ask: ##java.sql.ResultSet ~> Result[a, System.Error]): RowEvaluator[a] =
         RowEvaluator(r -> ask(r))
 
