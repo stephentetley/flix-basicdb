@@ -53,7 +53,7 @@ namespace BasicDb/Internal/Prim {
             conn.commit();
             Ok()
         } catch {
-            case _: ##java.sql.SQLException => Err(Generic("commitConnection"))
+            case _: ##java.sql.SQLException => Err(Generic("commit"))
         }
 
 

@@ -128,15 +128,20 @@ namespace BasicDb/RowEvaluator {
         RowEvaluator(_ -> fn())
 
 
-    // // Note - the primitive setX! functions index from 1, we add 1 to calls
+    // // Note - the primitive getX and setX! functions index from 1, we add 1 to calls
     // // so FactIO's API indexes from 0.
 
-    
+    /// This is "null safe" - if the internal result is null it is converted to the empty String.
     pub def getStringAt(ix: Int32): RowEvaluator[String] =
-        liftPrim(x -> BasicDb/Internal/ResultSet.getStringAt(x, ix + 1))
+        let* x1     = liftPrim(x -> BasicDb/Internal/ResultSet.getStringAt(x, ix + 1));
+        let ans     = if (Object.isNull(x1)) "" else x1;
+        return(ans)
 
+    /// This is "null safe" - if the internal result is null it is converted to the empty String.
     pub def getStringNamed(label: String): RowEvaluator[String] =
-        liftPrim(x -> BasicDb/Internal/ResultSet.getStringNamed(x, label))
+        let* x1     = liftPrim(x -> BasicDb/Internal/ResultSet.getStringNamed(x, label));
+        let ans     = if (Object.isNull(x1)) "" else x1;
+        return(ans)
 
     // See Javadocs for how a bool value is interpreted...
     pub def getBoolAt(ix: Int32): RowEvaluator[Bool] =
