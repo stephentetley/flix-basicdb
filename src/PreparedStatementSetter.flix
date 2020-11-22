@@ -28,6 +28,10 @@ namespace BasicDb/PreparedStatementSetter {
     pub def return(x: a): PreparedStatementSetter[a] =
         PreparedStatementSetter(_ -> Ok(x) as & Impure)
 
+
+    pub def throwError(msg: String): PreparedStatementSetter[a] =
+        PreparedStatementSetter(_ -> Err(System/Error.Generic(msg)) as & Impure)
+
     def apply1(x: PreparedStatementSetter[a], r: ##java.sql.PreparedStatement): Result[a, System.Error] & Impure =
         let PreparedStatementSetter(f) = x;
         f(r)

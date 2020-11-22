@@ -28,6 +28,9 @@ namespace BasicDb/RowEvaluator {
     pub def return(x: a): RowEvaluator[a] =
         RowEvaluator(_ -> Ok(x) as & Impure)
 
+    pub def throwError(msg: String): RowEvaluator[a] =
+        RowEvaluator(_ -> Err(System/Error.Generic(msg)) as & Impure)
+
     def apply1(x: RowEvaluator[a], r: ##java.sql.ResultSet): Result[a, System.Error] & Impure =
         let RowEvaluator(f) = x;
         f(r)
