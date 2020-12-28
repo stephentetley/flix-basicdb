@@ -19,7 +19,7 @@ use BasicDb.RowEvaluator.{RowEvaluator};
 
 namespace BasicDb {
 
-    pub opaque type RowEvaluator[a] = ##java.sql.ResultSet ~> Result[a, System.Error]
+    pub opaque type RowEvaluator[a] = ##java.sql.ResultSet ~> Result[a, String]
 
 }
 
@@ -29,9 +29,9 @@ namespace BasicDb/RowEvaluator {
         RowEvaluator(_ -> Ok(x) as & Impure)
 
     pub def throwError(msg: String): RowEvaluator[a] =
-        RowEvaluator(_ -> Err(System/Error.Generic(msg)) as & Impure)
+        RowEvaluator(_ -> Err(msg) as & Impure)
 
-    def apply1(x: RowEvaluator[a], r: ##java.sql.ResultSet): Result[a, System.Error] & Impure =
+    def apply1(x: RowEvaluator[a], r: ##java.sql.ResultSet): Result[a, String] & Impure =
         let RowEvaluator(f) = x;
         f(r)
 
@@ -117,17 +117,17 @@ namespace BasicDb/RowEvaluator {
         )
 
         
-    def liftPrim(ask: ##java.sql.ResultSet ~> Result[a, System.Error]): RowEvaluator[a] =
+    def liftPrim(ask: ##java.sql.ResultSet ~> Result[a, String]): RowEvaluator[a] =
         RowEvaluator(r -> ask(r))
 
 
     pub def liftAction(fn: Unit ~> a): RowEvaluator[a] =
         RowEvaluator(_ -> let x = fn(); Ok(x))
     
-    pub def liftResult(fn: Unit -> Result[a, System.Error]): RowEvaluator[a] = 
+    pub def liftResult(fn: Unit -> Result[a, String]): RowEvaluator[a] = 
         RowEvaluator(_ -> { fn() as & Impure })
         
-    pub def liftActionResult(fn: Unit ~> Result[a, System.Error]): RowEvaluator[a] =
+    pub def liftActionResult(fn: Unit ~> Result[a, String]): RowEvaluator[a] =
         RowEvaluator(_ -> fn())
 
 

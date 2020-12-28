@@ -14,29 +14,11 @@
  * limitations under the License.
  */
 
-use BasicDb.DbMonad;
-use BasicDb.DbMonad.{DbMonad};
-
-use BasicDb.PreparedStatement;
-use BasicDb.PreparedStatement.{PreparedStatement};
-
-use BasicDb.PreparedStatementSetter;
-use BasicDb.PreparedStatementSetter.{PreparedStatementSetter};
-
-use BasicDb.ResultSet;
-use BasicDb.ResultSet.{ResultSet};
-
-use BasicDb.RowEvaluator;
-use BasicDb.RowEvaluator.{RowEvaluator};
-
-use BasicDb.Statement;
-use BasicDb.Statement.{Statement};
-
 
 
 namespace BasicDb {
 
-    pub opaque type DbMonad[a] = ##java.sql.Connection ~> Result[a, System.Error]
+    pub opaque type DbMonad[a] = ##java.sql.Connection ~> Result[a, String]
 
     pub opaque type PreparedStatement = ##java.sql.PreparedStatement
 
@@ -48,6 +30,26 @@ namespace BasicDb {
 
 namespace BasicDb/DbMonad {
 
+        
+    use BasicDb.DbMonad;
+    use BasicDb.DbMonad.{DbMonad};
+
+    use BasicDb.PreparedStatement;
+    use BasicDb.PreparedStatement.{PreparedStatement};
+
+    use BasicDb.PreparedStatementSetter;
+    use BasicDb.PreparedStatementSetter.{PreparedStatementSetter};
+
+    use BasicDb.ResultSet;
+    use BasicDb.ResultSet.{ResultSet};
+
+    use BasicDb.RowEvaluator;
+    use BasicDb.RowEvaluator.{RowEvaluator};
+
+    use BasicDb.Statement;
+    use BasicDb.Statement.{Statement};
+
+
     pub def runDbMonad(ma: DbMonad[a], url: String): Result[a, System.Error] & Impure = 
         use BasicDb/Internal/Prim.{dmGetConnection, closeConnection};
         use Result.{flatMap};
@@ -55,10 +57,10 @@ namespace BasicDb/DbMonad {
             case Err(e) => Err(e)
             case Ok(conn) => {
                 let ans = apply1(ma, conn);
-                let* _ = closeConnection(conn);
+                let* _ = closeConnection(conn) ;
                 ans         
             }
-        }
+        } |> Result.mapErr(s -> System/Error.Generic(s))
         
 
     pub def runSQLite(ma: DbMonad[a], path: System.FilePath): Result[a, System.Error] & Impure = 
@@ -72,7 +74,7 @@ namespace BasicDb/DbMonad {
         runDbMonad(ma, url)
 
 
-    def apply1(ma: DbMonad[a], conn: ##java.sql.Connection): Result[a, System.Error] & Impure = 
+    def apply1(ma: DbMonad[a], conn: ##java.sql.Connection): Result[a, String] & Impure = 
         let DbMonad(x1) = ma;
         x1(conn)
 
@@ -80,17 +82,17 @@ namespace BasicDb/DbMonad {
         DbMonad(_ -> Ok(x) as & Impure)
 
     pub def throwError(msg: String): DbMonad[a] =
-        DbMonad(_ -> Err(System/Error.Generic(msg)) as & Impure)
+        DbMonad(_ -> Err(msg) as & Impure)
 
 
     pub def swapError(ma: DbMonad[a], msg: String): DbMonad[a] =
         DbMonad(conn -> match apply1(ma, conn) { 
             case Ok(a) => Ok(a)
-            case Err(_) => Err(System/Error.Generic(msg) as & Impure)
+            case Err(_) => Err(msg)
         })
 
     
-    pub def catchError(ma: DbMonad[a], handle: System.Error -> DbMonad[a]): DbMonad[a] =
+    pub def catchError(ma: DbMonad[a], handle: String -> DbMonad[a]): DbMonad[a] =
         DbMonad(conn -> match apply1(ma, conn) { 
             case Ok(a) => Ok(a)
             case Err(e) => apply1(handle(e), conn)
@@ -99,7 +101,7 @@ namespace BasicDb/DbMonad {
     
 
 
-    pub def mapError(f: System.Error -> System.Error, ma: DbMonad[a]): DbMonad[a] =
+    pub def mapError(f: String -> String, ma: DbMonad[a]): DbMonad[a] =
         DbMonad(conn -> match apply1(ma, conn) { 
             case Ok(a) => Ok(a)
             case Err(e) => Err(f(e))
@@ -195,7 +197,7 @@ namespace BasicDb/DbMonad {
     ///
     /// By definition this never fails.
     ///
-    pub def result(ma: DbMonad[a]): DbMonad[Result[a, System.Error]] = 
+    pub def result(ma: DbMonad[a]): DbMonad[Result[a, String]] = 
         DbMonad(conn -> 
             let ans = apply1(ma, conn);
             Ok(ans)
@@ -260,16 +262,16 @@ namespace BasicDb/DbMonad {
         })
 
 
-    def liftConnectionPrim(fn: ##java.sql.Connection ~> Result[a, System.Error]): DbMonad[a] = 
+    def liftConnectionPrim(fn: ##java.sql.Connection ~> Result[a, String]): DbMonad[a] = 
         DbMonad(conn -> fn(conn))
 
     pub def liftAction(fn: Unit ~> a): DbMonad[a] = 
         DbMonad(_ -> { let a = fn(); Ok(a) })
 
-    pub def liftResult(fn: Unit -> Result[a, System.Error]): DbMonad[a] = 
+    pub def liftResult(fn: Unit -> Result[a, String]): DbMonad[a] = 
         DbMonad(_ -> { fn() as & Impure })
 
-    pub def liftActionResult(fn: Unit ~> Result[a, System.Error]): DbMonad[a] = 
+    pub def liftActionResult(fn: Unit ~> Result[a, String]): DbMonad[a] = 
         DbMonad(_ -> fn())
 
     // DB operations
@@ -367,9 +369,9 @@ namespace BasicDb/DbMonad {
     /// Start with `next`
     /// This is optimized to avoid repeated unwrapping.
     def allRowsHelper(rs: ##java.sql.ResultSet, 
-                      eval: ##java.sql.ResultSet ~> Result[a, System.Error],
-                      fk: System.Error -> Result[List[a], System.Error],
-                      sk: List[a] -> Result[List[a], System.Error]): Result[List[a], System.Error] & Impure = 
+                      eval: ##java.sql.ResultSet ~> Result[a, String],
+                      fk: String -> Result[List[a], String],
+                      sk: List[a] -> Result[List[a], String]): Result[List[a], String] & Impure = 
         use BasicDb/Internal/ResultSet.{next};                      
         match rs.next() {
             case Ok(false) => sk(Nil)
@@ -387,8 +389,8 @@ namespace BasicDb/DbMonad {
 
     /// Start with `next`
     def allRowsXHelper(rs: ##java.sql.ResultSet, 
-                      eval: ##java.sql.ResultSet ~> Result[a, System.Error],
-                      fk: System.Error -> Result[Unit, System.Error]): Result[Unit, System.Error] & Impure = 
+                      eval: ##java.sql.ResultSet ~> Result[a, String],
+                      fk: String -> Result[Unit, String]): Result[Unit, String] & Impure = 
         use BasicDb/Internal/ResultSet.{next};                      
         match rs.next() {
             case Ok(false) => Ok()
@@ -411,8 +413,8 @@ namespace BasicDb/DbMonad {
     def mapMHelper(conn: ##java.sql.Connection, 
                    mf: a -> DbMonad[b], 
                    xs: List[a], 
-                   fk: System.Error -> Result[List[b], System.Error], 
-                   sk: List[b] -> Result[List[b], System.Error]): Result[List[b], System.Error] & Impure =
+                   fk: String -> Result[List[b], String], 
+                   sk: List[b] -> Result[List[b], String]): Result[List[b], String] & Impure =
         match xs {
             case Nil => sk(Nil)
             case x :: rs => {
@@ -432,8 +434,8 @@ namespace BasicDb/DbMonad {
     def mapXHelper(conn: ##java.sql.Connection, 
                    mf: a -> DbMonad[b], 
                    xs: List[a], 
-                   fk: System.Error -> Result[Unit, System.Error], 
-                   sk: Unit -> Result[Unit, System.Error]): Result[Unit, System.Error] & Impure =
+                   fk: String -> Result[Unit, String], 
+                   sk: Unit -> Result[Unit, String]): Result[Unit, String] & Impure =
         match xs {
             case Nil => sk()
             case x :: rs => {
@@ -457,8 +459,8 @@ namespace BasicDb/DbMonad {
                             mf: (a, Int32) -> DbMonad[b], 
                             ix : Int32, 
                             xs: List[a], 
-                            fk: System.Error -> Result[List[b], System.Error], 
-                            sk: List[b] -> Result[List[b], System.Error]): Result[List[b], System.Error] & Impure =
+                            fk: String -> Result[List[b], String], 
+                            sk: List[b] -> Result[List[b], String]): Result[List[b], String] & Impure =
         match xs {
             case Nil => sk(Nil)
             case x :: rs => {
@@ -479,8 +481,8 @@ namespace BasicDb/DbMonad {
                             mf: (a, Int32) -> DbMonad[b],
                             ix: Int32, 
                             xs: List[a], 
-                            fk: System.Error -> Result[Unit, System.Error], 
-                            sk: Unit -> Result[Unit, System.Error]): Result[Unit, System.Error] & Impure =
+                            fk: String -> Result[Unit, String], 
+                            sk: Unit -> Result[Unit, String]): Result[Unit, String] & Impure =
         match xs {
             case Nil => sk()
             case x :: rs => {
@@ -503,8 +505,8 @@ namespace BasicDb/DbMonad {
     ///
     def sequenceHelper(conn: ##java.sql.Connection,
                        xs: List[DbMonad[a]],
-                       fk: System.Error -> Result[List[a], System.Error],
-                       sk: List[a] -> Result[List[a], System.Error]): Result[List[a], System.Error] & Impure =
+                       fk: String -> Result[List[a], String],
+                       sk: List[a] -> Result[List[a], String]): Result[List[a], String] & Impure =
         match xs {
             case Nil => sk(Nil)
             case mx :: rs => match apply1(mx, conn) {
@@ -546,8 +548,8 @@ namespace BasicDb/DbMonad {
                     mf: (b, a) -> DbMonad[b], 
                     acc: b, 
                     xs: List[a], 
-                    fk: System.Error -> Result[b, System.Error], 
-                    sk: b -> Result[b, System.Error]): Result[b, System.Error] & Impure =
+                    fk: String -> Result[b, String], 
+                    sk: b -> Result[b, String]): Result[b, String] & Impure =
         match xs {
             case Nil => sk(acc)
             case x :: rs => {
@@ -568,8 +570,8 @@ namespace BasicDb/DbMonad {
                         mf: (ac, a) -> DbMonad[(ac, b)],
                         ac: ac,
                         xs: List[a],
-                        fk: System.Error -> Result[(ac, List[b]), System.Error],
-                        sk: (ac, List[b]) -> Result[(ac, List[b]), System.Error]): Result[(ac, List[b]), System.Error] & Impure =
+                        fk: String -> Result[(ac, List[b]), String],
+                        sk: (ac, List[b]) -> Result[(ac, List[b]), String]): Result[(ac, List[b]), String] & Impure =
         match xs {
             case Nil => sk(ac, Nil)
             case x :: rs => {
@@ -598,8 +600,8 @@ namespace BasicDb/DbMonad {
     def filterMapMHelper(conn: ##java.sql.Connection,
                          mf: a -> DbMonad[Option[b]],
                          xs: List[a],
-                         fk: System.Error -> Result[List[b], System.Error],
-                         sk: List[b] -> Result[List[b], System.Error]): Result[List[b], System.Error] & Impure =
+                         fk: String -> Result[List[b], String],
+                         sk: List[b] -> Result[List[b], String]): Result[List[b], String] & Impure =
         match xs {
             case Nil => sk(Nil)
             case x :: rs => {

@@ -14,102 +14,101 @@
  * limitations under the License.
  */
 
-use System.Error.{Generic};
 
 namespace BasicDb/Internal/Prim {
 
 
-    pub def dmGetConnection(url: String): Result[##java.sql.Connection, System.Error] & Impure = 
+    pub def dmGetConnection(url: String): Result[##java.sql.Connection, String] & Impure = 
         import java.sql.DriverManager:getConnection(String);
         try {
             let ans = getConnection(url);
             Ok(ans)
         } catch {
-            case _: ##java.sql.SQLException => Err(Generic("dmGetConnection")) 
+            case _: ##java.sql.SQLException => Err("dmGetConnection")
         }
 
     
-    pub def closeConnection(conn: ##java.sql.Connection): Result[Unit, System.Error] & Impure = 
+    pub def closeConnection(conn: ##java.sql.Connection): Result[Unit, String] & Impure = 
         import java.sql.Connection.close();
         try {
             conn.close();
             Ok()
         } catch {
-            case _: ##java.sql.SQLException => Err(Generic("closeConnection"))
+            case _: ##java.sql.SQLException => Err("closeConnection")
         }
 
-    pub def setAutoCommit(conn: ##java.sql.Connection, autoCommit: Bool): Result[Unit, System.Error] & Impure = 
+    pub def setAutoCommit(conn: ##java.sql.Connection, autoCommit: Bool): Result[Unit, String] & Impure = 
         import java.sql.Connection.setAutoCommit(Bool);
         try {
             conn.setAutoCommit(autoCommit);
             Ok()
         } catch {
-            case _: ##java.sql.SQLException => Err(Generic("setAutoCommit"))
+            case _: ##java.sql.SQLException => Err("setAutoCommit")
         }
 
-    pub def commit(conn: ##java.sql.Connection): Result[Unit, System.Error] & Impure = 
+    pub def commit(conn: ##java.sql.Connection): Result[Unit, String] & Impure = 
         import java.sql.Connection.commit();
         try {
             conn.commit();
             Ok()
         } catch {
-            case _: ##java.sql.SQLException => Err(Generic("commit"))
+            case _: ##java.sql.SQLException => Err("commit")
         }
 
 
-    pub def createStatement(conn: ##java.sql.Connection): Result[ ##java.sql.Statement, System.Error] & Impure = 
+    pub def createStatement(conn: ##java.sql.Connection): Result[ ##java.sql.Statement, String] & Impure = 
         import java.sql.Connection.createStatement();
         try {
             let ans = conn.createStatement();
             Ok(ans)
         } catch {
-            case _: ##java.sql.SQLException => Err(Generic("createStatement"))
+            case _: ##java.sql.SQLException => Err("createStatement")
         }
 
-    pub def closeStatement(stmt: ##java.sql.Statement): Result[Unit, System.Error] & Impure = 
+    pub def closeStatement(stmt: ##java.sql.Statement): Result[Unit, String] & Impure = 
         import java.sql.Statement.close();
         try {
             stmt.close();
             Ok()
         } catch {
-            case _: ##java.sql.SQLException => Err(Generic("closeStatement"))
+            case _: ##java.sql.SQLException => Err("closeStatement")
         }
 
-    pub def executeStatement(stmt: ##java.sql.Statement, sql: String): Result[Bool, System.Error] & Impure = 
+    pub def executeStatement(stmt: ##java.sql.Statement, sql: String): Result[Bool, String] & Impure = 
         import java.sql.Statement.execute(String);
         try {
             let ans = stmt.execute(sql);
             Ok(ans)
         } catch {
-            case _: ##java.sql.SQLException => Err(Generic("executeStatement"))
+            case _: ##java.sql.SQLException => Err("executeStatement")
         }
 
-    pub def executeQuery(stmt: ##java.sql.Statement, sql: String): Result[##java.sql.ResultSet, System.Error] & Impure = 
+    pub def executeQuery(stmt: ##java.sql.Statement, sql: String): Result[##java.sql.ResultSet, String] & Impure = 
         import java.sql.Statement.executeQuery(String);
         try {
             let ans = stmt.executeQuery(sql);
             Ok(ans)
         } catch {
-            case _: ##java.sql.SQLException => Err(Generic("executeQuery"))
+            case _: ##java.sql.SQLException => Err("executeQuery")
         }
 
-    pub def executeUpdate(stmt: ##java.sql.Statement, sql: String): Result[Int32, System.Error] & Impure = 
+    pub def executeUpdate(stmt: ##java.sql.Statement, sql: String): Result[Int32, String] & Impure = 
         import java.sql.Statement.executeUpdate(String);
         try {
             let ans = stmt.executeUpdate(sql);
             Ok(ans)
         } catch {
-            case _: ##java.sql.SQLException => Err(Generic("executeUpdate"))
+            case _: ##java.sql.SQLException => Err("executeUpdate")
         }
 
 
-    pub def prepareStatement(conn: ##java.sql.Connection, sql: String): Result[##java.sql.PreparedStatement, System.Error] & Impure = 
+    pub def prepareStatement(conn: ##java.sql.Connection, sql: String): Result[##java.sql.PreparedStatement, String] & Impure = 
         import java.sql.Connection.prepareStatement(String);
         try {
             let ans = conn.prepareStatement(sql);
             Ok(ans)
         } catch {
-            case _: ##java.sql.SQLException => Err(Generic("prepareStatement"))
+            case _: ##java.sql.SQLException => Err("prepareStatement")
         }
 
 }    

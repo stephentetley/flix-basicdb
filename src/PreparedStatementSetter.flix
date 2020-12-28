@@ -19,7 +19,7 @@ use BasicDb.PreparedStatementSetter.{PreparedStatementSetter};
 
 namespace BasicDb {
 
-    pub opaque type PreparedStatementSetter[a] = ##java.sql.PreparedStatement ~> Result[a, System.Error]
+    pub opaque type PreparedStatementSetter[a] = ##java.sql.PreparedStatement ~> Result[a, String]
 
 }
 
@@ -30,9 +30,9 @@ namespace BasicDb/PreparedStatementSetter {
 
 
     pub def throwError(msg: String): PreparedStatementSetter[a] =
-        PreparedStatementSetter(_ -> Err(System/Error.Generic(msg)) as & Impure)
+        PreparedStatementSetter(_ -> Err(msg) as & Impure)
 
-    def apply1(x: PreparedStatementSetter[a], r: ##java.sql.PreparedStatement): Result[a, System.Error] & Impure =
+    def apply1(x: PreparedStatementSetter[a], r: ##java.sql.PreparedStatement): Result[a, String] & Impure =
         let PreparedStatementSetter(f) = x;
         f(r)
 
@@ -70,17 +70,24 @@ namespace BasicDb/PreparedStatementSetter {
 
     pub def flatMap(k: a -> PreparedStatementSetter[b], x: PreparedStatementSetter[a]): PreparedStatementSetter[b] = bind(x, k)
 
-    def liftPrim(update: ##java.sql.PreparedStatement ~> Result[a, System.Error]): PreparedStatementSetter[a] =
+    def liftPrim(update: ##java.sql.PreparedStatement ~> Result[a, String]): PreparedStatementSetter[a] =
         PreparedStatementSetter(r -> update(r))
+
+    pub def liftOption(x: Option[a], errMsg: String): PreparedStatementSetter[a] = match x {
+        case Some(x1) => return(x1)
+        case None => throwError(errMsg)
+    }
+
+    pub def liftResult(x: Result[a, String]): PreparedStatementSetter[a] = match x { 
+        case Ok(x1) => return(x1)
+        case Err(msg) => throwError(msg)
+    }
 
 
     pub def liftAction(fn: Unit ~> a): PreparedStatementSetter[a] = 
         PreparedStatementSetter(_ -> { let a = fn(); Ok(a) })
 
-    pub def liftResult(fn: Unit -> Result[a, System.Error]): PreparedStatementSetter[a] = 
-        PreparedStatementSetter(_ -> { fn() as & Impure })
-
-    pub def liftActionResult(fn: Unit ~> Result[a, System.Error]): PreparedStatementSetter[a] = 
+    pub def liftActionResult(fn: Unit ~> Result[a, String]): PreparedStatementSetter[a] = 
         PreparedStatementSetter(_ -> fn())
 
 
