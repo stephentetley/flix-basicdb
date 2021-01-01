@@ -40,6 +40,6 @@ def rsEvalRow(): RowEvaluator[Unit] =
 
 def main(): Unit & Impure = 
     match runSQLite(test1(), System/FilePath.new("e:/coding/flix/flix-basicdb/data/dbms1.sqlite")) {
-        case Err(e) => Console.printLine(System/Error.toString(e))
+        case Err(e) => Console.printLine("Error: ${e}")
         case Ok(_) => ()
     }

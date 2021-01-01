@@ -14,11 +14,6 @@
  * limitations under the License.
  */
 
-use System.Error.{Generic};
-
-
-
-
 namespace BasicDb/Internal/PreparedStatement {
 
     pub def sql_type_null(): Int32 =

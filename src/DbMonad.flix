@@ -50,27 +50,27 @@ namespace BasicDb/DbMonad {
     use BasicDb.Statement.{Statement};
 
 
-    pub def runDbMonad(ma: DbMonad[a], url: String): Result[a, System.Error] & Impure = 
+    pub def runDbMonad(ma: DbMonad[a], url: String): Result[a, String] & Impure = 
         use BasicDb/Internal/Prim.{dmGetConnection, closeConnection};
-        use Result.{flatMap};
-        match dmGetConnection(url) { 
+        match dmGetConnection(url) {
             case Err(e) => Err(e)
             case Ok(conn) => {
-                let ans = apply1(ma, conn);
-                let* _ = closeConnection(conn) ;
-                ans         
+                let ans    = apply1(ma, conn);
+                /// ensure conn is closed whether or not previous line is `Ok`
+                closeConnection(conn);
+                ans
             }
-        } |> Result.mapErr(s -> System/Error.Generic(s))
+        }
         
 
-    pub def runSQLite(ma: DbMonad[a], path: System.FilePath): Result[a, System.Error] & Impure = 
-        use System/FilePath.{toString};
-        let url = "jdbc:sqlite:" + path.toString();
+    pub def runSQLite(ma: DbMonad[a], path: System.FilePath): Result[a, String] & Impure = 
+        use System/FilePath.{normalize};
+        let url = "jdbc:sqlite:${normalize(path)}";
         runDbMonad(ma, url)
 
-    pub def runDuckDB(ma: DbMonad[a], path: System.FilePath): Result[a, System.Error] & Impure = 
-        use System/FilePath.{toString};
-        let url = "jdbc:duckdb:" + path.toString();
+    pub def runDuckDB(ma: DbMonad[a], path: System.FilePath): Result[a, String] & Impure = 
+        use System/FilePath.{normalize};
+        let url = "jdbc:duckdb:${normalize(path)}";
         runDbMonad(ma, url)
 
 

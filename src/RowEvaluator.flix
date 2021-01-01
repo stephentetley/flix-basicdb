@@ -120,12 +120,19 @@ namespace BasicDb/RowEvaluator {
     def liftPrim(ask: ##java.sql.ResultSet ~> Result[a, String]): RowEvaluator[a] =
         RowEvaluator(r -> ask(r))
 
-
+    pub def liftOption(x: Option[a], errMsg: String): RowEvaluator[a] = match x { 
+        case Some(x1) => return(x1)
+        case None => throwError(errMsg)
+    }
+        
+    pub def liftResult(x: Result[a, String]): RowEvaluator[a] = match x { 
+        case Ok(x1) => return(x1)
+        case Err(msg) => throwError(msg)
+    }
+    
     pub def liftAction(fn: Unit ~> a): RowEvaluator[a] =
         RowEvaluator(_ -> let x = fn(); Ok(x))
     
-    pub def liftResult(fn: Unit -> Result[a, String]): RowEvaluator[a] = 
-        RowEvaluator(_ -> { fn() as & Impure })
         
     pub def liftActionResult(fn: Unit ~> Result[a, String]): RowEvaluator[a] =
         RowEvaluator(_ -> fn())
