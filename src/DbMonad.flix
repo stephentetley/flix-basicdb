@@ -268,8 +268,15 @@ namespace BasicDb/DbMonad {
     pub def liftAction(fn: Unit ~> a): DbMonad[a] = 
         DbMonad(_ -> { let a = fn(); Ok(a) })
 
-    pub def liftResult(fn: Unit -> Result[a, String]): DbMonad[a] = 
-        DbMonad(_ -> { fn() as & Impure })
+    pub def liftOption(x: Option[a], errMsg: String): DbMonad[a] = match x {
+        case Some(x1) => return(x1)
+        case None => throwError(errMsg)
+    }
+
+    pub def liftResult(x: Result[a, String]): DbMonad[a] = match x { 
+        case Ok(x1) => return(x1)
+        case Err(msg) => throwError(msg)
+    }
 
     pub def liftActionResult(fn: Unit ~> Result[a, String]): DbMonad[a] = 
         DbMonad(_ -> fn())
