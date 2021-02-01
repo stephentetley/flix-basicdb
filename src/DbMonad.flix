@@ -408,6 +408,28 @@ namespace BasicDb/DbMonad {
             case Err(e) => fk(e)
         }
 
+    /// Note - arg order is inconsistent with List.foldLeft etc. and probably should be changed.
+    pub def foldAllRows(rs: ResultSet, step: (b,a) -> b, start: b, eval: RowEvaluator[a]): DbMonad[b] = 
+        let RowEvaluator(f) = eval;
+        let ResultSet(rs1) = rs;        
+        liftActionResult(_ -> foldAllRowsHelper(rs1, f, step, start))
+
+    /// Start with `next`
+    /// This is optimized to avoid repeated unwrapping.
+    def foldAllRowsHelper(rs: ##java.sql.ResultSet, 
+                      eval: ##java.sql.ResultSet ~> Result[a, String],
+                      step: (b, a) -> b,
+                      ac: b): Result[b, String] & Impure = 
+        use BasicDb/Internal/ResultSet.{next};                      
+        match rs.next() {
+            case Ok(false) => Ok(ac)
+            case Ok(true) => match rs.eval() {
+                case Ok(x) => foldAllRowsHelper(rs, eval, step, step(ac, x))
+                case Err(e) => Err(e)
+            }
+            case Err(e) => Err(e)
+        }
+
 
     pub def mapM(mf: a -> DbMonad[b], xs: List[a]): DbMonad[List[b]] =
         DbMonad(conn ->
