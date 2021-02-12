@@ -336,6 +336,10 @@ namespace BasicDb/DbMonad {
         let* rs = liftActionResult(_ -> BasicDb/Internal/PreparedStatement.executeQuery(stmt1));
         return(ResultSet(rs))
 
+    pub def psExecuteCachedQuery(statementName: String, setter: PreparedStatementSetter[a]): DbMonad[ResultSet] =
+        let* pstmt = getPreparedStatement(statementName);
+        psExecuteQuery(pstmt, setter)
+
     pub def psExecuteUpdate(stmt: PreparedStatement, setter: PreparedStatementSetter[a]): DbMonad[Int32] =
         let PreparedStatementSetter(setter1) = setter;
         let PreparedStatement(stmt1) = stmt;
@@ -344,7 +348,10 @@ namespace BasicDb/DbMonad {
         let* n = liftActionResult(_ -> BasicDb/Internal/PreparedStatement.executeUpdate(stmt1));
         return(n)
 
-
+    pub def psExecuteCachedUpdate(statementName: String, setter: PreparedStatementSetter[a]): DbMonad[Int32] =
+        let* pstmt = getPreparedStatement(statementName);
+        psExecuteUpdate(pstmt, setter)
+        
     /// ResultSet
 
     pub def rsClose(rs: ResultSet): DbMonad[Unit] =
