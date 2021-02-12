@@ -149,6 +149,15 @@ namespace BasicDb/DbMonad {
     pub def flatMap(fn: a -> DbMonad[b], ma: DbMonad[a]): DbMonad[b] = bind(ma, fn)
 
 
+
+    pub def continue(ma: DbMonad[a], fk: String -> DbMonad[b], sk: a -> DbMonad[b]): DbMonad[b] = 
+        DbMonad((conn, s1) -> match apply1(ma, conn, s1) { 
+            case Ok((s2, a)) => apply1(sk(a), conn, s2)
+            case Err(e) => apply1(fk(e), conn, s1)
+        })
+
+
+
     pub def kleisliLeft(f1: a -> DbMonad[b], f2: b -> DbMonad[c], x: a): DbMonad[c] =
         DbMonad((conn, s1) -> match apply1(f1(x), conn, s1) { 
             case Ok((s2, b)) => apply1(f2(b), conn, s2)
@@ -579,12 +588,12 @@ namespace BasicDb/DbMonad {
     pub def forX(xs: List[a], f: a -> DbMonad[b]): DbMonad[Unit] = mapX(f, xs)
 
 
-    pub def foldM(mf: (b, a) -> DbMonad[b], start: b, xs: List[a]): DbMonad[b] =
+    pub def foldLeftM(mf: (b, a) -> DbMonad[b], start: b, xs: List[a]): DbMonad[b] =
         DbMonad((conn, s1) ->
-            foldMHelper(conn, mf, s1, start, xs, e -> Err(e), (s2, ac) -> Ok((s2, ac)))
+            foldLeftMHelper(conn, mf, s1, start, xs, e -> Err(e), (s2, ac) -> Ok((s2, ac)))
         )
 
-    def foldMHelper(conn: ##java.sql.Connection, 
+    def foldLeftMHelper(conn: ##java.sql.Connection, 
                     mf: (b, a) -> DbMonad[b], 
                     s1: PSCache,
                     acc: b, 
@@ -597,11 +606,26 @@ namespace BasicDb/DbMonad {
                 let ma = mf(acc, x);
                 match apply1(ma, conn, s1) {
                     case Err(e) => fk(e)
-                    case Ok((s2, acc1)) => foldMHelper(conn, mf, s2, acc1, rs, fk, sk)
+                    case Ok((s2, acc1)) => foldLeftMHelper(conn, mf, s2, acc1, rs, fk, sk)
                 }
             }
         }
 
+    
+    /// Note `foldRightM` does not short-circuit on failure as it has to traverse the list
+    /// to start at the right.
+    pub def foldRightM(mf: (a, b) -> DbMonad[b], start: b, xs: List[a]): DbMonad[b] = 
+        foldRightMHelper(mf, return(start), xs, ms -> ms)
+
+    ///
+    /// Helper function for `foldRightM`.
+    ///
+    def foldRightMHelper(f: (a, b) -> DbMonad[b], s: DbMonad[b], xs: List[a], k: DbMonad[b] -> DbMonad[b]): DbMonad[b] = 
+        match xs {
+            case Nil => k(s)
+            case x :: rs => foldRightMHelper(f, s, rs, ms -> k(bind(ms, s1 -> f(x, s1))))
+        }
+    
     pub def mapAccumM(mf: (ac, a) -> DbMonad[(ac, b)], start: ac, xs: List[a]): DbMonad[(ac, List[b])] =
         DbMonad((conn, s1) ->
             mapAccumMHelper(conn, mf, s1, start, xs, e -> Err(e), (s2, ac, ks) -> Ok((s2, (ac, ks))))
@@ -628,7 +652,7 @@ namespace BasicDb/DbMonad {
     ///
     /// `mapAccumX` is a synonym for `foldM`.
     ///
-    pub def mapAccumX(mf: (ac, a) -> DbMonad[ac], start: ac, xs: List[a]): DbMonad[ac] = foldM(mf, start, xs)
+    pub def mapAccumX(mf: (ac, a) -> DbMonad[ac], start: ac, xs: List[a]): DbMonad[ac] = foldLeftM(mf, start, xs)
 
 
     pub def filterMapM(mf: a -> DbMonad[Option[b]], xs: List[a]): DbMonad[List[b]] =
@@ -658,6 +682,46 @@ namespace BasicDb/DbMonad {
                 }
             }
         }
+
+
+    pub def replicateM(n: Int32, ma: DbMonad[a]): DbMonad[List[a]] =
+        DbMonad((conn, s1) ->
+            replicateMHelper(conn, ma, s1, n, e -> Err(e), (s2, ks) -> Ok((s2, ks)))
+        )
+
+    def replicateMHelper(conn: ##java.sql.Connection,
+                         ma: DbMonad[a],
+                         s1: PSCache, 
+                         n: Int32,
+                         fk: String -> Result[(PSCache, List[a]), String],
+                         sk: (PSCache, List[a]) -> Result[(PSCache, List[a]), String]): Result[(PSCache, List[a]), String] & Impure =
+        if (n <= 0) 
+            sk(s1, Nil)
+        else 
+            match apply1(ma, conn, s1) {
+                case Err(e) => fk(e)
+                case Ok((s2, a)) => replicateMHelper(conn, ma, s2, n - 1, fk, (s3, ks) -> sk(s3, a :: ks))
+            }
+            
+        
+   pub def replicateX(n: Int32, ma: DbMonad[a]): DbMonad[Unit] =
+        DbMonad((conn, s1) ->
+            replicateXHelper(conn, ma, s1, n, e -> Err(e), s2 -> Ok((s2, ())))
+        )
+
+    def replicateXHelper(conn: ##java.sql.Connection,
+                         ma: DbMonad[a],
+                         s1: PSCache, 
+                         n: Int32,
+                         fk: String -> Result[(PSCache, Unit), String],
+                         sk: PSCache -> Result[(PSCache, Unit), String]): Result[(PSCache, Unit), String] & Impure =
+        if (n <= 0) 
+            sk(s1)
+        else 
+            match apply1(ma, conn, s1) {
+                case Err(e) => fk(e)
+                case Ok((s2, _)) => replicateXHelper(conn, ma, s2, n - 1, fk, sk)
+            }        
 
 
     /// Alias for `seqRight`
