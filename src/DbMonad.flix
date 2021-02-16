@@ -331,10 +331,14 @@ namespace BasicDb/DbMonad {
         DbMonad((_, s1) -> Ok((Map.insert(name, pstmt, s1), ())) as & Impure)
 
     pub def getPreparedStatement(name: String): DbMonad[PreparedStatement] =
-        DbMonad((_, s1) -> match Map.get(name, s1) {
-            case Some(pstmt) => Ok((s1, pstmt)) as & Impure
-            case None => Err("getPreparedStatement('${name}') missing") as & Impure
-        })
+        bind( getPreparedStatement1(name)
+            , x -> match x { 
+                case Some(pstmt) => return(pstmt)
+                case None => throwError("getPreparedStatement('${name}') missing")
+            })
+
+    def getPreparedStatement1(name: String): DbMonad[Option[PreparedStatement]] =
+        DbMonad((_, s1) -> Ok((s1, Map.get(name, s1))) as & Impure)
 
 
     pub def psExecuteQuery(stmt: PreparedStatement, setter: PreparedStatementSetter[a]): DbMonad[ResultSet] =
@@ -349,6 +353,19 @@ namespace BasicDb/DbMonad {
         let* pstmt = getPreparedStatement(statementName);
         psExecuteQuery(pstmt, setter)
 
+
+    pub def psExecuteQueryAndCachePS(statementName: String, sql: String, setter: PreparedStatementSetter[a]): DbMonad[ResultSet] =
+        let* ox = getPreparedStatement1(statementName);
+        match ox { 
+            case Some(pstmt) => psExecuteQuery(pstmt, setter)
+            case None => {
+                let* _ = cachePreparedStatement(statementName, sql);
+                psExecuteCachedQuery(statementName, setter)
+            }
+        }
+        
+
+
     pub def psExecuteUpdate(stmt: PreparedStatement, setter: PreparedStatementSetter[a]): DbMonad[Int32] =
         let PreparedStatementSetter(setter1) = setter;
         let PreparedStatement(stmt1) = stmt;
@@ -361,6 +378,16 @@ namespace BasicDb/DbMonad {
         let* pstmt = getPreparedStatement(statementName);
         psExecuteUpdate(pstmt, setter)
         
+    pub def psExecuteUpdateAndCachePS(statementName: String, sql: String, setter: PreparedStatementSetter[a]): DbMonad[Int32] =
+        let* ox = getPreparedStatement1(statementName);
+        match ox { 
+            case Some(pstmt) => psExecuteUpdate(pstmt, setter)
+            case None => {
+                let* _ = cachePreparedStatement(statementName, sql);
+                psExecuteCachedUpdate(statementName, setter)
+            }
+        }
+
     /// ResultSet
 
     pub def rsClose(rs: ResultSet): DbMonad[Unit] =

@@ -60,6 +60,22 @@ namespace BasicDb/PreparedStatementSetter {
             }
         )
 
+    pub def seqLeft(ma: PreparedStatementSetter[a], mb: PreparedStatementSetter[b]): PreparedStatementSetter[a] = 
+        PreparedStatementSetter(r -> match apply1(ma, r) { 
+            case Ok(a) => match apply1(mb, r) {
+                case Ok(_) => Ok(a)
+                case Err(e) => Err(e)
+            }
+            case Err(e) => Err(e)
+        })
+
+    pub def seqRight(ma: PreparedStatementSetter[a], mb: PreparedStatementSetter[b]): PreparedStatementSetter[b] = 
+        PreparedStatementSetter(r -> match apply1(ma, r) { 
+            case Ok(_) => apply1(mb, r)
+            case Err(e) => Err(e)
+        })
+
+
     pub def bind(x: PreparedStatementSetter[a], k: a -> PreparedStatementSetter[b]): PreparedStatementSetter[b] =
         PreparedStatementSetter(r ->
             match apply1(x, r) {
