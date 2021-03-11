@@ -265,9 +265,14 @@ namespace BasicDb/DbMonad {
         case None => throwError(errMsg)
     }
 
-    pub def liftResult(x: Result[a, String]): DbMonad[a] = match x { 
+    pub def liftResult(x: Result[a, e], makeErrMsg: e -> String): DbMonad[a] = match x { 
         case Ok(x1) => return(x1)
-        case Err(msg) => throwError(msg)
+        case Err(e) => throwError(makeErrMsg(e))
+    }
+
+    pub def liftValidation(x: Validation[a, e], makeErrMsg: List[e] -> String): DbMonad[a] = match x { 
+        case Success(x1) => return(x1)
+        case Failure(es) => throwError(makeErrMsg(Nel.toList(es)))
     }
 
     pub def liftActionResult(fn: Unit ~> Result[a, String]): DbMonad[a] = 

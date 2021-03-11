@@ -125,10 +125,17 @@ namespace BasicDb/RowEvaluator {
         case None => throwError(errMsg)
     }
         
-    pub def liftResult(x: Result[a, String]): RowEvaluator[a] = match x { 
+    pub def liftResult(x: Result[a, e], makeErrMsg: e -> String): RowEvaluator[a] = match x { 
         case Ok(x1) => return(x1)
-        case Err(msg) => throwError(msg)
+        case Err(e) => throwError(makeErrMsg(e))
     }
+
+
+    pub def liftValidation(x: Validation[a, e], makeErrMsg: List[e] -> String): RowEvaluator[a] = match x { 
+        case Success(x1) => return(x1)
+        case Failure(es) => throwError(makeErrMsg(Nel.toList(es)))
+    }
+
     
     pub def liftAction(fn: Unit ~> a): RowEvaluator[a] =
         RowEvaluator(_ -> let x = fn(); Ok(x))
