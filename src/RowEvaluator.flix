@@ -458,8 +458,8 @@ namespace BasicDb/RowEvaluator {
     pub def <*(p1: RowEvaluator[a], p2: RowEvaluator[b]): RowEvaluator[a] = seqLeft(p1, p2)
 
     // Haskell's <$>
-    pub def <&>(f: a -> b, p2: RowEvaluator[a]): RowEvaluator[b] =
-        map(f, p2)
+    pub def <&>(f: a -> b, mx: RowEvaluator[a]): RowEvaluator[b] =
+        map(f, mx)
 
     pub def <&(x: b, p2: RowEvaluator[a]): RowEvaluator[b] =
         p2 *> return(x)
@@ -469,13 +469,13 @@ namespace BasicDb/RowEvaluator {
         bind(ma, k)
 
     /// Alias for `flatMap` (flipped `bind`)
-    pub def =<<(k: a -> RowEvaluator[b], ma: RowEvaluator[a]): RowEvaluator[b] = 
-        flatMap(k, ma)
+    pub def =<<(k: a -> RowEvaluator[b], mx: RowEvaluator[a]): RowEvaluator[b] = 
+        flatMap(k, mx)
 
 
     // Haskell's ap <*>
-    pub def <*>(mf: RowEvaluator[a -> b], p2: RowEvaluator[a]): RowEvaluator[b] =
-        ap(mf, p2)
+    pub def <*>(mf: RowEvaluator[a -> b], mx: RowEvaluator[a]): RowEvaluator[b] =
+        ap(mf, mx)
 
     /// Alias for `kleisliLeft`
     pub def >=>(f1: a -> RowEvaluator[b], f2: b -> RowEvaluator[c]): a -> RowEvaluator[c] = 
