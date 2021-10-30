@@ -31,7 +31,7 @@ namespace BasicDb/Internal/Prim {
     pub def closeConnection(conn: ##java.sql.Connection): Result[Unit, String] & Impure = 
         import java.sql.Connection.close();
         try {
-            conn.close();
+            close(conn);
             Ok()
         } catch {
             case _: ##java.sql.SQLException => Err("closeConnection")
@@ -40,7 +40,7 @@ namespace BasicDb/Internal/Prim {
     pub def setAutoCommit(conn: ##java.sql.Connection, autoCommit: Bool): Result[Unit, String] & Impure = 
         import java.sql.Connection.setAutoCommit(Bool);
         try {
-            conn.setAutoCommit(autoCommit);
+            setAutoCommit(conn, autoCommit);
             Ok()
         } catch {
             case _: ##java.sql.SQLException => Err("setAutoCommit")
@@ -49,7 +49,7 @@ namespace BasicDb/Internal/Prim {
     pub def commit(conn: ##java.sql.Connection): Result[Unit, String] & Impure = 
         import java.sql.Connection.commit();
         try {
-            conn.commit();
+            commit(conn);
             Ok()
         } catch {
             case _: ##java.sql.SQLException => Err("commit")
@@ -59,7 +59,7 @@ namespace BasicDb/Internal/Prim {
     pub def createStatement(conn: ##java.sql.Connection): Result[ ##java.sql.Statement, String] & Impure = 
         import java.sql.Connection.createStatement();
         try {
-            let ans = conn.createStatement();
+            let ans = createStatement(conn);
             Ok(ans)
         } catch {
             case _: ##java.sql.SQLException => Err("createStatement")
@@ -68,7 +68,7 @@ namespace BasicDb/Internal/Prim {
     pub def closeStatement(stmt: ##java.sql.Statement): Result[Unit, String] & Impure = 
         import java.sql.Statement.close();
         try {
-            stmt.close();
+            close(stmt);
             Ok()
         } catch {
             case _: ##java.sql.SQLException => Err("closeStatement")
@@ -77,7 +77,7 @@ namespace BasicDb/Internal/Prim {
     pub def executeStatement(stmt: ##java.sql.Statement, sql: String): Result[Bool, String] & Impure = 
         import java.sql.Statement.execute(String);
         try {
-            let ans = stmt.execute(sql);
+            let ans = execute(stmt, sql);
             Ok(ans)
         } catch {
             case _: ##java.sql.SQLException => Err("executeStatement")
@@ -86,7 +86,7 @@ namespace BasicDb/Internal/Prim {
     pub def executeQuery(stmt: ##java.sql.Statement, sql: String): Result[##java.sql.ResultSet, String] & Impure = 
         import java.sql.Statement.executeQuery(String);
         try {
-            let ans = stmt.executeQuery(sql);
+            let ans = executeQuery(stmt, sql);
             Ok(ans)
         } catch {
             case _: ##java.sql.SQLException => Err("executeQuery")
@@ -95,7 +95,7 @@ namespace BasicDb/Internal/Prim {
     pub def executeUpdate(stmt: ##java.sql.Statement, sql: String): Result[Int32, String] & Impure = 
         import java.sql.Statement.executeUpdate(String);
         try {
-            let ans = stmt.executeUpdate(sql);
+            let ans = executeUpdate(stmt, sql);
             Ok(ans)
         } catch {
             case _: ##java.sql.SQLException => Err("executeUpdate")
@@ -105,7 +105,7 @@ namespace BasicDb/Internal/Prim {
     pub def prepareStatement(conn: ##java.sql.Connection, sql: String): Result[##java.sql.PreparedStatement, String] & Impure = 
         import java.sql.Connection.prepareStatement(String);
         try {
-            let ans = conn.prepareStatement(sql);
+            let ans = prepareStatement(conn, sql);
             Ok(ans)
         } catch {
             case _: ##java.sql.SQLException => Err("prepareStatement")

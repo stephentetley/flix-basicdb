@@ -23,7 +23,7 @@ namespace BasicDb/Internal/PreparedStatement {
     pub def clearParameters!(x: ##java.sql.PreparedStatement): Result[Unit, String] & Impure =
         import java.sql.PreparedStatement.clearParameters();
         try {
-            x.clearParameters();
+            clearParameters(x);
             Ok()
         } catch {
             case _: ##java.sql.SQLException => Err("clearParameters!")
@@ -33,7 +33,7 @@ namespace BasicDb/Internal/PreparedStatement {
     pub def executeQuery(x: ##java.sql.PreparedStatement): Result[##java.sql.ResultSet, String] & Impure =
         import java.sql.PreparedStatement.executeQuery();
         try {
-            let ans = x.executeQuery();
+            let ans = executeQuery(x);
             Ok(ans)
         } catch {
             case _: ##java.sql.SQLException => Err("executeQuery")
@@ -42,7 +42,7 @@ namespace BasicDb/Internal/PreparedStatement {
     pub def executeUpdate(x: ##java.sql.PreparedStatement): Result[Int32, String] & Impure =
         import java.sql.PreparedStatement.executeUpdate();
         try {
-            let ans = x.executeUpdate();
+            let ans = executeUpdate(x);
             Ok(ans)
         } catch {
             case _: ##java.sql.SQLException => Err("executeUpdate")
@@ -53,7 +53,7 @@ namespace BasicDb/Internal/PreparedStatement {
     pub def setNull!(x: ##java.sql.PreparedStatement, ix: Int32, sqlType: Int32): Result[Unit, String] & Impure =
         import java.sql.PreparedStatement.setNull(Int32, Int32);
         try {
-            x.setNull(ix, sqlType);
+            setNull(x, ix, sqlType);
             Ok()
         } catch {
             case _: ##java.sql.SQLException => Err("setNull!")
@@ -62,7 +62,7 @@ namespace BasicDb/Internal/PreparedStatement {
     pub def setString!(x: ##java.sql.PreparedStatement, ix: Int32, str: String): Result[Unit, String] & Impure =
         import java.sql.PreparedStatement.setString(Int32, String);
         try {
-            x.setString(ix, str);
+            setString(x, ix, str);
             Ok()
         } catch {
             case _: ##java.sql.SQLException => Err("setString!")
@@ -71,7 +71,7 @@ namespace BasicDb/Internal/PreparedStatement {
     pub def setBool!(x: ##java.sql.PreparedStatement, ix: Int32, b: Bool): Result[Unit, String] & Impure =
         import java.sql.PreparedStatement.setBoolean(Int32, Bool);
         try {
-            x.setBoolean(ix, b);
+            setBoolean(x, ix, b);
             Ok()
         } catch {
             case _: ##java.sql.SQLException => Err("setBool!")
@@ -80,7 +80,7 @@ namespace BasicDb/Internal/PreparedStatement {
     pub def setInt8!(x: ##java.sql.PreparedStatement, ix: Int32, n: Int8): Result[Unit, String] & Impure =
         import java.sql.PreparedStatement.setByte(Int32, Int8);
         try {
-            x.setByte(ix, n);
+            setByte(x, ix, n);
             Ok()
         } catch {
             case _: ##java.sql.SQLException => Err("setInt8!")
@@ -89,7 +89,7 @@ namespace BasicDb/Internal/PreparedStatement {
     pub def setInt16!(x: ##java.sql.PreparedStatement, ix: Int32, n: Int16): Result[Unit, String] & Impure =
         import java.sql.PreparedStatement.setShort(Int32, Int16);
         try {
-            x.setShort(ix, n);
+            setShort(x, ix, n);
             Ok()
         } catch {
             case _: ##java.sql.SQLException => Err("setInt16!")
@@ -98,7 +98,7 @@ namespace BasicDb/Internal/PreparedStatement {
     pub def setInt32!(x: ##java.sql.PreparedStatement, ix: Int32, n: Int32): Result[Unit, String] & Impure =
         import java.sql.PreparedStatement.setInt(Int32, Int32);
         try {
-            x.setInt(ix, n);
+            setInt(x, ix, n);
             Ok()
         } catch {
             case _: ##java.sql.SQLException => Err("setInt32!")
@@ -107,7 +107,7 @@ namespace BasicDb/Internal/PreparedStatement {
     pub def setInt64!(x: ##java.sql.PreparedStatement, ix: Int32, n: Int64): Result[Unit, String] & Impure =
         import java.sql.PreparedStatement.setLong(Int32, Int64);
         try {
-            x.setLong(ix, n);
+            setLong(x, ix, n);
             Ok()
         } catch {
             case _: ##java.sql.SQLException => Err("setInt64!")
@@ -116,7 +116,7 @@ namespace BasicDb/Internal/PreparedStatement {
     pub def setFloat32!(x: ##java.sql.PreparedStatement, ix: Int32, d: Float32): Result[Unit, String] & Impure =
         import java.sql.PreparedStatement.setFloat(Int32, Float32);
         try {
-            x.setFloat(ix, d);
+            setFloat(x, ix, d);
             Ok()
         } catch {
             case _: ##java.sql.SQLException => Err("setFloat32!")
@@ -125,13 +125,11 @@ namespace BasicDb/Internal/PreparedStatement {
     pub def setFloat64!(x: ##java.sql.PreparedStatement, ix: Int32, d: Float64): Result[Unit, String] & Impure =
         import java.sql.PreparedStatement.setDouble(Int32, Float64);
         try {
-            x.setDouble(ix, d);
+            setDouble(x, ix, d);
             Ok()
         } catch {
             case _: ##java.sql.SQLException => Err("setFloat64!")
         }
-
-
 
 }
 

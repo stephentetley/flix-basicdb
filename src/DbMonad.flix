@@ -296,16 +296,16 @@ namespace BasicDb/DbMonad {
 
     pub def setAutoCommit(autoCommit: Bool): DbMonad[Unit] =
         use BasicDb/Internal/Prim.{setAutoCommit};
-        liftConnectionPrim(x -> x.setAutoCommit(autoCommit))
+        liftConnectionPrim(x -> setAutoCommit(x, autoCommit))
 
     pub def commit(): DbMonad[Unit] =
         use BasicDb/Internal/Prim.{commit};
-        liftConnectionPrim(x -> x.commit())
+        liftConnectionPrim(commit)
 
 
     pub def createStatement(): DbMonad[Statement] =
         use BasicDb/Internal/Prim.{createStatement};
-        liftConnectionPrim(x1 -> { let ans = x1.createStatement(); Result.map(Statement, ans)})
+        liftConnectionPrim(x1 -> { let ans = createStatement(x1); Result.map(Statement, ans)})
 
 
 
@@ -324,7 +324,7 @@ namespace BasicDb/DbMonad {
     pub def prepareStatement(sql: String): DbMonad[PreparedStatement] =
         use BasicDb/Internal/Prim.{prepareStatement};
         swapError( 
-            liftConnectionPrim(x1 -> { let ans = x1.prepareStatement(sql); Result.map(PreparedStatement, ans)})
+            liftConnectionPrim(x1 -> { let ans = prepareStatement(x1, sql); Result.map(PreparedStatement, ans)})
         , "prepareStatement(`${sql}`)"
         )
         
@@ -398,12 +398,12 @@ namespace BasicDb/DbMonad {
     pub def rsClose(rs: ResultSet): DbMonad[Unit] =
         use BasicDb/Internal/ResultSet.{close};
         let ResultSet(rs1) = rs;
-        liftActionResult(_ -> rs1.close())
+        liftActionResult(_ -> close(rs1))
  
     pub def rsNext(rs: ResultSet): DbMonad[Bool] =
         use BasicDb/Internal/ResultSet.{next};
         let ResultSet(rs1) = rs;
-        liftActionResult(_ -> rs1.next())
+        liftActionResult(_ -> next(rs1))
 
     pub def rsEval(rs: ResultSet, eval: RowEvaluator[a]): DbMonad[a] =
         let RowEvaluator(f) = eval;
@@ -427,9 +427,9 @@ namespace BasicDb/DbMonad {
                       fk: String -> Result[List[a], String],
                       sk: List[a] -> Result[List[a], String]): Result[List[a], String] & Impure = 
         use BasicDb/Internal/ResultSet.{next};                      
-        match rs.next() {
+        match next(rs) {
             case Ok(false) => sk(Nil)
-            case Ok(true) => match rs.eval() {
+            case Ok(true) => match eval(rs) {
                 case Ok(x) => allRowsHelper(rs, eval, fk, ks -> sk(x :: ks))
                 case Err(e) => fk(e)
             }
@@ -446,9 +446,9 @@ namespace BasicDb/DbMonad {
                       eval: ##java.sql.ResultSet ~> Result[a, String],
                       fk: String -> Result[Unit, String]): Result[Unit, String] & Impure = 
         use BasicDb/Internal/ResultSet.{next};                      
-        match rs.next() {
+        match next(rs) {
             case Ok(false) => Ok()
-            case Ok(true) => match rs.eval() {
+            case Ok(true) => match eval(rs) {
                 case Ok(_) => allRowsXHelper(rs, eval, fk)
                 case Err(e) => fk(e)
             }
@@ -468,9 +468,9 @@ namespace BasicDb/DbMonad {
                       step: (b, a) -> b,
                       ac: b): Result[b, String] & Impure = 
         use BasicDb/Internal/ResultSet.{next};                      
-        match rs.next() {
+        match next(rs) {
             case Ok(false) => Ok(ac)
-            case Ok(true) => match rs.eval() {
+            case Ok(true) => match eval(rs) {
                 case Ok(x) => foldAllRowsHelper(rs, eval, step, step(ac, x))
                 case Err(e) => Err(e)
             }
