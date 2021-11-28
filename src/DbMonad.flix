@@ -20,6 +20,25 @@ namespace BasicDb {
 
     pub opaque type DbMonad[a] = ##java.sql.Connection -> Map[String, PreparedStatement] -> Result[(Map[String, PreparedStatement], a), String] & Impure
 
+    instance Functor[DbMonad] { 
+        pub def map(f: a -> b & ef, x: DbMonad[a]): DbMonad[b] & ef = 
+            BasicDb/DbMonad.map(f, x)
+    }
+
+    instance Applicative[DbMonad] { 
+        pub def point(x: a): DbMonad[a] = 
+            BasicDb/DbMonad.point(x)
+
+        pub def ap(f: DbMonad[a -> b & ef], x: DbMonad[a]): DbMonad[b] & ef = 
+            BasicDb/DbMonad.ap(f, x)
+    }
+
+    instance Monad[DbMonad] { 
+        pub def flatMap(k: a -> DbMonad[b] & ef, x: DbMonad[a]): DbMonad[b] & ef = 
+            BasicDb/DbMonad.flatMap(k, x)
+    }
+
+
     pub opaque type PreparedStatement = ##java.sql.PreparedStatement
 
     pub opaque type Statement = ##java.sql.Statement
@@ -81,7 +100,7 @@ namespace BasicDb/DbMonad {
         let DbMonad(x1) = ma;
         x1(conn, pstmts)
 
-    pub def return(x: a): DbMonad[a] = 
+    pub def point(x: a): DbMonad[a] = 
         DbMonad((_, s1) -> Ok((s1, x)) as & Impure)
 
     pub def throwError(msg: String): DbMonad[a] =
@@ -177,10 +196,10 @@ namespace BasicDb/DbMonad {
         })
 
     pub def optional(ma: DbMonad[a]): DbMonad[Option[a]] = 
-        alt(map(Some, ma), return(None))
+        alt(map(Some, ma), point(None))
 
     pub def tryWithDefault(ma: DbMonad[a], d: a): DbMonad[a] = 
-        alt(ma, return(d))
+        alt(ma, point(d))
 
     pub def testM(ma: DbMonad[a]): DbMonad[Bool] =
         DbMonad((conn, s1) -> match apply1(ma, conn, s1) { 
@@ -200,17 +219,17 @@ namespace BasicDb/DbMonad {
         })
 
     pub def guard(x: Bool): DbMonad[Unit] = match x { 
-        case true => return()
+        case true => point()
         case false => throwError("guard")
     }
 
     pub def whenTrue(x: Bool, ma: DbMonad[a]): DbMonad[Option[a]] = match x { 
         case true => map(Some, ma)
-        case false => return(None)
+        case false => point(None)
     }
 
     pub def whenFalse(x: Bool, ma: DbMonad[a]): DbMonad[Option[a]] = match x { 
-        case true => return(None)
+        case true => point(None)
         case false => map(Some, ma)
     }
 
@@ -223,11 +242,11 @@ namespace BasicDb/DbMonad {
 
     pub def whenSome(x: Option[a], f: a -> DbMonad[b]): DbMonad[Option[b]] = match x { 
         case Some(a) => map(Some, f(a))
-        case None => return(None)
+        case None => point(None)
     }
 
     pub def whenNone(x: Option[a], ma: DbMonad[b]): DbMonad[Option[b]] = match x { 
-        case Some(_) => return(None)
+        case Some(_) => point(None)
         case None => map(Some, ma)
     }
 
@@ -263,17 +282,17 @@ namespace BasicDb/DbMonad {
         DbMonad((_, s1) -> {let a = fn(); Ok((s1, a))})
 
     pub def liftOption(x: Option[a], errMsg: String): DbMonad[a] = match x {
-        case Some(x1) => return(x1)
+        case Some(x1) => point(x1)
         case None => throwError(errMsg)
     }
 
     pub def liftResult(x: Result[a, e], makeErrMsg: e -> String): DbMonad[a] = match x { 
-        case Ok(x1) => return(x1)
+        case Ok(x1) => point(x1)
         case Err(e) => throwError(makeErrMsg(e))
     }
 
     pub def liftValidation(x: Validation[a, e], makeErrMsg: List[e] -> String): DbMonad[a] = match x { 
-        case Success(x1) => return(x1)
+        case Success(x1) => point(x1)
         case Failure(es) => throwError(makeErrMsg(Nel.toList(es)))
     }
 
@@ -293,7 +312,7 @@ namespace BasicDb/DbMonad {
         let* stmt   = liftConnectionPrim(createStatement);
         let* ans    = liftActionResult(_ -> executeStatement(stmt, sql));
         let* _      = liftActionResult(_ -> closeStatement(stmt));
-        return(ans)
+        point(ans)
 
 
     pub def setAutoCommit(autoCommit: Bool): DbMonad[Unit] =
@@ -314,12 +333,12 @@ namespace BasicDb/DbMonad {
     pub def executeQuery(stmt: Statement, sql: String): DbMonad[ResultSet] =
         let Statement(stmt1) = stmt;
         let* rs = liftActionResult(_ -> BasicDb/Internal/Prim.executeQuery(stmt1, sql));
-        return(ResultSet(rs))
+        point(ResultSet(rs))
 
     pub def executeUpdate(stmt: Statement, sql: String): DbMonad[Int32] =
         let Statement(stmt1) = stmt;
         let* n = liftActionResult(_ -> BasicDb/Internal/Prim.executeUpdate(stmt1, sql));
-        return(n)
+        point(n)
 
 
 
@@ -340,7 +359,7 @@ namespace BasicDb/DbMonad {
     pub def getPreparedStatement(name: String): DbMonad[PreparedStatement] =
         bind( getPreparedStatement1(name)
             , x -> match x { 
-                case Some(pstmt) => return(pstmt)
+                case Some(pstmt) => point(pstmt)
                 case None => throwError("getPreparedStatement('${name}') missing")
             })
 
@@ -354,7 +373,7 @@ namespace BasicDb/DbMonad {
         let* _  = liftActionResult(_ -> BasicDb/Internal/PreparedStatement.clearParameters!(stmt1));
         let* _  = liftActionResult(_ -> setter1(stmt1));
         let* rs = liftActionResult(_ -> BasicDb/Internal/PreparedStatement.executeQuery(stmt1));
-        return(ResultSet(rs))
+        point(ResultSet(rs))
 
     pub def psExecuteCachedQuery(statementName: String, setter: PreparedStatementSetter[a]): DbMonad[ResultSet] =
         let* pstmt = getPreparedStatement(statementName);
@@ -379,7 +398,7 @@ namespace BasicDb/DbMonad {
         let* _ = liftActionResult(_ -> BasicDb/Internal/PreparedStatement.clearParameters!(stmt1));
         let* _ = liftActionResult(_ -> setter1(stmt1));
         let* n = liftActionResult(_ -> BasicDb/Internal/PreparedStatement.executeUpdate(stmt1));
-        return(n)
+        point(n)
 
     pub def psExecuteCachedUpdate(statementName: String, setter: PreparedStatementSetter[a]): DbMonad[Int32] =
         let* pstmt = getPreparedStatement(statementName);
@@ -649,7 +668,7 @@ namespace BasicDb/DbMonad {
     /// Note `foldRightM` does not short-circuit on failure as it has to traverse the list
     /// to start at the right.
     pub def foldRightM(mf: (a, b) -> DbMonad[b], start: b, xs: List[a]): DbMonad[b] = 
-        foldRightMHelper(mf, return(start), xs, ms -> ms)
+        foldRightMHelper(mf, point(start), xs, ms -> ms)
 
     ///
     /// Helper function for `foldRightM`.
@@ -773,7 +792,7 @@ namespace BasicDb/DbMonad {
         map(f, p2)
 
     pub def <&(x: b, p2: DbMonad[a]): DbMonad[b] =
-        p2 *> return(x)
+        p2 *> point(x)
 
     /// Alias for `bind`
     pub def >>=(ma: DbMonad[a], k: a -> DbMonad[b]): DbMonad[b] = bind(ma, k)

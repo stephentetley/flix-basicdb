@@ -21,11 +21,29 @@ namespace BasicDb {
 
     pub opaque type RowEvaluator[a] = ##java.sql.ResultSet -> Result[a, String] & Impure
 
+    instance Functor[RowEvaluator] { 
+        pub def map(f: a -> b & ef, x: RowEvaluator[a]): RowEvaluator[b] & ef = 
+            BasicDb/RowEvaluator.map(f, x)
+    }
+
+    instance Applicative[RowEvaluator] { 
+        pub def point(x: a): RowEvaluator[a] = 
+            BasicDb/RowEvaluator.point(x)
+
+        pub def ap(f: RowEvaluator[a -> b & ef], x: RowEvaluator[a]): RowEvaluator[b] & ef = 
+            BasicDb/RowEvaluator.ap(f, x)
+    }
+
+    instance Monad[RowEvaluator] { 
+        pub def flatMap(k: a -> RowEvaluator[b] & ef, x: RowEvaluator[a]): RowEvaluator[b] & ef = 
+            BasicDb/RowEvaluator.flatMap(k, x)
+    }
+
 }
 
 namespace BasicDb/RowEvaluator {
 
-    pub def return(x: a): RowEvaluator[a] =
+    pub def point(x: a): RowEvaluator[a] =
         RowEvaluator(_ -> Ok(x) as & Impure)
 
     pub def throwError(msg: String): RowEvaluator[a] =
@@ -121,18 +139,18 @@ namespace BasicDb/RowEvaluator {
         RowEvaluator(r -> ask(r))
 
     pub def liftOption(x: Option[a], errMsg: String): RowEvaluator[a] = match x { 
-        case Some(x1) => return(x1)
+        case Some(x1) => point(x1)
         case None => throwError(errMsg)
     }
         
     pub def liftResult(x: Result[a, e], makeErrMsg: e -> String): RowEvaluator[a] = match x { 
-        case Ok(x1) => return(x1)
+        case Ok(x1) => point(x1)
         case Err(e) => throwError(makeErrMsg(e))
     }
 
 
     pub def liftValidation(x: Validation[a, e], makeErrMsg: List[e] -> String): RowEvaluator[a] = match x { 
-        case Success(x1) => return(x1)
+        case Success(x1) => point(x1)
         case Failure(es) => throwError(makeErrMsg(Nel.toList(es)))
     }
 
@@ -152,13 +170,13 @@ namespace BasicDb/RowEvaluator {
     pub def getStringAt(ix: Int32): RowEvaluator[String] =
         let* x1     = liftPrim(x -> BasicDb/Internal/ResultSet.getStringAt(x, ix + 1));
         let ans     = if (Object.isNull(x1)) "" else x1;
-        return(ans)
+        point(ans)
 
     /// This is "null safe" - if the internal result is null it is converted to the empty String.
     pub def getStringNamed(label: String): RowEvaluator[String] =
         let* x1     = liftPrim(x -> BasicDb/Internal/ResultSet.getStringNamed(x, label));
         let ans     = if (Object.isNull(x1)) "" else x1;
-        return(ans)
+        point(ans)
 
     // See Javadocs for how a bool value is interpreted...
     pub def getBoolAt(ix: Int32): RowEvaluator[Bool] =
@@ -462,7 +480,7 @@ namespace BasicDb/RowEvaluator {
         map(f, mx)
 
     pub def <&(x: b, p2: RowEvaluator[a]): RowEvaluator[b] =
-        p2 *> return(x)
+        p2 *> point(x)
 
     /// Alias for `bind`
     pub def >>=(ma: RowEvaluator[a], k: a -> RowEvaluator[b]): RowEvaluator[b] = 

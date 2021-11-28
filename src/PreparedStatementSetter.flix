@@ -21,11 +21,30 @@ namespace BasicDb {
 
     pub opaque type PreparedStatementSetter[a] = ##java.sql.PreparedStatement -> Result[a, String] & Impure
 
+    instance Functor[PreparedStatementSetter] { 
+        pub def map(f: a -> b & ef, x: PreparedStatementSetter[a]): PreparedStatementSetter[b] & ef = 
+            BasicDb/PreparedStatementSetter.map(f, x)
+    }
+
+    instance Applicative[PreparedStatementSetter] { 
+        pub def point(x: a): PreparedStatementSetter[a] = 
+            BasicDb/PreparedStatementSetter.point(x)
+
+        pub def ap(f: PreparedStatementSetter[a -> b & ef], x: PreparedStatementSetter[a]): PreparedStatementSetter[b] & ef = 
+            BasicDb/PreparedStatementSetter.ap(f, x)
+    }
+
+    instance Monad[PreparedStatementSetter] { 
+        pub def flatMap(k: a -> PreparedStatementSetter[b] & ef, x: PreparedStatementSetter[a]): PreparedStatementSetter[b] & ef = 
+            BasicDb/PreparedStatementSetter.flatMap(k, x)
+    }
+
+
 }
 
 namespace BasicDb/PreparedStatementSetter {
 
-    pub def return(x: a): PreparedStatementSetter[a] =
+    pub def point(x: a): PreparedStatementSetter[a] =
         PreparedStatementSetter(_ -> Ok(x) as & Impure)
 
 
@@ -84,24 +103,25 @@ namespace BasicDb/PreparedStatementSetter {
             }
         ) as & ef
 
-    pub def flatMap(k: a -> PreparedStatementSetter[b], x: PreparedStatementSetter[a]): PreparedStatementSetter[b] = bind(x, k)
+    pub def flatMap(k: a -> PreparedStatementSetter[b] & ef, x: PreparedStatementSetter[a]): PreparedStatementSetter[b]  & ef = 
+        bind(x, k)
 
     def liftPrim(update: ##java.sql.PreparedStatement -> Result[a, String] & Impure): PreparedStatementSetter[a] =
         PreparedStatementSetter(r -> update(r))
 
     pub def liftOption(x: Option[a], errMsg: String): PreparedStatementSetter[a] = match x {
-        case Some(x1) => return(x1)
+        case Some(x1) => point(x1)
         case None => throwError(errMsg)
     }
 
     pub def liftResult(x: Result[a, e], makeErrMsg: e -> String): PreparedStatementSetter[a] = match x { 
-        case Ok(x1) => return(x1)
+        case Ok(x1) => point(x1)
         case Err(e) => throwError(makeErrMsg(e))
     }
 
 
     pub def liftValidation(x: Validation[a, e], makeErrMsg: List[e] -> String): PreparedStatementSetter[a] = match x { 
-        case Success(x1) => return(x1)
+        case Success(x1) => point(x1)
         case Failure(es) => throwError(makeErrMsg(Nel.toList(es)))
     }
 

@@ -8,7 +8,7 @@ use BasicDb/DbMonad.{runSQLite, execute, createStatement, prepareStatement,
 
 
 def test1(): DbMonad[Bool] = 
-    use BasicDb/DbMonad.{flatMap, return};
+    use BasicDb/DbMonad.{flatMap, point};
     let* _      = execute("DROP TABLE IF EXISTS dbms;");
     let* _      = execute("CREATE TABLE IF NOT EXISTS dbms (name text PRIMARY KEY NOT NULL, year int);");
     let* pstmt  = prepareStatement("INSERT INTO dbms(name, year) VALUES(?,?)");
@@ -22,20 +22,20 @@ def test1(): DbMonad[Bool] =
     let* rs     = executeQuery(stmt, "SELECT name, year FROM dbms ORDER BY year");
     let* _      = allRowsX(rs, rsEvalRow());
     let* _      = rsClose(rs);
-    return(true)
+    point(true)
 
 def setPStmt!(name: String, year: Int32): PreparedStatementSetter[Unit] = 
-    use BasicDb/PreparedStatementSetter.{flatMap, return, putStringAt!, putInt32At!};
+    use BasicDb/PreparedStatementSetter.{flatMap, point, putStringAt!, putInt32At!};
     let* _ = putStringAt!(0,  name);
     let* _ = putInt32At!( 1,  year);
-    return()
+    point()
 
 def rsEvalRow(): RowEvaluator[Unit] = 
-    use BasicDb/RowEvaluator.{flatMap, return, getStringAt, getInt32At, liftAction};
+    use BasicDb/RowEvaluator.{flatMap, point, getStringAt, getInt32At, liftAction};
     let* name   = getStringAt(0);
     let* year   = getInt32At(1);
     let* _      = liftAction(_ -> Console.printLine(name + ", " + Int32.toString(year)));
-    return()
+    point()
 
 
 def main(_args: Array[String]): Int32 & Impure = 
