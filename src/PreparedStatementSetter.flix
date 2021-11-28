@@ -19,7 +19,7 @@ use BasicDb.PreparedStatementSetter.{PreparedStatementSetter};
 
 namespace BasicDb {
 
-    pub opaque type PreparedStatementSetter[a] = ##java.sql.PreparedStatement ~> Result[a, String]
+    pub opaque type PreparedStatementSetter[a] = ##java.sql.PreparedStatement -> Result[a, String] & Impure
 
 }
 
@@ -36,7 +36,7 @@ namespace BasicDb/PreparedStatementSetter {
         let PreparedStatementSetter(f) = x;
         f(r)
 
-    pub def map(f: a -> b & ef, x: PreparedStatementSetter[a]): PreparedStatementSetter[b] =
+    pub def map(f: a -> b & ef, x: PreparedStatementSetter[a]): PreparedStatementSetter[b] & ef =
         PreparedStatementSetter(r ->
             match apply1(x, r) {
                 case Ok(a) => {
@@ -45,9 +45,9 @@ namespace BasicDb/PreparedStatementSetter {
                 }
                 case Err(e) => Err(e)
             }
-        )
+        ) as & ef
 
-    pub def ap(mf: PreparedStatementSetter[a -> b & ef], ma: PreparedStatementSetter[a]): PreparedStatementSetter[b] =
+    pub def ap(mf: PreparedStatementSetter[a -> b & ef], ma: PreparedStatementSetter[a]): PreparedStatementSetter[b] & ef =
         PreparedStatementSetter(r ->
             match apply1(mf, r) {
                 case Ok(f) => {
@@ -58,7 +58,7 @@ namespace BasicDb/PreparedStatementSetter {
                 }
                 case Err(e1) => Err(e1)
             }
-        )
+        ) as & ef
 
     pub def seqLeft(ma: PreparedStatementSetter[a], mb: PreparedStatementSetter[b]): PreparedStatementSetter[a] = 
         PreparedStatementSetter(r -> match apply1(ma, r) { 
@@ -76,17 +76,17 @@ namespace BasicDb/PreparedStatementSetter {
         })
 
 
-    pub def bind(x: PreparedStatementSetter[a], k: a -> PreparedStatementSetter[b]): PreparedStatementSetter[b] =
+    pub def bind(x: PreparedStatementSetter[a], k: a -> PreparedStatementSetter[b] & ef): PreparedStatementSetter[b] & ef=
         PreparedStatementSetter(r ->
             match apply1(x, r) {
-                case Ok(a) => { let ans = k(a); apply1(ans, r) }
+                case Ok(a) => { let ans = k(a) as & Impure; apply1(ans, r) }
                 case Err(e) => Err(e)
             }
-        )
+        ) as & ef
 
     pub def flatMap(k: a -> PreparedStatementSetter[b], x: PreparedStatementSetter[a]): PreparedStatementSetter[b] = bind(x, k)
 
-    def liftPrim(update: ##java.sql.PreparedStatement ~> Result[a, String]): PreparedStatementSetter[a] =
+    def liftPrim(update: ##java.sql.PreparedStatement -> Result[a, String] & Impure): PreparedStatementSetter[a] =
         PreparedStatementSetter(r -> update(r))
 
     pub def liftOption(x: Option[a], errMsg: String): PreparedStatementSetter[a] = match x {
@@ -105,10 +105,10 @@ namespace BasicDb/PreparedStatementSetter {
         case Failure(es) => throwError(makeErrMsg(Nel.toList(es)))
     }
 
-    pub def liftAction(fn: Unit ~> a): PreparedStatementSetter[a] = 
+    pub def liftAction(fn: Unit -> a & Impure): PreparedStatementSetter[a] = 
         PreparedStatementSetter(_ -> { let a = fn(); Ok(a) })
 
-    pub def liftActionResult(fn: Unit ~> Result[a, String]): PreparedStatementSetter[a] = 
+    pub def liftActionResult(fn: Unit -> Result[a, String] & Impure): PreparedStatementSetter[a] = 
         PreparedStatementSetter(_ -> fn())
 
 
@@ -193,7 +193,7 @@ namespace BasicDb/PreparedStatementSetter {
     ///
     pub def lift2(f: (t1, t2) -> u & ef, 
                   o1: PreparedStatementSetter[t1], 
-                  o2: PreparedStatementSetter[t2]): PreparedStatementSetter[u] =
+                  o2: PreparedStatementSetter[t2]): PreparedStatementSetter[u] & ef =
         ap(map(f, o1), o2)
 
     ///
@@ -204,7 +204,7 @@ namespace BasicDb/PreparedStatementSetter {
     pub def lift3(f: (t1, t2, t3) -> u & ef, 
                   o1: PreparedStatementSetter[t1], 
                   o2: PreparedStatementSetter[t2], 
-                  o3: PreparedStatementSetter[t3]): PreparedStatementSetter[u] =
+                  o3: PreparedStatementSetter[t3]): PreparedStatementSetter[u] & ef =
         ap(lift2(f, o1, o2), o3)
 
     ///
@@ -216,7 +216,7 @@ namespace BasicDb/PreparedStatementSetter {
                   o1: PreparedStatementSetter[t1], 
                   o2: PreparedStatementSetter[t2], 
                   o3: PreparedStatementSetter[t3], 
-                  o4: PreparedStatementSetter[t4]): PreparedStatementSetter[u] =
+                  o4: PreparedStatementSetter[t4]): PreparedStatementSetter[u] & ef =
         ap(lift3(f, o1, o2, o3), o4)
 
     ///
@@ -229,7 +229,7 @@ namespace BasicDb/PreparedStatementSetter {
                       o2: PreparedStatementSetter[t2], 
                       o3: PreparedStatementSetter[t3], 
                       o4: PreparedStatementSetter[t4], 
-                      o5: PreparedStatementSetter[t5]): PreparedStatementSetter[u] =
+                      o5: PreparedStatementSetter[t5]): PreparedStatementSetter[u] & ef =
         ap(lift4(f, o1, o2, o3, o4), o5)
 
     ///
@@ -243,7 +243,7 @@ namespace BasicDb/PreparedStatementSetter {
                   o3: PreparedStatementSetter[t3], 
                   o4: PreparedStatementSetter[t4], 
                   o5: PreparedStatementSetter[t5], 
-                  o6: PreparedStatementSetter[t6]): PreparedStatementSetter[u] =
+                  o6: PreparedStatementSetter[t6]): PreparedStatementSetter[u] & ef =
         ap(lift5(f, o1, o2, o3, o4, o5), o6)
 
     ///
@@ -258,7 +258,7 @@ namespace BasicDb/PreparedStatementSetter {
                   o4: PreparedStatementSetter[t4], 
                   o5: PreparedStatementSetter[t5], 
                   o6: PreparedStatementSetter[t6], 
-                  o7: PreparedStatementSetter[t7]): PreparedStatementSetter[u] =
+                  o7: PreparedStatementSetter[t7]): PreparedStatementSetter[u] & ef =
         ap(lift6(f, o1, o2, o3, o4, o5, o6), o7)
 
     ///
@@ -274,7 +274,7 @@ namespace BasicDb/PreparedStatementSetter {
                   o5: PreparedStatementSetter[t5], 
                   o6: PreparedStatementSetter[t6], 
                   o7: PreparedStatementSetter[t7], 
-                  o8: PreparedStatementSetter[t8]): PreparedStatementSetter[u] =
+                  o8: PreparedStatementSetter[t8]): PreparedStatementSetter[u] & ef =
         ap(lift7(f, o1, o2, o3, o4, o5, o6, o7), o8)
 
     ///
@@ -291,7 +291,7 @@ namespace BasicDb/PreparedStatementSetter {
                   o6: PreparedStatementSetter[t6], 
                   o7: PreparedStatementSetter[t7], 
                   o8: PreparedStatementSetter[t8], 
-                  o9: PreparedStatementSetter[t9]): PreparedStatementSetter[u] =
+                  o9: PreparedStatementSetter[t9]): PreparedStatementSetter[u] & ef =
         ap(lift8(f, o1, o2, o3, o4, o5, o6, o7, o8), o9)
 
     ///
@@ -309,7 +309,7 @@ namespace BasicDb/PreparedStatementSetter {
                    o7: PreparedStatementSetter[t7], 
                    o8: PreparedStatementSetter[t8], 
                    o9: PreparedStatementSetter[t9], 
-                   o10: PreparedStatementSetter[t10]): PreparedStatementSetter[u] =
+                   o10: PreparedStatementSetter[t10]): PreparedStatementSetter[u] & ef =
         ap(lift9(f, o1, o2, o3, o4, o5, o6, o7, o8, o9), o10)
 
 

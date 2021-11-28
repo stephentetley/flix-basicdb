@@ -15,7 +15,8 @@
  */
 
 
-
+/// BROKEN
+/// To fix at some point...
 
 namespace BasicDb/ArrayRowIterator {
 

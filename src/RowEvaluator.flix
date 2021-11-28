@@ -19,7 +19,7 @@ use BasicDb.RowEvaluator.{RowEvaluator};
 
 namespace BasicDb {
 
-    pub opaque type RowEvaluator[a] = ##java.sql.ResultSet ~> Result[a, String]
+    pub opaque type RowEvaluator[a] = ##java.sql.ResultSet -> Result[a, String] & Impure
 
 }
 
@@ -35,7 +35,7 @@ namespace BasicDb/RowEvaluator {
         let RowEvaluator(f) = x;
         f(r)
 
-    pub def map(f: a -> b & ef, x: RowEvaluator[a]): RowEvaluator[b] =
+    pub def map(f: a -> b & ef, x: RowEvaluator[a]): RowEvaluator[b] & ef =
         RowEvaluator(r ->
             match apply1(x, r) {
                 case Ok(a) => {
@@ -44,9 +44,9 @@ namespace BasicDb/RowEvaluator {
                 }
                 case Err(e) => Err(e)
             }
-        )
+        ) as & ef
 
-    pub def ap(mf: RowEvaluator[a -> b & ef], ma: RowEvaluator[a]): RowEvaluator[b] =
+    pub def ap(mf: RowEvaluator[a -> b & ef], ma: RowEvaluator[a]): RowEvaluator[b] & ef =
         RowEvaluator(r ->
             match apply1(mf, r) {
                 case Ok(f) => {
@@ -57,7 +57,7 @@ namespace BasicDb/RowEvaluator {
                 }
                 case Err(e1) => Err(e1)
             }
-        )
+        ) as & ef
 
     pub def seqLeft(ma: RowEvaluator[a], mb: RowEvaluator[b]): RowEvaluator[a] = 
         RowEvaluator(r ->
@@ -78,15 +78,15 @@ namespace BasicDb/RowEvaluator {
             }
         )
 
-    pub def bind(x: RowEvaluator[a], k: a -> RowEvaluator[b]): RowEvaluator[b] =
+    pub def bind(x: RowEvaluator[a], k: a -> RowEvaluator[b] & ef): RowEvaluator[b] & ef =
         RowEvaluator(r ->
             match apply1(x, r) {
-                case Ok(a) => { let ans = k(a); apply1(ans, r) }
+                case Ok(a) => { let ans = k(a) as & Impure; apply1(ans, r) }
                 case Err(e) => Err(e)
             }
-        )
+        ) as & ef
 
-    pub def flatMap(k: a -> RowEvaluator[b], x: RowEvaluator[a]): RowEvaluator[b] = bind(x, k)
+    pub def flatMap(k: a -> RowEvaluator[b] & ef, x: RowEvaluator[a]): RowEvaluator[b] & ef = bind(x, k)
 
     pub def kleisliLeft(f1: a -> RowEvaluator[b], f2: b -> RowEvaluator[c], x: a): RowEvaluator[c] =
         RowEvaluator(r -> 
@@ -117,7 +117,7 @@ namespace BasicDb/RowEvaluator {
         )
 
         
-    def liftPrim(ask: ##java.sql.ResultSet ~> Result[a, String]): RowEvaluator[a] =
+    def liftPrim(ask: ##java.sql.ResultSet -> Result[a, String] & Impure): RowEvaluator[a] =
         RowEvaluator(r -> ask(r))
 
     pub def liftOption(x: Option[a], errMsg: String): RowEvaluator[a] = match x { 
@@ -137,11 +137,11 @@ namespace BasicDb/RowEvaluator {
     }
 
     
-    pub def liftAction(fn: Unit ~> a): RowEvaluator[a] =
+    pub def liftAction(fn: Unit -> a & Impure): RowEvaluator[a] =
         RowEvaluator(_ -> let x = fn(); Ok(x))
     
         
-    pub def liftActionResult(fn: Unit ~> Result[a, String]): RowEvaluator[a] =
+    pub def liftActionResult(fn: Unit -> Result[a, String] & Impure): RowEvaluator[a] =
         RowEvaluator(_ -> fn())
 
 
@@ -211,7 +211,7 @@ namespace BasicDb/RowEvaluator {
     ///
     pub def lift2(f: (t1, t2) -> u & ef, 
                   o1: RowEvaluator[t1], 
-                  o2: RowEvaluator[t2]): RowEvaluator[u] =
+                  o2: RowEvaluator[t2]): RowEvaluator[u] & ef =
         ap(map(f, o1), o2)
 
     ///
@@ -222,7 +222,7 @@ namespace BasicDb/RowEvaluator {
     pub def lift3(f: (t1, t2, t3) -> u & ef, 
                   o1: RowEvaluator[t1], 
                   o2: RowEvaluator[t2], 
-                  o3: RowEvaluator[t3]): RowEvaluator[u] =
+                  o3: RowEvaluator[t3]): RowEvaluator[u] & ef =
         ap(lift2(f, o1, o2), o3)
 
     ///
@@ -234,7 +234,7 @@ namespace BasicDb/RowEvaluator {
                   o1: RowEvaluator[t1], 
                   o2: RowEvaluator[t2], 
                   o3: RowEvaluator[t3], 
-                  o4: RowEvaluator[t4]): RowEvaluator[u] =
+                  o4: RowEvaluator[t4]): RowEvaluator[u] & ef =
         ap(lift3(f, o1, o2, o3), o4)
 
     ///
@@ -247,7 +247,7 @@ namespace BasicDb/RowEvaluator {
                   o2: RowEvaluator[t2], 
                   o3: RowEvaluator[t3], 
                   o4: RowEvaluator[t4], 
-                  o5: RowEvaluator[t5]): RowEvaluator[u] =
+                  o5: RowEvaluator[t5]): RowEvaluator[u] & ef =
         ap(lift4(f, o1, o2, o3, o4), o5)
 
     ///
@@ -261,7 +261,7 @@ namespace BasicDb/RowEvaluator {
                   o3: RowEvaluator[t3],
                   o4: RowEvaluator[t4], 
                   o5: RowEvaluator[t5], 
-                  o6: RowEvaluator[t6]): RowEvaluator[u] =
+                  o6: RowEvaluator[t6]): RowEvaluator[u] & ef =
         ap(lift5(f, o1, o2, o3, o4, o5), o6)
 
     ///
@@ -276,7 +276,7 @@ namespace BasicDb/RowEvaluator {
                   o4: RowEvaluator[t4], 
                   o5: RowEvaluator[t5], 
                   o6: RowEvaluator[t6], 
-                  o7: RowEvaluator[t7]): RowEvaluator[u] =
+                  o7: RowEvaluator[t7]): RowEvaluator[u] & ef =
         ap(lift6(f, o1, o2, o3, o4, o5, o6), o7)
 
     ///
@@ -292,7 +292,7 @@ namespace BasicDb/RowEvaluator {
                   o5: RowEvaluator[t5], 
                   o6: RowEvaluator[t6], 
                   o7: RowEvaluator[t7], 
-                  o8: RowEvaluator[t8]): RowEvaluator[u] =
+                  o8: RowEvaluator[t8]): RowEvaluator[u] & ef =
         ap(lift7(f, o1, o2, o3, o4, o5, o6, o7), o8)
 
     ///
@@ -309,7 +309,7 @@ namespace BasicDb/RowEvaluator {
                   o6: RowEvaluator[t6], 
                   o7: RowEvaluator[t7], 
                   o8: RowEvaluator[t8], 
-                  o9: RowEvaluator[t9]): RowEvaluator[u] =
+                  o9: RowEvaluator[t9]): RowEvaluator[u] & ef =
         ap(lift8(f, o1, o2, o3, o4, o5, o6, o7, o8), o9)
 
     ///
@@ -327,7 +327,7 @@ namespace BasicDb/RowEvaluator {
                    o7: RowEvaluator[t7], 
                    o8: RowEvaluator[t8], 
                    o9: RowEvaluator[t9], 
-                   o10: RowEvaluator[t10]): RowEvaluator[u] =
+                   o10: RowEvaluator[t10]): RowEvaluator[u] & ef =
         ap(lift9(f, o1, o2, o3, o4, o5, o6, o7, o8, o9), o10)
 
 

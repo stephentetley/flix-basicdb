@@ -18,7 +18,7 @@
 
 namespace BasicDb {
 
-    pub opaque type DbMonad[a] = ##java.sql.Connection -> Map[String, PreparedStatement] ~> Result[(Map[String, PreparedStatement], a), String]
+    pub opaque type DbMonad[a] = ##java.sql.Connection -> Map[String, PreparedStatement] -> Result[(Map[String, PreparedStatement], a), String] & Impure
 
     pub opaque type PreparedStatement = ##java.sql.PreparedStatement
 
@@ -75,7 +75,9 @@ namespace BasicDb/DbMonad {
         runDbMonad(ma, url)
 
 
-    def apply1(ma: DbMonad[a], conn: ##java.sql.Connection, pstmts: Map[String, PreparedStatement]): Result[(Map[String, PreparedStatement], a), String] & Impure = 
+    def apply1(ma: DbMonad[a], 
+                conn: ##java.sql.Connection, 
+                pstmts: Map[String, PreparedStatement]): Result[(Map[String, PreparedStatement], a), String] & Impure = 
         let DbMonad(x1) = ma;
         x1(conn, pstmts)
 
@@ -109,20 +111,20 @@ namespace BasicDb/DbMonad {
         })
 
     /// Needs to allow allow effects (e.g create / access arrays)
-    pub def map(fn: a -> b & ef, ma: DbMonad[a]): DbMonad[b] = 
+    pub def map(fn: a -> b & ef, ma: DbMonad[a]): DbMonad[b] & ef = 
         DbMonad((conn, s1) -> match apply1(ma, conn, s1) { 
             case Ok((s2, a)) => {let ans = fn(a) as & Impure; Ok((s2, ans))}
             case Err(e) => Err(e)
-        })
+        }) as & ef
 
-    pub def ap(mf: DbMonad[a -> b & ef], ma: DbMonad[a]): DbMonad[b] = 
+    pub def ap(mf: DbMonad[a -> b & ef], ma: DbMonad[a]): DbMonad[b] & ef = 
         DbMonad((conn, s1) -> match apply1(mf, conn, s1) { 
             case Ok((s2, f)) => match apply1(ma, conn, s2) { 
                 case Ok((s3, a)) => {let ans = f(a) as & Impure; Ok((s3, ans))}
                 case Err(e) => Err(e)
             }
             case Err(e) => Err(e)
-        })
+        }) as & ef
 
     pub def seqLeft(ma: DbMonad[a], mb: DbMonad[b]): DbMonad[a] = 
         DbMonad((conn, s1) -> match apply1(ma, conn, s1) { 
@@ -140,13 +142,13 @@ namespace BasicDb/DbMonad {
         })
 
 
-    pub def bind(ma: DbMonad[a], fn: a -> DbMonad[b]): DbMonad[b] = 
+    pub def bind(ma: DbMonad[a], fn: a -> DbMonad[b] & ef): DbMonad[b] & ef = 
         DbMonad((conn, s1) -> match apply1(ma, conn, s1) { 
-            case Ok((s2, a)) => apply1(fn(a), conn, s2)
+            case Ok((s2, a)) => apply1(fn(a) as & Impure, conn, s2)
             case Err(e) => Err(e)
-        })
+        }) as & ef
 
-    pub def flatMap(fn: a -> DbMonad[b], ma: DbMonad[a]): DbMonad[b] = bind(ma, fn)
+    pub def flatMap(fn: a -> DbMonad[b] & ef, ma: DbMonad[a]): DbMonad[b] & ef = bind(ma, fn)
 
 
 
@@ -251,13 +253,13 @@ namespace BasicDb/DbMonad {
         })
 
 
-    def liftConnectionPrim(fn: ##java.sql.Connection ~> Result[a, String]): DbMonad[a] = 
+    def liftConnectionPrim(fn: ##java.sql.Connection -> Result[a, String] & Impure): DbMonad[a] = 
         DbMonad((conn, s1) -> match fn(conn) {
             case Ok(a) => Ok((s1, a))
             case Err(e) => Err(e)
         })
 
-    pub def liftAction(fn: Unit ~> a): DbMonad[a] = 
+    pub def liftAction(fn: Unit -> a & Impure): DbMonad[a] = 
         DbMonad((_, s1) -> {let a = fn(); Ok((s1, a))})
 
     pub def liftOption(x: Option[a], errMsg: String): DbMonad[a] = match x {
@@ -275,7 +277,7 @@ namespace BasicDb/DbMonad {
         case Failure(es) => throwError(makeErrMsg(Nel.toList(es)))
     }
 
-    pub def liftActionResult(fn: Unit ~> Result[a, String]): DbMonad[a] = 
+    pub def liftActionResult(fn: Unit -> Result[a, String] & Impure): DbMonad[a] = 
         DbMonad((_, s1) -> match fn() { 
             case Ok(a) => Ok((s1, a))
             case Err(e) => Err(e)
@@ -423,7 +425,7 @@ namespace BasicDb/DbMonad {
     /// Start with `next`
     /// This is optimized to avoid repeated unwrapping.
     def allRowsHelper(rs: ##java.sql.ResultSet, 
-                      eval: ##java.sql.ResultSet ~> Result[a, String],
+                      eval: ##java.sql.ResultSet -> Result[a, String] & Impure,
                       fk: String -> Result[List[a], String],
                       sk: List[a] -> Result[List[a], String]): Result[List[a], String] & Impure = 
         use BasicDb/Internal/ResultSet.{next};                      
@@ -443,7 +445,7 @@ namespace BasicDb/DbMonad {
 
     /// Start with `next`
     def allRowsXHelper(rs: ##java.sql.ResultSet, 
-                      eval: ##java.sql.ResultSet ~> Result[a, String],
+                      eval: ##java.sql.ResultSet -> Result[a, String] & Impure,
                       fk: String -> Result[Unit, String]): Result[Unit, String] & Impure = 
         use BasicDb/Internal/ResultSet.{next};                      
         match next(rs) {
@@ -464,7 +466,7 @@ namespace BasicDb/DbMonad {
     /// Start with `next`
     /// This is optimized to avoid repeated unwrapping.
     def foldAllRowsHelper(rs: ##java.sql.ResultSet, 
-                      eval: ##java.sql.ResultSet ~> Result[a, String],
+                      eval: ##java.sql.ResultSet -> Result[a, String] & Impure,
                       step: (b, a) -> b,
                       ac: b): Result[b, String] & Impure = 
         use BasicDb/Internal/ResultSet.{next};                      
@@ -798,7 +800,7 @@ namespace BasicDb/DbMonad {
     ///
     pub def lift2(f: (t1, t2) -> u & ef, 
                   o1: DbMonad[t1], 
-                  o2: DbMonad[t2]): DbMonad[u] =
+                  o2: DbMonad[t2]): DbMonad[u] & ef =
         ap(map(f, o1), o2)
 
 
@@ -810,7 +812,7 @@ namespace BasicDb/DbMonad {
     pub def lift3(f: (t1, t2, t3) -> u & ef, 
                   o1: DbMonad[t1], 
                   o2: DbMonad[t2], 
-                  o3: DbMonad[t3]): DbMonad[u] =
+                  o3: DbMonad[t3]): DbMonad[u] & ef =
         ap(lift2(f, o1, o2), o3)
 
     ///
@@ -822,7 +824,7 @@ namespace BasicDb/DbMonad {
                   o1: DbMonad[t1], 
                   o2: DbMonad[t2], 
                   o3: DbMonad[t3], 
-                  o4: DbMonad[t4]): DbMonad[u] =
+                  o4: DbMonad[t4]): DbMonad[u] & ef =
         ap(lift3(f, o1, o2, o3), o4)
 
     ///
@@ -835,7 +837,7 @@ namespace BasicDb/DbMonad {
                   o2: DbMonad[t2], 
                   o3: DbMonad[t3], 
                   o4: DbMonad[t4], 
-                  o5: DbMonad[t5]): DbMonad[u] =
+                  o5: DbMonad[t5]): DbMonad[u] & ef =
         ap(lift4(f, o1, o2, o3, o4), o5)
 
     ///
@@ -849,7 +851,7 @@ namespace BasicDb/DbMonad {
                   o3: DbMonad[t3],
                   o4: DbMonad[t4], 
                   o5: DbMonad[t5], 
-                  o6: DbMonad[t6]): DbMonad[u] =
+                  o6: DbMonad[t6]): DbMonad[u] & ef =
         ap(lift5(f, o1, o2, o3, o4, o5), o6)
 
     ///
@@ -864,7 +866,7 @@ namespace BasicDb/DbMonad {
                   o4: DbMonad[t4], 
                   o5: DbMonad[t5], 
                   o6: DbMonad[t6], 
-                  o7: DbMonad[t7]): DbMonad[u] =
+                  o7: DbMonad[t7]): DbMonad[u] & ef =
         ap(lift6(f, o1, o2, o3, o4, o5, o6), o7)
 
     ///
@@ -880,7 +882,7 @@ namespace BasicDb/DbMonad {
                   o5: DbMonad[t5], 
                   o6: DbMonad[t6], 
                   o7: DbMonad[t7], 
-                  o8: DbMonad[t8]): DbMonad[u] =
+                  o8: DbMonad[t8]): DbMonad[u] & ef =
         ap(lift7(f, o1, o2, o3, o4, o5, o6, o7), o8)
 
     ///
@@ -897,7 +899,7 @@ namespace BasicDb/DbMonad {
                   o6: DbMonad[t6], 
                   o7: DbMonad[t7], 
                   o8: DbMonad[t8], 
-                  o9: DbMonad[t9]): DbMonad[u] =
+                  o9: DbMonad[t9]): DbMonad[u] & ef =
         ap(lift8(f, o1, o2, o3, o4, o5, o6, o7, o8), o9)
 
     ///
@@ -915,7 +917,7 @@ namespace BasicDb/DbMonad {
                    o7: DbMonad[t7], 
                    o8: DbMonad[t8], 
                    o9: DbMonad[t9], 
-                   o10: DbMonad[t10]): DbMonad[u] =
+                   o10: DbMonad[t10]): DbMonad[u] & ef =
         ap(lift9(f, o1, o2, o3, o4, o5, o6, o7, o8, o9), o10)
 
 
