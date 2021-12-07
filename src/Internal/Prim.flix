@@ -19,7 +19,7 @@ namespace BasicDb/Internal/Prim {
 
 
     pub def dmGetConnection(url: String): Result[##java.sql.Connection, String] & Impure = 
-        import java.sql.DriverManager:getConnection(String);
+        import static java.sql.DriverManager.getConnection(String);
         try {
             let ans = getConnection(url);
             Ok(ans)
