@@ -34,12 +34,12 @@ def rsEvalRow(): RowEvaluator[Unit] =
     use BasicDb/RowEvaluator.{flatMap, point, getStringAt, getInt32At, liftAction};
     let* name   = getStringAt(0);
     let* year   = getInt32At(1);
-    let* _      = liftAction(_ -> Console.printLine(name + ", " + Int32.toString(year)));
+    let* _      = liftAction(_ -> println(name + ", " + Int32.toString(year)));
     point()
 
 
 def main(_args: Array[String]): Int32 & Impure = 
     match runSQLite(test1(), System/FilePath.new("e:/coding/flix/flix-basicdb/data/dbms1.sqlite")) {
-        case Err(e) => {Console.printLine("Error: ${e}"); 1}
+        case Err(e) => {println("Error: ${e}"); 1}
         case Ok(_) => 0
     }
