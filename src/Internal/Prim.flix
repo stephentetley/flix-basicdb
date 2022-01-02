@@ -20,11 +20,12 @@ namespace BasicDb/Internal/Prim {
 
     pub def dmGetConnection(url: String): Result[##java.sql.Connection, String] & Impure = 
         import static java.sql.DriverManager.getConnection(String);
+        import java.lang.Throwable.getMessage();
         try {
             let ans = getConnection(url);
             Ok(ans)
         } catch {
-            case _: ##java.sql.SQLException => Err("dmGetConnection")
+            case exn: ##java.sql.SQLException => Err("dmGetConnection: ${getMessage(exn)}")
         }
 
     
