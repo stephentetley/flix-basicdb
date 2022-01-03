@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-use BasicDb.RowEvaluator;
-use BasicDb.RowEvaluator.{RowEvaluator};
-
 namespace BasicDb {
+
+    use BasicDb.RowEvaluator;
+    use BasicDb.RowEvaluator.{RowEvaluator};
 
     pub opaque type RowEvaluator[a] = ##java.sql.ResultSet -> Result[a, String] & Impure
 
@@ -42,6 +42,9 @@ namespace BasicDb {
 }
 
 namespace BasicDb/RowEvaluator {
+
+    use BasicDb.RowEvaluator;
+    use BasicDb.RowEvaluator.{RowEvaluator};
 
     pub def point(x: a): RowEvaluator[a] =
         RowEvaluator(_ -> Ok(x) as & Impure)

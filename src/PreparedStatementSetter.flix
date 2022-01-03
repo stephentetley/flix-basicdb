@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-use BasicDb.PreparedStatementSetter;
-use BasicDb.PreparedStatementSetter.{PreparedStatementSetter};
 
 namespace BasicDb {
+
 
     pub opaque type PreparedStatementSetter[a] = ##java.sql.PreparedStatement -> Result[a, String] & Impure
 
@@ -44,6 +43,10 @@ namespace BasicDb {
 
 namespace BasicDb/PreparedStatementSetter {
 
+
+    use BasicDb.PreparedStatementSetter;
+    use BasicDb.PreparedStatementSetter.{PreparedStatementSetter};
+    
     pub def point(x: a): PreparedStatementSetter[a] =
         PreparedStatementSetter(_ -> Ok(x) as & Impure)
 
