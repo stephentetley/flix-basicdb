@@ -152,6 +152,20 @@ namespace BasicDb/PreparedStatementSetter {
         liftPrim(x -> BasicDb/Internal/PreparedStatement.setFloat64!(x, ix + 1, n))
 
 
+    pub def putIsoLocalDateStringAt!(ix: Int32, d: Time.LocalDate): PreparedStatementSetter[Unit] =
+        let fmt = Time/Format/DateFormatter.iso_local_date();
+        let str = Time/LocalDate.format(fmt, d);
+        putStringAt!(ix, str)
+
+    pub def putIsoLocalDateTimeStringAt!(ix: Int32, dt: Time.LocalDateTime): PreparedStatementSetter[Unit] =
+        let fmt = Time/Format/DateTimeFormatter.iso_local_date_time();
+        let str = Time/LocalDateTime.format(fmt, dt);
+        putStringAt!(ix, str)
+
+    pub def putIsoLocalTimeStringAt!(ix: Int32, dt: Time.LocalTime): PreparedStatementSetter[Unit] =
+        let fmt = Time/Format/TimeFormatter.iso_local_time();
+        let str = Time/LocalTime.format(fmt, dt);
+        putStringAt!(ix, str)
 
     pub def putOptionStringAt!(ix: Int32, x: Option[String]): PreparedStatementSetter[Unit] = match x {
         case Some(s) => putStringAt!(ix, s)
@@ -193,6 +207,22 @@ namespace BasicDb/PreparedStatementSetter {
         case None => putNullAt!(ix)
     }
 
+    pub def putOptionIsoLocalDateStringAt!(ix: Int32, x: Option[Time.LocalDate]): PreparedStatementSetter[Unit] =
+        match x {
+            case Some(n) => putIsoLocalDateStringAt!(ix, n)
+            case None    => putNullAt!(ix)
+        }
 
+    pub def putOptionIsoLocalDateTimeStringAt!(ix: Int32, x: Option[Time.LocalDateTime]): PreparedStatementSetter[Unit] =
+        match x {
+            case Some(n) => putIsoLocalDateTimeStringAt!(ix, n)
+            case None    => putNullAt!(ix)
+        }
+
+    pub def putOptionIsoLocalTimeStringAt!(ix: Int32, x: Option[Time.LocalTime]): PreparedStatementSetter[Unit] =
+        match x {
+            case Some(n) => putIsoLocalTimeStringAt!(ix, n)
+            case None    => putNullAt!(ix)
+        }
 }
 

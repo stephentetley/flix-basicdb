@@ -197,6 +197,62 @@ namespace BasicDb/RowEvaluator {
         liftPrim(x -> BasicDb/Internal/ResultSet.getFloat64Named(x, label))
 
 
+    /// Cell has type String...
+    pub def getLocalDateStringAt(ix: Int32): RowEvaluator[Time.LocalDate] =
+        let* s = getStringAt(ix);
+        let fmt = Time/Format/DateFormatter.iso_local_date();
+        match Time/LocalDate.parse(fmt, s) {
+            case Some(dt) => point(dt)
+            case None     => throwError("getLocalDateStringAt(${ix})")
+        }
+    
+
+    /// Cell has type String...
+    pub def getLocalDateStringNamed(label: String): RowEvaluator[Time.LocalDate] =
+        let* s = getStringNamed(label);
+        let fmt = Time/Format/DateFormatter.iso_local_date();
+        match Time/LocalDate.parse(fmt, s) {
+            case Some(d) => point(d)
+            case None    => throwError("getLocalDateStringNamed(${label})")
+        }
+
+    /// Cell has type String...
+    pub def getLocalDateTimeStringAt(ix: Int32): RowEvaluator[Time.LocalDateTime] =
+        let* s = getStringAt(ix);
+        let fmt = Time/Format/DateTimeFormatter.iso_local_date_time();
+        match Time/LocalDateTime.parse(fmt, s) {
+            case Some(dt) => point(dt)
+            case None     => throwError("getLocalDateTimeStringAt(${ix})")
+        }
+    
+
+    /// Cell has type String...
+    pub def getLocalDateTimeStringNamed(label: String): RowEvaluator[Time.LocalDateTime] =
+        let* s = getStringNamed(label);
+        let fmt = Time/Format/DateTimeFormatter.iso_local_date_time();
+        match Time/LocalDateTime.parse(fmt, s) {
+            case Some(dt) => point(dt)
+            case None     => throwError("getLocalDateTimeStringNamed(${label})")
+        }
+
+    /// Cell has type String...
+    pub def getLocalTimeStringAt(ix: Int32): RowEvaluator[Time.LocalTime] =
+        let* s = getStringAt(ix);
+        let fmt = Time/Format/TimeFormatter.iso_local_time();
+        match Time/LocalTime.parse(fmt, s) {
+            case Some(t) => point(t)
+            case None    => throwError("getLocalTimeStringAt(${ix})")
+        }
+    
+
+    /// Cell has type String...
+    pub def getLocalTimeStringNamed(label: String): RowEvaluator[Time.LocalTime] =
+        let* s = getStringNamed(label);
+        let fmt = Time/Format/TimeFormatter.iso_local_time();
+        match Time/LocalTime.parse(fmt, s) {
+            case Some(t) => point(t)
+            case None    => throwError("getLocalTimeStringNamed(${label})")
+        }
 
 }
 
