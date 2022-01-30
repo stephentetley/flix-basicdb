@@ -145,6 +145,16 @@ namespace BasicDb/DbMonad {
             }
         )
 
+    pub def localSQLiteConnection(path: System.FilePath, ma: DbMonad[a]): DbMonad[a] = 
+        use System/FilePath.{normalize};
+        let url = "jdbc:sqlite:${normalize(path)}";
+        localConnection(url, ma)
+
+    pub def localDuckDBConnection(path: System.FilePath, ma: DbMonad[a]): DbMonad[a] = 
+        use System/FilePath.{normalize};
+        let url = "jdbc:duckdb:${normalize(path)}";
+        localConnection(url, ma)
+
 
     /// Needs to allow allow effects (e.g create / access arrays)
     pub def map(fn: a -> b & ef, ma: DbMonad[a]): DbMonad[b] & ef = 
