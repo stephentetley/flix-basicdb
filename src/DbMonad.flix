@@ -15,6 +15,7 @@
  */
 
 /// DbMonad has a cache of prepared statements
+/// (This might be as useful as was envisaged and potentially will be removed)
 
 namespace BasicDb {
 
@@ -120,14 +121,30 @@ namespace BasicDb/DbMonad {
             case Err(e) => apply1(handle(e), conn, s1)
         })
 
-    
-
 
     pub def mapError(f: String -> String, ma: DbMonad[a]): DbMonad[a] =
         DbMonad((conn, s1) -> match apply1(ma, conn, s1) { 
             case Ok((s2, a)) => Ok((s2, a))
             case Err(e) => Err(f(e))
         })
+
+    pub def localConnection(url: String, ma: DbMonad[a]): DbMonad[a] = 
+        use BasicDb/Internal/Prim.{dmGetConnection, closeConnection};
+        DbMonad((_, s1) -> 
+            match dmGetConnection(url) {
+                case Err(e)   => Err(e)
+                case Ok(conn) => {
+                    let ans1 = apply1(ma, conn, Map.empty());
+                    /// ensure conn is closed whether or not previous line is `Ok`
+                    closeConnection(conn);
+                    match ans1 {
+                        case Err(e)   => Err(e)
+                        case Ok((_, a)) => Ok((s1, a))
+                    }
+                }
+            }
+        )
+
 
     /// Needs to allow allow effects (e.g create / access arrays)
     pub def map(fn: a -> b & ef, ma: DbMonad[a]): DbMonad[b] & ef = 
