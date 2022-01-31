@@ -19,7 +19,7 @@ namespace BasicDb/Writer {
     use BasicDb.DbMonad;
     use BasicDb.PreparedStatementSetter;
     
-    type alias RowSetter[a] = a -> PreparedStatementSetter[Unit]
+    pub type alias RowSetter[a] = a -> PreparedStatementSetter[Unit]
 
 
     pub def store(sqlstrings: {prepStmt :: String, tableActions :: List[String]}, 
