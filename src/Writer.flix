@@ -16,6 +16,8 @@
 
 namespace BasicDb/Writer {
 
+    use Monad.{>>=};
+
     use BasicDb.DbMonad;
     use BasicDb.PreparedStatementSetter;
     
@@ -33,6 +35,14 @@ namespace BasicDb/Writer {
                                 {let* n = psExecuteUpdate(stmt, setter(x)); point(ac+n)}, 0, rows);
         let* _          = commit();
         point(nrows)
+
+    pub def storeRelation(sqlstrings: {prepStmt :: String, tableActions :: List[String]}, 
+                    setter: RowSetter[a], 
+                    extractor: {| r} -> Array[a],
+                    reln: {| r}): DbMonad[Int32] =
+        use BasicDb/DbMonad.{flatMap, point, liftAction};
+        liftAction(_ -> extractor(reln) |> Array.toList) >>= store(sqlstrings, setter)
+        
 
 
 }
