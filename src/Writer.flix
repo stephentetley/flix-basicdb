@@ -36,6 +36,13 @@ namespace BasicDb/Writer {
         let* _          = commit();
         point(nrows)
 
+    pub def storeArray(sqlstrings: {prepStmt :: String, tableActions :: List[String]}, 
+                    setter: RowSetter[a], 
+                    rows: Array[a]): DbMonad[Int32] =
+        use BasicDb/DbMonad.{flatMap, point, liftAction};
+        liftAction(_ -> Array.toList(rows)) >>= store(sqlstrings, setter)
+
+
     pub def storeRelation(sqlstrings: {prepStmt :: String, tableActions :: List[String]}, 
                     setter: RowSetter[a], 
                     extractor: {| r} -> Array[a],
@@ -44,6 +51,7 @@ namespace BasicDb/Writer {
         liftAction(_ -> extractor(reln) |> Array.toList) >>= store(sqlstrings, setter)
         
 
+    /// `append` versions without tableActions?
 
 }
 
