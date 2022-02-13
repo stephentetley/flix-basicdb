@@ -336,15 +336,20 @@ namespace BasicDb/DbMonad {
 
 
     pub def executeQuery(stmt: Statement, sql: String): DbMonad[ResultSet] =
-        let Statement(stmt1) = stmt;
-        let* rs = liftActionResult(_ -> BasicDb/Internal/Prim.executeQuery(stmt1, sql));
-        point(ResultSet(rs))
+        let body = () -> { 
+            let Statement(stmt1) = stmt;
+            let* rs = liftActionResult(_ -> BasicDb/Internal/Prim.executeQuery(stmt1, sql));
+            point(ResultSet(rs))
+        };
+        swapError(body(), "executeQuery: ${sql}")
 
     pub def executeUpdate(stmt: Statement, sql: String): DbMonad[Int32] =
-        let Statement(stmt1) = stmt;
-        let* n = liftActionResult(_ -> BasicDb/Internal/Prim.executeUpdate(stmt1, sql));
-        point(n)
-
+        let body = () -> { 
+            let Statement(stmt1) = stmt;
+            let* n = liftActionResult(_ -> BasicDb/Internal/Prim.executeUpdate(stmt1, sql));
+            point(n)
+        };
+        swapError(body(), "executeUpdate: ${sql}")
 
 
     pub def prepareStatement(sql: String): DbMonad[PreparedStatement] =
