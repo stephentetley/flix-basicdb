@@ -19,7 +19,7 @@
 
 namespace BasicDb {
 
-    pub opaque type DbMonad[a] = ##java.sql.Connection -> Map[String, PreparedStatement] -> Result[(Map[String, PreparedStatement], a), String] & Impure
+    pub opaque type DbMonad[a] = ##java.sql.Connection -> Result[a, String] & Impure
 
     instance Functor[DbMonad] { 
         pub def map(f: a -> b & ef, x: DbMonad[a]): DbMonad[b] & ef = 
@@ -76,7 +76,7 @@ namespace BasicDb/DbMonad {
         match dmGetConnection(url) {
             case Err(e) => Err(e)
             case Ok(conn) => {
-                let ans    = apply1(ma, conn, Map.empty()) |> Result.map(snd);
+                let ans    = apply1(ma, conn);
                 /// ensure conn is closed whether or not previous line is `Ok`
                 closeConnection(conn);
                 ans
@@ -96,51 +96,47 @@ namespace BasicDb/DbMonad {
 
 
     def apply1(ma: DbMonad[a], 
-                conn: ##java.sql.Connection, 
-                pstmts: Map[String, PreparedStatement]): Result[(Map[String, PreparedStatement], a), String] & Impure = 
+                conn: ##java.sql.Connection): Result[a, String] & Impure = 
         let DbMonad(x1) = ma;
-        x1(conn, pstmts)
+        x1(conn)
 
     pub def point(x: a): DbMonad[a] = 
-        DbMonad((_, s1) -> Ok((s1, x)) as & Impure)
+        DbMonad(_ -> Ok(x) as & Impure)
 
     pub def throwError(msg: String): DbMonad[a] =
-        DbMonad((_, _) -> Err(msg) as & Impure)
+        DbMonad(_ -> Err(msg) as & Impure)
 
 
     pub def swapError(ma: DbMonad[a], msg: String): DbMonad[a] =
-        DbMonad((conn, s1) -> match apply1(ma, conn, s1) { 
-            case Ok((s2, a)) => Ok((s2, a))
+        DbMonad(conn -> match apply1(ma, conn) { 
+            case Ok(a) => Ok(a)
             case Err(_) => Err(msg)
         })
 
     
     pub def catchError(ma: DbMonad[a], handle: String -> DbMonad[a]): DbMonad[a] =
-        DbMonad((conn, s1) -> match apply1(ma, conn, s1) { 
-            case Ok((s2, a)) => Ok((s2, a))
-            case Err(e) => apply1(handle(e), conn, s1)
+        DbMonad(conn -> match apply1(ma, conn) { 
+            case Ok(a) => Ok(a)
+            case Err(e) => apply1(handle(e), conn)
         })
 
 
     pub def mapError(f: String -> String, ma: DbMonad[a]): DbMonad[a] =
-        DbMonad((conn, s1) -> match apply1(ma, conn, s1) { 
-            case Ok((s2, a)) => Ok((s2, a))
+        DbMonad(conn -> match apply1(ma, conn) { 
+            case Ok(a) => Ok(a)
             case Err(e) => Err(f(e))
         })
 
     pub def localConnection(url: String, ma: DbMonad[a]): DbMonad[a] = 
         use BasicDb/Internal/Prim.{dmGetConnection, closeConnection};
-        DbMonad((_, s1) -> 
+        DbMonad(_ -> 
             match dmGetConnection(url) {
                 case Err(e)   => Err(e)
                 case Ok(conn) => {
-                    let ans1 = apply1(ma, conn, Map.empty());
+                    let ans1 = apply1(ma, conn);
                     /// ensure conn is closed whether or not previous line is `Ok`
                     closeConnection(conn);
-                    match ans1 {
-                        case Err(e)   => Err(e)
-                        case Ok((_, a)) => Ok((s1, a))
-                    }
+                    ans1
                 }
             }
         )
@@ -158,15 +154,15 @@ namespace BasicDb/DbMonad {
 
     /// Needs to allow allow effects (e.g create / access arrays)
     pub def map(fn: a -> b & ef, ma: DbMonad[a]): DbMonad[b] & ef = 
-        DbMonad((conn, s1) -> match apply1(ma, conn, s1) { 
-            case Ok((s2, a)) => {let ans = fn(a) as & Impure; Ok((s2, ans))}
+        DbMonad(conn -> match apply1(ma, conn) { 
+            case Ok(a) => {let ans = fn(a) as & Impure; Ok(ans)}
             case Err(e) => Err(e)
         }) as & ef
 
     pub def ap(mf: DbMonad[a -> b & ef], ma: DbMonad[a]): DbMonad[b] & ef = 
-        DbMonad((conn, s1) -> match apply1(mf, conn, s1) { 
-            case Ok((s2, f)) => match apply1(ma, conn, s2) { 
-                case Ok((s3, a)) => {let ans = f(a) as & Impure; Ok((s3, ans))}
+        DbMonad(conn -> match apply1(mf, conn) { 
+            case Ok(f) => match apply1(ma, conn) { 
+                case Ok(a) => {let ans = f(a) as & Impure; Ok(ans)}
                 case Err(e) => Err(e)
             }
             case Err(e) => Err(e)
@@ -176,8 +172,8 @@ namespace BasicDb/DbMonad {
 
 
     pub def bind(ma: DbMonad[a], fn: a -> DbMonad[b] & ef): DbMonad[b] & ef = 
-        DbMonad((conn, s1) -> match apply1(ma, conn, s1) { 
-            case Ok((s2, a)) => apply1(fn(a) as & Impure, conn, s2)
+        DbMonad(conn -> match apply1(ma, conn) { 
+            case Ok(a) => apply1(fn(a) as & Impure, conn)
             case Err(e) => Err(e)
         }) as & ef
 
@@ -186,18 +182,18 @@ namespace BasicDb/DbMonad {
 
 
     pub def continue(ma: DbMonad[a], fk: String -> DbMonad[b], sk: a -> DbMonad[b]): DbMonad[b] = 
-        DbMonad((conn, s1) -> match apply1(ma, conn, s1) { 
-            case Ok((s2, a)) => apply1(sk(a), conn, s2)
-            case Err(e) => apply1(fk(e), conn, s1)
+        DbMonad((conn) -> match apply1(ma, conn) { 
+            case Ok(a) => apply1(sk(a), conn)
+            case Err(e) => apply1(fk(e), conn)
         })
 
 
 
 
     pub def alt(ma: DbMonad[a], mb: DbMonad[a]): DbMonad[a] =
-        DbMonad((conn, s1) -> match apply1(ma, conn, s1) { 
-            case Ok((s2, a)) => Ok((s2, a))
-            case Err(_) => apply1(mb, conn, s1)
+        DbMonad(conn -> match apply1(ma, conn) { 
+            case Ok(a) => Ok(a)
+            case Err(_) => apply1(mb, conn)
         })
 
     pub def optional(ma: DbMonad[a]): DbMonad[Option[a]] = 
@@ -207,9 +203,9 @@ namespace BasicDb/DbMonad {
         alt(ma, point(d))
 
     pub def testM(ma: DbMonad[a]): DbMonad[Bool] =
-        DbMonad((conn, s1) -> match apply1(ma, conn, s1) { 
-            case Ok((s2, _)) => Ok((s2, true))
-            case Err(_) => Ok((s1, false))
+        DbMonad(conn -> match apply1(ma, conn) { 
+            case Ok(_) => Ok(true)
+            case Err(_) => Ok(false)
         })
 
     ///
@@ -218,9 +214,9 @@ namespace BasicDb/DbMonad {
     /// By definition this never fails.
     ///
     pub def result(ma: DbMonad[a]): DbMonad[Result[a, String]] = 
-        DbMonad((conn, s1) -> match apply1(ma, conn, s1) {
-            case Ok((s2, a)) => Ok((s2, Ok(a)))
-            case Err(e) => Ok((s1, Err(e)))
+        DbMonad(conn -> match apply1(ma, conn) {
+            case Ok(a) => Ok(Ok(a))
+            case Err(e) => Ok(Err(e))
         })
 
     pub def guard(x: Bool): DbMonad[Unit] = match x { 
@@ -278,13 +274,10 @@ namespace BasicDb/DbMonad {
 
 
     def liftConnectionPrim(fn: ##java.sql.Connection -> Result[a, String] & Impure): DbMonad[a] = 
-        DbMonad((conn, s1) -> match fn(conn) {
-            case Ok(a) => Ok((s1, a))
-            case Err(e) => Err(e)
-        })
+        DbMonad(conn -> fn(conn))
 
     pub def liftAction(fn: Unit -> a & Impure): DbMonad[a] = 
-        DbMonad((_, s1) -> {let a = fn(); Ok((s1, a))})
+        DbMonad(_ -> {let a = fn(); Ok(a)})
 
     pub def liftOption(x: Option[a], errMsg: String): DbMonad[a] = match x {
         case Some(x1) => point(x1)
@@ -302,10 +295,7 @@ namespace BasicDb/DbMonad {
     }
 
     pub def liftActionResult(fn: Unit -> Result[a, String] & Impure): DbMonad[a] = 
-        DbMonad((_, s1) -> match fn() { 
-            case Ok(a) => Ok((s1, a))
-            case Err(e) => Err(e)
-        })
+        DbMonad(_ -> fn())
 
     // DB operations
 
@@ -359,23 +349,6 @@ namespace BasicDb/DbMonad {
         , "prepareStatement(`${sql}`)"
         )
         
-    pub def cachePreparedStatement(name: String, sql: String): DbMonad[Unit] =
-        let* pstmt = prepareStatement(sql);
-        addPreparedStatement(name, pstmt)
-
-    def addPreparedStatement(name: String, pstmt: PreparedStatement): DbMonad[Unit] =
-        DbMonad((_, s1) -> Ok((Map.insert(name, pstmt, s1), ())) as & Impure)
-
-    pub def getPreparedStatement(name: String): DbMonad[PreparedStatement] =
-        bind( getPreparedStatement1(name)
-            , x -> match x { 
-                case Some(pstmt) => point(pstmt)
-                case None => throwError("getPreparedStatement('${name}') missing")
-            })
-
-    def getPreparedStatement1(name: String): DbMonad[Option[PreparedStatement]] =
-        DbMonad((_, s1) -> Ok((s1, Map.get(name, s1))) as & Impure)
-
 
     pub def psExecuteQuery(stmt: PreparedStatement, setter: PreparedStatementSetter[a]): DbMonad[ResultSet] =
         let PreparedStatementSetter(setter1) = setter;
@@ -385,23 +358,8 @@ namespace BasicDb/DbMonad {
         let* rs = liftActionResult(_ -> BasicDb/Internal/PreparedStatement.executeQuery(stmt1));
         point(ResultSet(rs))
 
-    pub def psExecuteCachedQuery(statementName: String, setter: PreparedStatementSetter[a]): DbMonad[ResultSet] =
-        let* pstmt = getPreparedStatement(statementName);
-        psExecuteQuery(pstmt, setter)
 
-
-    pub def psExecuteQueryAndCachePS(statementName: String, sql: String, setter: PreparedStatementSetter[a]): DbMonad[ResultSet] =
-        let* ox = getPreparedStatement1(statementName);
-        match ox { 
-            case Some(pstmt) => psExecuteQuery(pstmt, setter)
-            case None => {
-                let* _ = cachePreparedStatement(statementName, sql);
-                psExecuteCachedQuery(statementName, setter)
-            }
-        }
         
-
-
     pub def psExecuteUpdate(stmt: PreparedStatement, setter: PreparedStatementSetter[a]): DbMonad[Int32] =
         let PreparedStatementSetter(setter1) = setter;
         let PreparedStatement(stmt1) = stmt;
@@ -410,19 +368,6 @@ namespace BasicDb/DbMonad {
         let* n = liftActionResult(_ -> BasicDb/Internal/PreparedStatement.executeUpdate(stmt1));
         point(n)
 
-    pub def psExecuteCachedUpdate(statementName: String, setter: PreparedStatementSetter[a]): DbMonad[Int32] =
-        let* pstmt = getPreparedStatement(statementName);
-        psExecuteUpdate(pstmt, setter)
-        
-    pub def psExecuteUpdateAndCachePS(statementName: String, sql: String, setter: PreparedStatementSetter[a]): DbMonad[Int32] =
-        let* ox = getPreparedStatement1(statementName);
-        match ox { 
-            case Some(pstmt) => psExecuteUpdate(pstmt, setter)
-            case None => {
-                let* _ = cachePreparedStatement(statementName, sql);
-                psExecuteCachedUpdate(statementName, setter)
-            }
-        }
 
     /// ResultSet
 
@@ -510,8 +455,8 @@ namespace BasicDb/DbMonad {
 
 
     pub def mapM(mf: a -> DbMonad[b], xs: List[a]): DbMonad[List[b]] =
-        DbMonad((conn, s1) ->
-            mapMHelper(conn, mf, s1, xs, e -> Err(e), (s2, ys) -> Ok((s2, ys)))
+        DbMonad(conn ->
+            mapMHelper(conn, mf, xs, e -> Err(e), ks -> Ok(ks))
         )
 
     ///
@@ -519,46 +464,44 @@ namespace BasicDb/DbMonad {
     ///
     def mapMHelper(conn: ##java.sql.Connection, 
                    mf: a -> DbMonad[b], 
-                   s1: PSCache,
                    xs: List[a], 
-                   fk: String -> Result[(PSCache, List[b]), String], 
-                   sk: (PSCache, List[b]) -> Result[(PSCache, List[b]), String]): Result[(PSCache, List[b]), String] & Impure =
+                   fk: String -> Result[List[b], String], 
+                   sk: List[b] -> Result[List[b], String]): Result[List[b], String] & Impure =
         match xs {
-            case Nil => sk(s1, Nil)
+            case Nil => sk(Nil)
             case x :: rs => {
                 let ma = mf(x);
-                match apply1(ma, conn, s1) {
+                match apply1(ma, conn) {
                     case Err(e) => fk(e)
-                    case Ok((s2, x1)) => mapMHelper(conn, mf, s2, rs, fk, (s3, ks) -> sk(s3, x1 :: ks))
+                    case Ok(x1) => mapMHelper(conn, mf, rs, fk, ks -> sk(x1 :: ks))
                 }
             }
         }
 
     pub def mapX(mf: a -> DbMonad[b], xs: List[a]): DbMonad[Unit] =
-        DbMonad((conn, s1) ->
-            mapXHelper(conn, mf, s1, xs, e -> Err(e), s2 -> Ok((s2, ())))
+        DbMonad(conn ->
+            mapXHelper(conn, mf, xs, e -> Err(e), _ -> Ok())
         )
 
     def mapXHelper(conn: ##java.sql.Connection, 
                    mf: a -> DbMonad[b], 
-                   s1: PSCache,
                    xs: List[a], 
-                   fk: String -> Result[(PSCache, Unit), String], 
-                   sk: PSCache -> Result[(PSCache, Unit), String]): Result[(PSCache, Unit), String] & Impure =
+                   fk: String -> Result[Unit, String], 
+                   sk: Unit -> Result[Unit, String]): Result[Unit, String] & Impure =
         match xs {
-            case Nil => sk(s1)
+            case Nil => sk()
             case x :: rs => {
                 let ma = mf(x);
-                match apply1(ma, conn, s1) {
+                match apply1(ma, conn) {
                     case Err(e) => fk(e)
-                    case Ok(_) => mapXHelper(conn, mf, s1, rs, fk, sk)
+                    case Ok(_) => mapXHelper(conn, mf, rs, fk, sk)
                 }
             }
         }
 
     pub def mapWithIndexM(mf: (a, Int32) -> DbMonad[b], xs: List[a]): DbMonad[List[b]] =
-        DbMonad((conn, s1) ->
-            mapWithIndexMHelper(conn, mf, s1, 0, xs, e -> Err(e), (s2, ys) -> Ok((s2, ys)))
+        DbMonad(conn ->
+            mapWithIndexMHelper(conn, mf, 0, xs, e -> Err(e), ks -> Ok(ks))
         )
 
     ///
@@ -566,64 +509,61 @@ namespace BasicDb/DbMonad {
     ///
     def mapWithIndexMHelper(conn: ##java.sql.Connection, 
                             mf: (a, Int32) -> DbMonad[b], 
-                            s1: PSCache,
                             ix : Int32, 
                             xs: List[a], 
-                            fk: String -> Result[(PSCache, List[b]), String], 
-                            sk: (PSCache, List[b]) -> Result[(PSCache, List[b]), String]): Result[(PSCache, List[b]), String] & Impure =
+                            fk: String -> Result[List[b], String], 
+                            sk: List[b] -> Result[List[b], String]): Result[List[b], String] & Impure =
         match xs {
-            case Nil => sk(s1, Nil)
+            case Nil => sk(Nil)
             case x :: rs => {
                 let ma = mf(x, ix);
-                match apply1(ma, conn, s1) {
+                match apply1(ma, conn) {
                     case Err(e) => fk(e)
-                    case Ok((s2, x1)) => mapWithIndexMHelper(conn, mf, s2, ix + 1, rs, fk, (s3, ks) -> sk(s3, x1 :: ks))
+                    case Ok(x1) => mapWithIndexMHelper(conn, mf, ix + 1, rs, fk, ks -> sk(x1 :: ks))
                 }
             }
         }
 
     pub def mapWithIndexX(mf: (a, Int32) -> DbMonad[b], xs: List[a]): DbMonad[Unit] =
-        DbMonad((conn, s1) ->
-            mapWithIndexXHelper(conn, mf, s1, 0, xs, e -> Err(e), s2 -> Ok((s2, ())))
+        DbMonad(conn ->
+            mapWithIndexXHelper(conn, mf, 0, xs, e -> Err(e), _ -> Ok())
         )
 
     def mapWithIndexXHelper(conn: ##java.sql.Connection, 
                             mf: (a, Int32) -> DbMonad[b],
-                            s1: PSCache,
                             ix: Int32, 
                             xs: List[a], 
-                            fk: String -> Result[(PSCache, Unit), String], 
-                            sk: PSCache -> Result[(PSCache, Unit), String]): Result[(PSCache, Unit), String] & Impure =
+                            fk: String -> Result[Unit, String], 
+                            sk: Unit -> Result[Unit, String]): Result[Unit, String] & Impure =
         match xs {
-            case Nil => sk(s1)
+            case Nil => sk()
             case x :: rs => {
                 let ma = mf(x, ix);
-                match apply1(ma, conn, s1) {
+                match apply1(ma, conn) {
                     case Err(e) => fk(e)
-                    case Ok((s2, _)) => mapWithIndexXHelper(conn, mf, s2, ix + 1, rs, fk, sk)
+                    case Ok(_) => mapWithIndexXHelper(conn, mf, ix + 1, rs, fk, sk)
                 }
             }
         }
 
 
     pub def sequence(xs: List[DbMonad[a]]): DbMonad[List[a]] =
-        DbMonad((conn, s1) ->
-            sequenceHelper(conn, s1, xs, e -> Err(e), (s2, ks) -> Ok((s2, ks)))
+        DbMonad(conn ->
+            sequenceHelper(conn, xs, e -> Err(e), ks -> Ok(ks))
         )
 
     ///
     /// Helper function for `sequence`.
     ///
     def sequenceHelper(conn: ##java.sql.Connection,
-                       s1: PSCache,
                        xs: List[DbMonad[a]],
-                       fk: String -> Result[(PSCache, List[a]), String],
-                       sk: (PSCache, List[a]) -> Result[(PSCache, List[a]), String]): Result[(PSCache, List[a]), String] & Impure =
+                       fk: String -> Result[List[a], String],
+                       sk: List[a] -> Result[List[a], String]): Result[List[a], String] & Impure =
         match xs {
-            case Nil => sk(s1, Nil)
-            case mx :: rs => match apply1(mx, conn, s1) {
+            case Nil => sk(Nil)
+            case mx :: rs => match apply1(mx, conn) {
                 case Err(e) => fk(e)
-                case Ok((s2, x)) => sequenceHelper(conn, s2, rs, fk, (s3, ks) -> sk(s3, x :: ks))
+                case Ok(x) => sequenceHelper(conn, rs, fk, ks -> sk(x :: ks))
             }
         }
 
@@ -652,24 +592,23 @@ namespace BasicDb/DbMonad {
 
 
     pub def foldLeftM(mf: (b, a) -> DbMonad[b], start: b, xs: List[a]): DbMonad[b] =
-        DbMonad((conn, s1) ->
-            foldLeftMHelper(conn, mf, s1, start, xs, e -> Err(e), (s2, ac) -> Ok((s2, ac)))
+        DbMonad(conn ->
+            foldLeftMHelper(conn, mf, start, xs, e -> Err(e), ac -> Ok(ac))
         )
 
     def foldLeftMHelper(conn: ##java.sql.Connection, 
-                    mf: (b, a) -> DbMonad[b], 
-                    s1: PSCache,
+                    mf: (b, a) -> DbMonad[b],
                     acc: b, 
                     xs: List[a], 
-                    fk: String -> Result[(PSCache, b), String], 
-                    sk: (PSCache, b) -> Result[(PSCache, b), String]): Result[(PSCache, b), String] & Impure =
+                    fk: String -> Result[b, String], 
+                    sk: b -> Result[b, String]): Result[b, String] & Impure =
         match xs {
-            case Nil => sk(s1, acc)
+            case Nil => sk(acc)
             case x :: rs => {
                 let ma = mf(acc, x);
-                match apply1(ma, conn, s1) {
-                    case Err(e) => fk(e)
-                    case Ok((s2, acc1)) => foldLeftMHelper(conn, mf, s2, acc1, rs, fk, sk)
+                match apply1(ma, conn) {
+                    case Err(e)   => fk(e)
+                    case Ok(acc1) => foldLeftMHelper(conn, mf, acc1, rs, fk, sk)
                 }
             }
         }
@@ -690,24 +629,23 @@ namespace BasicDb/DbMonad {
         }
     
     pub def mapAccumM(mf: (ac, a) -> DbMonad[(ac, b)], start: ac, xs: List[a]): DbMonad[(ac, List[b])] =
-        DbMonad((conn, s1) ->
-            mapAccumMHelper(conn, mf, s1, start, xs, e -> Err(e), (s2, ac, ks) -> Ok((s2, (ac, ks))))
+        DbMonad(conn ->
+            mapAccumMHelper(conn, mf, start, xs, e -> Err(e), (ac, ks) -> Ok((ac, ks)))
         )
 
     def mapAccumMHelper(conn: ##java.sql.Connection,
                         mf: (ac, a) -> DbMonad[(ac, b)],
-                        s1: PSCache,
                         ac: ac,
                         xs: List[a],
-                        fk: String -> Result[(PSCache, (ac, List[b])), String],
-                        sk: (PSCache, ac, List[b]) -> Result[(PSCache, (ac, List[b])), String]): Result[(Map[String, PreparedStatement], (ac, List[b])), String] & Impure =
+                        fk: String -> Result[(ac, List[b]), String],
+                        sk: (ac, List[b]) -> Result[(ac, List[b]), String]): Result[(ac, List[b]), String] & Impure =
         match xs {
-            case Nil => sk(s1, ac, Nil)
+            case Nil => sk(ac, Nil)
             case x :: rs => {
                 let ma = mf(ac, x);
-                match apply1(ma, conn, s1) {
-                    case Err(e) => fk(e)
-                    case Ok((s2, (ac1, x1))) => mapAccumMHelper(conn, mf, s2, ac1, rs, fk, (s3, ac2, ks) -> sk(s3, ac2, x1 :: ks))
+                match apply1(ma, conn) {
+                    case Err(e)        => fk(e)
+                    case Ok((ac1, x1)) => mapAccumMHelper(conn, mf, ac1, rs, fk, (ac2, ks) -> sk(ac2, x1 :: ks))
                 }
             }
         }
@@ -719,8 +657,8 @@ namespace BasicDb/DbMonad {
 
 
     pub def filterMapM(mf: a -> DbMonad[Option[b]], xs: List[a]): DbMonad[List[b]] =
-        DbMonad((conn, s1) ->
-            filterMapMHelper(conn, mf, s1, xs, e -> Err(e), (s2, ks) -> Ok((s2, ks)))
+        DbMonad(conn ->
+            filterMapMHelper(conn, mf, xs, e -> Err(e), ks -> Ok(ks))
         )
 
     ///
@@ -728,19 +666,18 @@ namespace BasicDb/DbMonad {
     ///
     def filterMapMHelper(conn: ##java.sql.Connection,
                          mf: a -> DbMonad[Option[b]],
-                         s1: PSCache, 
                          xs: List[a],
-                         fk: String -> Result[(PSCache, List[b]), String],
-                         sk: (PSCache, List[b]) -> Result[(PSCache, List[b]), String]): Result[(PSCache, List[b]), String] & Impure =
+                         fk: String -> Result[List[b], String],
+                         sk: List[b] -> Result[List[b], String]): Result[List[b], String] & Impure =
         match xs {
-            case Nil => sk(s1, Nil)
+            case Nil => sk(Nil)
             case x :: rs => {
                 let ma = mf(x); 
-                match apply1(ma, conn, s1) {
+                match apply1(ma, conn) {
                     case Err(e) => fk(e)
-                    case Ok((s2, ans)) => match ans { 
-                        case None => filterMapMHelper(conn, mf, s2, rs, fk, sk)
-                        case Some(a1) => filterMapMHelper(conn, mf, s2, rs, fk, (s3, ks) -> sk(s3, a1 :: ks))
+                    case Ok(ans) => match ans { 
+                        case None => filterMapMHelper(conn, mf, rs, fk, sk)
+                        case Some(a1) => filterMapMHelper(conn, mf, rs, fk, ks -> sk(a1 :: ks))
                     }
                 }
             }
@@ -748,42 +685,40 @@ namespace BasicDb/DbMonad {
 
 
     pub def replicateM(n: Int32, ma: DbMonad[a]): DbMonad[List[a]] =
-        DbMonad((conn, s1) ->
-            replicateMHelper(conn, ma, s1, n, e -> Err(e), (s2, ks) -> Ok((s2, ks)))
+        DbMonad(conn ->
+            replicateMHelper(conn, ma, n, e -> Err(e), ks -> Ok(ks))
         )
 
     def replicateMHelper(conn: ##java.sql.Connection,
                          ma: DbMonad[a],
-                         s1: PSCache, 
                          n: Int32,
-                         fk: String -> Result[(PSCache, List[a]), String],
-                         sk: (PSCache, List[a]) -> Result[(PSCache, List[a]), String]): Result[(PSCache, List[a]), String] & Impure =
+                         fk: String -> Result[List[a], String],
+                         sk: List[a] -> Result[List[a], String]): Result[List[a], String] & Impure =
         if (n <= 0) 
-            sk(s1, Nil)
+            sk(Nil)
         else 
-            match apply1(ma, conn, s1) {
+            match apply1(ma, conn) {
                 case Err(e) => fk(e)
-                case Ok((s2, a)) => replicateMHelper(conn, ma, s2, n - 1, fk, (s3, ks) -> sk(s3, a :: ks))
+                case Ok(a)  => replicateMHelper(conn, ma, n - 1, fk, ks -> sk(a :: ks))
             }
             
         
    pub def replicateX(n: Int32, ma: DbMonad[a]): DbMonad[Unit] =
-        DbMonad((conn, s1) ->
-            replicateXHelper(conn, ma, s1, n, e -> Err(e), s2 -> Ok((s2, ())))
+        DbMonad(conn ->
+            replicateXHelper(conn, ma, n, e -> Err(e), _ -> Ok())
         )
 
     def replicateXHelper(conn: ##java.sql.Connection,
                          ma: DbMonad[a],
-                         s1: PSCache, 
                          n: Int32,
-                         fk: String -> Result[(PSCache, Unit), String],
-                         sk: PSCache -> Result[(PSCache, Unit), String]): Result[(PSCache, Unit), String] & Impure =
+                         fk: String -> Result[Unit, String],
+                         sk: Unit -> Result[Unit, String]): Result[Unit, String] & Impure =
         if (n <= 0) 
-            sk(s1)
+            sk()
         else 
-            match apply1(ma, conn, s1) {
+            match apply1(ma, conn) {
                 case Err(e) => fk(e)
-                case Ok((s2, _)) => replicateXHelper(conn, ma, s2, n - 1, fk, sk)
+                case Ok(_)  => replicateXHelper(conn, ma, n - 1, fk, sk)
             }        
 
 
