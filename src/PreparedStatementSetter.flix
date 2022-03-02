@@ -110,7 +110,7 @@ namespace BasicDb/PreparedStatementSetter {
 
     pub def liftValidation(x: Validation[a, e], makeErrMsg: List[e] -> String): PreparedStatementSetter[a] = match x { 
         case Success(x1) => point(x1)
-        case Failure(es) => throwError(makeErrMsg(Nel.toList(es)))
+        case Failure(es) => throwError(makeErrMsg(Nec.toList(es)))
     }
 
     pub def liftAction(fn: Unit -> a & Impure): PreparedStatementSetter[a] = 

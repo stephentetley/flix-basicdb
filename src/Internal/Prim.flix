@@ -19,8 +19,8 @@ namespace BasicDb/Internal/Prim {
 
 
     pub def dmGetConnection(url: String): Result[##java.sql.Connection, String] & Impure = 
-        import static java.sql.DriverManager.getConnection(String);
-        import java.lang.Throwable.getMessage();
+        import static java.sql.DriverManager.getConnection(String): ##java.sql.Connection & Impure;
+        import java.lang.Throwable.getMessage(): String & Impure;
         try {
             let ans = getConnection(url);
             Ok(ans)
@@ -30,7 +30,7 @@ namespace BasicDb/Internal/Prim {
 
     
     pub def closeConnection(conn: ##java.sql.Connection): Result[Unit, String] & Impure = 
-        import java.sql.Connection.close();
+        import java.sql.Connection.close(): Unit & Impure;
         try {
             close(conn);
             Ok()
@@ -39,7 +39,7 @@ namespace BasicDb/Internal/Prim {
         }
 
     pub def setAutoCommit(conn: ##java.sql.Connection, autoCommit: Bool): Result[Unit, String] & Impure = 
-        import java.sql.Connection.setAutoCommit(Bool);
+        import java.sql.Connection.setAutoCommit(Bool): Unit & Impure;
         try {
             setAutoCommit(conn, autoCommit);
             Ok()
@@ -48,7 +48,7 @@ namespace BasicDb/Internal/Prim {
         }
 
     pub def commit(conn: ##java.sql.Connection): Result[Unit, String] & Impure = 
-        import java.sql.Connection.commit();
+        import java.sql.Connection.commit(): Unit & Impure;
         try {
             commit(conn);
             Ok()
@@ -57,8 +57,8 @@ namespace BasicDb/Internal/Prim {
         }
 
 
-    pub def createStatement(conn: ##java.sql.Connection): Result[ ##java.sql.Statement, String] & Impure = 
-        import java.sql.Connection.createStatement();
+    pub def createStatement(conn: ##java.sql.Connection): Result[##java.sql.Statement, String] & Impure = 
+        import java.sql.Connection.createStatement(): ##java.sql.Statement & Impure;
         try {
             let ans = createStatement(conn);
             Ok(ans)
@@ -67,7 +67,7 @@ namespace BasicDb/Internal/Prim {
         }
 
     pub def closeStatement(stmt: ##java.sql.Statement): Result[Unit, String] & Impure = 
-        import java.sql.Statement.close();
+        import java.sql.Statement.close(): Unit & Impure;
         try {
             close(stmt);
             Ok()
@@ -76,7 +76,7 @@ namespace BasicDb/Internal/Prim {
         }
 
     pub def executeStatement(stmt: ##java.sql.Statement, sql: String): Result[Bool, String] & Impure = 
-        import java.sql.Statement.execute(String);
+        import java.sql.Statement.execute(String): Bool & Impure;
         try {
             let ans = execute(stmt, sql);
             Ok(ans)
@@ -85,7 +85,7 @@ namespace BasicDb/Internal/Prim {
         }
 
     pub def executeQuery(stmt: ##java.sql.Statement, sql: String): Result[##java.sql.ResultSet, String] & Impure = 
-        import java.sql.Statement.executeQuery(String);
+        import java.sql.Statement.executeQuery(String): ##java.sql.ResultSet & Impure;
         try {
             let ans = executeQuery(stmt, sql);
             Ok(ans)
@@ -94,7 +94,7 @@ namespace BasicDb/Internal/Prim {
         }
 
     pub def executeUpdate(stmt: ##java.sql.Statement, sql: String): Result[Int32, String] & Impure = 
-        import java.sql.Statement.executeUpdate(String);
+        import java.sql.Statement.executeUpdate(String): Int32 & Impure;
         try {
             let ans = executeUpdate(stmt, sql);
             Ok(ans)
@@ -104,7 +104,7 @@ namespace BasicDb/Internal/Prim {
 
 
     pub def prepareStatement(conn: ##java.sql.Connection, sql: String): Result[##java.sql.PreparedStatement, String] & Impure = 
-        import java.sql.Connection.prepareStatement(String);
+        import java.sql.Connection.prepareStatement(String): ##java.sql.PreparedStatement & Impure;
         try {
             let ans = prepareStatement(conn, sql);
             Ok(ans)
