@@ -18,6 +18,8 @@
 /// BROKEN
 /// To fix at some point...
 
+/* 
+
 namespace BasicDb/ArrayRowIterator {
 
     
@@ -52,3 +54,4 @@ namespace BasicDb/ArrayRowIterator {
 
 }
 
+*/
