@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-/// DbMonad has a cache of prepared statements
-/// (This might be as useful as was envisaged and potentially will be removed)
 
 namespace BasicDb {
 
