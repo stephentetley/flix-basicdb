@@ -298,7 +298,7 @@ namespace BasicDb/DbMonad {
     // DB operations
 
     pub def execute(sql: String): DbMonad[Bool] = 
-        executeHelper(sql) `swapError` "execute('${sql}')"
+        mapError(msg -> "execute('${sql}')" + Environment.getLineSeparator() + msg, executeHelper(sql))
 
     def executeHelper(sql: String): DbMonad[Bool] = 
         use BasicDb/Internal/Prim.{createStatement, executeStatement, closeStatement};
