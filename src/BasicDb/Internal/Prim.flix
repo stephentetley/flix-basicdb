@@ -17,7 +17,7 @@
 
 namespace BasicDb/Internal/Prim {
 
-    use BasicDb/Error.{getMessage};
+    use BasicDb/Error.{getSQLExceptionMessage};
 
 
     pub def dmGetConnection(url: String): Result[##java.sql.Connection, String] & Impure = 
@@ -26,7 +26,7 @@ namespace BasicDb/Internal/Prim {
             let ans = getConnection(url);
             Ok(ans)
         } catch {
-            case exn: ##java.sql.SQLException => Err("dmGetConnection: ${getMessage(exn as ##java.lang.Throwable)}")
+            case exn: ##java.sql.SQLException => let msg = getSQLExceptionMessage(exn); Err("dmGetConnection: ${msg}")
         }
 
     
@@ -36,7 +36,7 @@ namespace BasicDb/Internal/Prim {
             close(conn);
             Ok()
         } catch {
-            case exn: ##java.sql.SQLException => Err("closeConnection: ${getMessage(exn as ##java.lang.Throwable)}")
+            case exn: ##java.sql.SQLException => let msg = getSQLExceptionMessage(exn); Err("closeConnection: ${msg}")
         }
 
     pub def setAutoCommit(conn: ##java.sql.Connection, autoCommit: Bool): Result[Unit, String] & Impure = 
@@ -45,7 +45,7 @@ namespace BasicDb/Internal/Prim {
             setAutoCommit(conn, autoCommit);
             Ok()
         } catch {
-            case exn: ##java.sql.SQLException => Err("setAutoCommit: ${getMessage(exn as ##java.lang.Throwable)}")
+            case exn: ##java.sql.SQLException => let msg = getSQLExceptionMessage(exn); Err("setAutoCommit: ${msg}")
         }
 
     pub def commit(conn: ##java.sql.Connection): Result[Unit, String] & Impure = 
@@ -54,7 +54,7 @@ namespace BasicDb/Internal/Prim {
             commit(conn);
             Ok()
         } catch {
-            case exn: ##java.sql.SQLException => Err("commit: ${getMessage(exn as ##java.lang.Throwable)}")
+            case exn: ##java.sql.SQLException => let msg = getSQLExceptionMessage(exn); Err("commit: ${msg}")
         }
 
 
@@ -64,7 +64,7 @@ namespace BasicDb/Internal/Prim {
             let ans = createStatement(conn);
             Ok(ans)
         } catch {
-            case exn: ##java.sql.SQLException => Err("createStatement: ${getMessage(exn as ##java.lang.Throwable)}")
+            case exn: ##java.sql.SQLException => let msg = getSQLExceptionMessage(exn); Err("createStatement: ${msg}")
         }
 
     pub def closeStatement(stmt: ##java.sql.Statement): Result[Unit, String] & Impure = 
@@ -73,7 +73,7 @@ namespace BasicDb/Internal/Prim {
             close(stmt);
             Ok()
         } catch {
-            case exn: ##java.sql.SQLException => Err("closeStatement: ${getMessage(exn as ##java.lang.Throwable)}")
+            case exn: ##java.sql.SQLException => let msg = getSQLExceptionMessage(exn); Err("closeStatement: ${msg}")
         }
 
     pub def executeStatement(stmt: ##java.sql.Statement, sql: String): Result[Bool, String] & Impure = 
@@ -82,7 +82,7 @@ namespace BasicDb/Internal/Prim {
             let ans = execute(stmt, sql);
             Ok(ans)
         } catch {
-            case exn: ##java.sql.SQLException => Err("executeStatement: ${getMessage(exn as ##java.lang.Throwable)}")
+            case exn: ##java.sql.SQLException => let msg = getSQLExceptionMessage(exn); Err("executeStatement: ${msg}")
         }
 
     pub def executeQuery(stmt: ##java.sql.Statement, sql: String): Result[##java.sql.ResultSet, String] & Impure = 
@@ -91,7 +91,7 @@ namespace BasicDb/Internal/Prim {
             let ans = executeQuery(stmt, sql);
             Ok(ans)
         } catch {
-            case exn: ##java.sql.SQLException => Err("executeQuery: ${getMessage(exn as ##java.lang.Throwable)}")
+            case exn: ##java.sql.SQLException => let msg = getSQLExceptionMessage(exn); Err("executeQuery: ${msg}")
         }
 
     pub def executeUpdate(stmt: ##java.sql.Statement, sql: String): Result[Int32, String] & Impure = 
@@ -100,7 +100,7 @@ namespace BasicDb/Internal/Prim {
             let ans = executeUpdate(stmt, sql);
             Ok(ans)
         } catch {
-            case exn: ##java.sql.SQLException => Err("executeUpdate: ${getMessage(exn as ##java.lang.Throwable)}")
+            case exn: ##java.sql.SQLException => let msg = getSQLExceptionMessage(exn); Err("executeUpdate: ${msg}")
         }
 
 
@@ -110,7 +110,7 @@ namespace BasicDb/Internal/Prim {
             let ans = prepareStatement(conn, sql);
             Ok(ans)
         } catch {
-            case exn: ##java.sql.SQLException => Err("prepareStatement: ${getMessage(exn as ##java.lang.Throwable)}")
+            case exn: ##java.sql.SQLException => let msg = getSQLExceptionMessage(exn); Err("prepareStatement: ${msg}")
         }
 
 }    

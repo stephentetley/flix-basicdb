@@ -17,9 +17,10 @@
 namespace BasicDb/Error {
 
 
-    pub def getMessage(x: ##java.lang.Throwable): String & Impure = 
+    pub def getSQLExceptionMessage(x: ##java.sql.SQLException): String & Impure = 
         import java.lang.Throwable.getMessage(): String & Impure;
-        getMessage(x)
+        let x1 = x as ##java.lang.Throwable;
+        getMessage(x1)
 
 }
 
