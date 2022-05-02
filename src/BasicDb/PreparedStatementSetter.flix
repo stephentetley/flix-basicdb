@@ -153,7 +153,7 @@ namespace BasicDb/PreparedStatementSetter {
 
 
     pub def putIsoLocalDateStringAt!(ix: Int32, d: Time.LocalDate): PreparedStatementSetter[Unit] =
-        let fmt = Time/Format/DateFormatter.iso_local_date();
+        let fmt = Time/Format/DateTimeFormatter.iso_local_date();
         let str = Time/LocalDate.format(fmt, d);
         putStringAt!(ix, str)
 
@@ -163,7 +163,7 @@ namespace BasicDb/PreparedStatementSetter {
         putStringAt!(ix, str)
 
     pub def putIsoLocalTimeStringAt!(ix: Int32, dt: Time.LocalTime): PreparedStatementSetter[Unit] =
-        let fmt = Time/Format/TimeFormatter.iso_local_time();
+        let fmt = Time/Format/DateTimeFormatter.iso_local_time();
         let str = Time/LocalTime.format(fmt, dt);
         putStringAt!(ix, str)
 

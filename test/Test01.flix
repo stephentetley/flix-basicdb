@@ -10,7 +10,7 @@ namespace Test01 {
 
     @test
     def test01(): Int32 & Impure = 
-        match runSQLite(action1(), FlixSandbox/System/FilePath.new("e:/coding/flix/flix-basicdb/data/dbms1.sqlite")) {
+        match runSQLite(action1(), FlixSandbox/System/FilePath.filePath("e:/coding/flix/flix-basicdb/data/dbms1.sqlite")) {
             case Err(e) => {println("Error: ${e}"); 1}
             case Ok(_) => 0
         }
