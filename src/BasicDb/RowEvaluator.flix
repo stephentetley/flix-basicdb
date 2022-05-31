@@ -19,7 +19,7 @@ namespace BasicDb {
     use BasicDb.RowEvaluator;
     use BasicDb.RowEvaluator.{RowEvaluator};
 
-    pub opaque type RowEvaluator[a] = ##java.sql.ResultSet -> Result[a, String] & Impure
+    pub enum RowEvaluator[a](##java.sql.ResultSet -> Result[a, String] & Impure)
 
     instance Functor[RowEvaluator] { 
         pub def map(f: a -> b & ef, x: RowEvaluator[a]): RowEvaluator[b] & ef = 

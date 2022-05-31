@@ -17,7 +17,7 @@
 
 namespace BasicDb {
 
-    pub opaque type DbMonad[a] = ##java.sql.Connection -> Result[a, String] & Impure
+    pub enum DbMonad[a](##java.sql.Connection -> Result[a, String] & Impure)
 
     instance Functor[DbMonad] { 
         pub def map(f: a -> b & ef, x: DbMonad[a]): DbMonad[b] & ef = 
@@ -38,11 +38,11 @@ namespace BasicDb {
     }
 
 
-    pub opaque type PreparedStatement = ##java.sql.PreparedStatement
+    pub enum PreparedStatement(##java.sql.PreparedStatement)
 
-    pub opaque type Statement = ##java.sql.Statement
+    pub enum Statement(##java.sql.Statement)
 
-    pub opaque type ResultSet = ##java.sql.ResultSet
+    pub enum ResultSet(##java.sql.ResultSet)
 
 }
 

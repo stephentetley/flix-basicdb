@@ -18,7 +18,7 @@
 namespace BasicDb {
 
 
-    pub opaque type PreparedStatementSetter[a] = ##java.sql.PreparedStatement -> Result[a, String] & Impure
+    pub enum PreparedStatementSetter[a](##java.sql.PreparedStatement -> Result[a, String] & Impure)
 
     instance Functor[PreparedStatementSetter] { 
         pub def map(f: a -> b & ef, x: PreparedStatementSetter[a]): PreparedStatementSetter[b] & ef = 
