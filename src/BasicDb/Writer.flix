@@ -38,17 +38,17 @@ namespace BasicDb/Writer {
 
     pub def storeArray(sqlstrings: {prepStmt :: String, tableActions :: List[String]}, 
                     setter: RowSetter[a], 
-                    rows: Array[a]): DbMonad[Int32] =
+                    rows: Array[a, r]): DbMonad[Int32] =
         use BasicDb/DbMonad.{flatMap, point, liftAction};
-        liftAction(_ -> Array.toList(rows)) >>= store(sqlstrings, setter)
+        liftAction(_ -> Array.toList(rows) as & Impure) >>= store(sqlstrings, setter)
 
 
     pub def storeRelation(sqlstrings: {prepStmt :: String, tableActions :: List[String]}, 
                     setter: RowSetter[a], 
-                    extractor: {| r} -> Array[a],
-                    reln: {| r}): DbMonad[Int32] =
+                    extractor: {| rr} -> Array[a, r],
+                    reln: {| rr}): DbMonad[Int32] =
         use BasicDb/DbMonad.{flatMap, point, liftAction};
-        liftAction(_ -> extractor(reln) |> Array.toList) >>= store(sqlstrings, setter)
+        liftAction(_ -> (extractor(reln) |> Array.toList) as & Impure) >>= store(sqlstrings, setter)
         
 
     /// `append` versions without tableActions?
