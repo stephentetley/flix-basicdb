@@ -21,12 +21,13 @@ namespace BasicDb/Writer {
     use BasicDb.DbMonad;
     use BasicDb.PreparedStatementSetter;
     
-    pub type alias RowSetter[a] = a -> PreparedStatementSetter[Unit]
+    pub type alias RowSetter[r: Region, a: Type] = a -> PreparedStatementSetter[r, Unit]
+
 
 
     pub def store(sqlstrings: {prepStmt :: String, tableActions :: List[String]}, 
-                    setter: RowSetter[a], 
-                    rows: t[a]): DbMonad[Int32] with Foldable[t] =
+                    setter: RowSetter[r, a], 
+                    rows: t[a]): DbMonad[r, Int32] \ Write(r) with Foldable[t] =
         use BasicDb/DbMonad.{flatMap, point, setAutoCommit, execute, prepareStatement, psExecuteUpdate, commit};
         let* _          = setAutoCommit(false);
         let* _          = Foldable.foreachM(execute, sqlstrings.tableActions);
@@ -37,21 +38,22 @@ namespace BasicDb/Writer {
         point(nrows)
 
     pub def storeArray(sqlstrings: {prepStmt :: String, tableActions :: List[String]}, 
-                    setter: RowSetter[a], 
-                    rows: Array[a, r]): DbMonad[Int32] =
+                    setter: RowSetter[r, a], 
+                    rows: Array[a, r]): DbMonad[r, Int32] \ {Write(r), Read(r) } =
         use BasicDb/DbMonad.{flatMap, point, liftAction};
-        liftAction(_ -> Array.toList(rows) as & Impure) >>= store(sqlstrings, setter)
+        liftAction(_ -> Array.toList(rows)) >>= store(sqlstrings, setter)
 
 
     pub def storeRelation(sqlstrings: {prepStmt :: String, tableActions :: List[String]}, 
-                    setter: RowSetter[a], 
-                    extractor: {| rr} -> Array[a, r],
-                    reln: {| rr}): DbMonad[Int32] =
+                    setter: RowSetter[r, a], 
+                    extractor: {| rr} -> Array[a, r] \ Write(r),
+                    reln: {| rr}): DbMonad[r, Int32] \ {Write(r), Read(r) } =
         use BasicDb/DbMonad.{flatMap, point, liftAction};
-        liftAction(_ -> (extractor(reln) |> Array.toList) as & Impure) >>= store(sqlstrings, setter)
+        liftAction(_ -> (extractor(reln) |> Array.toList)) >>= store(sqlstrings, setter)
         
 
     /// `append` versions without tableActions?
+
 
 }
 

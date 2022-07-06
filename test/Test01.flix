@@ -1,3 +1,8 @@
+/// This is expected to be run with the sqlite-jdbc jar in the classpath, e.g on Windows:
+/// 
+/// > java -cp "./lib/*;../bin/flix-working.jar" ca.uwaterloo.flix.Main test
+///
+
 namespace Test01 {
 
     use BasicDb.DbMonad;
@@ -10,12 +15,14 @@ namespace Test01 {
 
     @test
     def test01(): Int32 & Impure = 
-        match runSQLite(action1(), FlixSandbox/System/FilePath.filePath("e:/coding/flix/flix-basicdb/data/dbms1.sqlite")) {
-            case Err(e) => {println("Error: ${e}"); 1}
-            case Ok(_) => 0
+        region r1 {
+            match runSQLite(r1, action1(), FlixSandbox/System/FilePath.filePath("e:/coding/flix/flix-basicdb/data/dbms1.sqlite")) {
+                case Err(e) => {println("Error: ${e}"); 1}
+                case Ok(_) => 0
+            }
         }
 
-    def action1(): DbMonad[Bool] = 
+    def action1(): DbMonad[r, Bool] \ { Write(r), Impure }= 
         use BasicDb/DbMonad.{flatMap, point};
         let* _      = execute("DROP TABLE IF EXISTS dbms;");
         let* _      = execute("CREATE TABLE IF NOT EXISTS dbms (name text PRIMARY KEY NOT NULL, year int);");
@@ -32,17 +39,18 @@ namespace Test01 {
         let* _      = rsClose(rs);
         point(true)
 
-    def setPStmt!(name: String, year: Int32): PreparedStatementSetter[Unit] = 
+    def setPStmt!(name: String, year: Int32): PreparedStatementSetter[r, Unit] \ Write(r) = 
         use BasicDb/PreparedStatementSetter.{flatMap, point, putStringAt!, putInt32At!};
         let* _ = putStringAt!(0,  name);
         let* _ = putInt32At!( 1,  year);
         point()
 
-    def rsEvalRow(): RowEvaluator[Unit] = 
+    def rsEvalRow(): RowEvaluator[r, Unit] \ { Read(r), Impure} = 
         use BasicDb/RowEvaluator.{flatMap, point, getStringAt, getInt32At, liftAction};
         let* name   = getStringAt(0);
         let* year   = getInt32At(1);
         let* _      = liftAction(_ -> println(name + ", " + Int32.toString(year)));
         point()
+
 
 }
