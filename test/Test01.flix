@@ -13,6 +13,7 @@ namespace Test01 {
     use BasicDb/DbMonad.{runSQLite, execute, createStatement, prepareStatement, 
             setAutoCommit, commit, psExecuteUpdate, executeQuery, allRowsX, rsClose};
 
+
     @test
     def test01(): Int32 & Impure = 
         region r1 {
@@ -51,6 +52,7 @@ namespace Test01 {
         let* year   = getInt32At(1);
         let* _      = liftAction(_ -> println(name + ", " + Int32.toString(year)));
         point()
+
 
 
 }

@@ -21,7 +21,6 @@ namespace BasicDb/Reader {
     use BasicDb.RowEvaluator.{RowEvaluator};
 
 
-
     pub def allRows(eval: RowEvaluator[r, a], sqlquery: String): DbMonad[r, List[a]] \ Write(r) =
         use BasicDb/DbMonad.{flatMap, point}; 
         let* stmt   = BasicDb/DbMonad.createStatement();
@@ -45,6 +44,7 @@ namespace BasicDb/Reader {
 
     pub def allRelations(eval: RowEvaluator[r, #{| reln}], sqlquery: String): DbMonad[r, #{| reln}] \ Write(r) =
         foldAllRows((ac, x) -> ac <+> x, #{}, eval, sqlquery)
+
 
 
 }

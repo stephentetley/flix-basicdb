@@ -19,7 +19,7 @@ namespace BasicDb {
     use BasicDb.RowEvaluator;
     use BasicDb.RowEvaluator.{RowEvaluator};
 
-    pub enum RowEvaluator[_: Region, a: Type](##java.sql.ResultSet -> Result[a, String])
+    pub enum RowEvaluator[r: Region, a: Type](##java.sql.ResultSet -> Result[a, String] & r)
 
     instance Functor[RowEvaluator[r]] { 
         pub def map(f: a -> b & ef, x: RowEvaluator[r, a]): RowEvaluator[r, b] & ef = 
@@ -46,24 +46,24 @@ namespace BasicDb/RowEvaluator {
     use BasicDb.RowEvaluator;
     use BasicDb.RowEvaluator.{RowEvaluator};
 
-    pub def point(x: a): RowEvaluator[r, a] = RowEvaluator(_ -> Ok(x))
+    pub def point(x: a): RowEvaluator[r, a] = RowEvaluator(_ -> Ok(x) as & r)
 
-    pub def throwError(msg: String): RowEvaluator[r, a] = RowEvaluator(_ -> Err(msg))
+    pub def throwError(msg: String): RowEvaluator[r, a] = RowEvaluator(_ -> Err(msg) as & r)
 
-    def apply1(x: RowEvaluator[r, a], r: ##java.sql.ResultSet): Result[a, String] =
+    def apply1(x: RowEvaluator[r, a], r: ##java.sql.ResultSet): Result[a, String] & r =
         let RowEvaluator(f) = x;
         f(r)
 
 
     def getRowEvaluatorRegion(): RowEvaluator[r, Region[r]] = 
-        RowEvaluator(_ -> Ok(() as Region[r]))
+        RowEvaluator(_ -> Ok(() as Region[r]) as & r)
 
 
     pub def map(f: a -> b & ef, x: RowEvaluator[r, a]): RowEvaluator[r, b] & ef =
         RowEvaluator(row ->
             match apply1(x, row) {
                 case Ok(a) => {
-                    let ans = f(a) as & Pure;
+                    let ans = f(a) as & r;
                     Ok(ans)
                 }
                 case Err(e) => Err(e)
@@ -75,7 +75,7 @@ namespace BasicDb/RowEvaluator {
             match apply1(mf, row) {
                 case Ok(f) => {
                     match apply1(ma, row) {
-                        case Ok(a) => Ok(f(a) as & Pure)
+                        case Ok(a) => Ok(f(a) as & r)
                         case Err(e2) => Err(e2)
                     }
                 }
@@ -90,7 +90,7 @@ namespace BasicDb/RowEvaluator {
     pub def flatMap(k: a -> RowEvaluator[r, b] & ef, x: RowEvaluator[r, a]): RowEvaluator[r, b] & ef =
         RowEvaluator(row ->
             match apply1(x, row) {
-                case Ok(a)  => {let ans = k(a) as & Pure; apply1(ans, row)}
+                case Ok(a)  => {let ans = k(a) as & r; apply1(ans, row)}
                 case Err(e) => Err(e)
             }
         ) as & ef
@@ -136,15 +136,15 @@ namespace BasicDb/RowEvaluator {
     }
 
     def liftPrim(ask: ##java.sql.ResultSet -> Result[a, String] & ef): RowEvaluator[r, a] & ef =
-        RowEvaluator(row -> ask(row) as & Pure) as & ef
+        RowEvaluator(row -> ask(row) as & r) as & ef
 
     
     pub def liftAction(fn: Unit -> a & ef): RowEvaluator[r, a] & ef =
-        RowEvaluator(_ -> let x = fn() as & Pure; Ok(x)) as & ef
+        RowEvaluator(_ -> let x = fn() as & r; Ok(x)) as & ef
     
         
     pub def liftActionResult(fn: Unit -> Result[a, String] & ef): RowEvaluator[r, a] & ef =
-        RowEvaluator(_ -> fn() as & Pure) as & ef
+        RowEvaluator(_ -> fn() as & r) as & ef
 
 
     // // Note - the primitive getX and setX! functions index from 1, we add 1 to calls
