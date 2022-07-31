@@ -3,7 +3,7 @@
 A basic monadic database interface for Flix using JDBC.
 
 To run the tests or programs depending on this library you are likely to 
-have to use the classpath option to tell java where to find to the JDBC diriver.
+have to use the classpath option to tell java where to find to the JDBC driver.
 
 In the command below `sqlite-jdbc-3.36.n.n.jar` is in the folder `lib`:
 
@@ -16,14 +16,16 @@ another jar store.
 Dependencies: 
 
 https://github.com/stephentetley/flix-time
-https://github.com/stephentetley/flix-sandbox
-https://github.com/stephentetley/charset-locale
-https://github.com/stephentetley/collection-interop
 
-Apache Commons IO
+https://github.com/stephentetley/interop-filepath
 
-Compatible *.pkg and *.jar files are included in the folder `lib`.
+https://github.com/stephentetley/interop-charset-locale
 
-To connect to a specific database you will likely need an appropriate JDBC jar.
+https://github.com/stephentetley/interop-collections
+
+
+Compatible *.pkg files are included in the folder `lib`.
+
+To connect to a specific database you will need an appropriate JDBC jar.
 A jar for SQLite is included in the `lib` folder.
 

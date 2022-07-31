@@ -52,7 +52,7 @@ namespace BasicDb {
 
 namespace BasicDb/DbMonad {
 
-    use FlixSandbox/System.FilePath;
+    use Interop/System.FilePath;
 
     use BasicDb.DbMonad;
     use BasicDb.DbMonad.{DbMonad};
@@ -88,12 +88,12 @@ namespace BasicDb/DbMonad {
         
 
     pub def runSQLite(r: Region[r], ma: DbMonad[r, a], path: FilePath): Result[a, String] \ { r, Impure } = 
-        use FlixSandbox/System/FilePath.{normalize};
+        use Interop/System/FilePath.{normalize};
         let url = "jdbc:sqlite:${normalize(path)}";
         runDbMonad(r, ma, url)
 
     pub def runDuckDB(r: Region[r], ma: DbMonad[r, a], path: FilePath): Result[a, String] \ { r, Impure } = 
-        use FlixSandbox/System/FilePath.{normalize};
+        use Interop/System/FilePath.{normalize};
         let url = "jdbc:duckdb:${normalize(path)}";
         runDbMonad(r, ma, url)
 
@@ -146,12 +146,12 @@ namespace BasicDb/DbMonad {
         ) as & Impure
 
     pub def localSQLiteConnection(r: Region[r], path: FilePath, ma: DbMonad[r, a]): DbMonad[r, a] \ { r, Impure } = 
-        use FlixSandbox/System/FilePath.{normalize};
+        use Interop/System/FilePath.{normalize};
         let url = "jdbc:sqlite:${normalize(path)}";
         localConnection(r, url, ma)
 
     pub def localDuckDBConnection(r: Region[r], path: FilePath, ma: DbMonad[r, a]): DbMonad[r, a] \ { r, Impure } =
-        use FlixSandbox/System/FilePath.{normalize};
+        use Interop/System/FilePath.{normalize};
         let url = "jdbc:duckdb:${normalize(path)}";
         localConnection(r, url, ma)
 

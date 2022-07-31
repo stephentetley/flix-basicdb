@@ -17,7 +17,7 @@ namespace Test02 {
     @test
     def testRead01(): Int32 & Impure = 
         region r1 {
-            match runSQLite(r1, query1(), FlixSandbox/System/FilePath.filePath("e:/coding/flix/flix-basicdb/data/langs.sqlite")) {
+            match runSQLite(r1, query1(), Interop/System/FilePath.filePath("e:/coding/flix/flix-basicdb/data/langs.sqlite")) {
                 case Err(e) => {println("Error: ${e}"); 1}
                 case Ok(_) => 0
             }
