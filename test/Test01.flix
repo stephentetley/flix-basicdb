@@ -17,7 +17,8 @@ namespace Test01 {
     @test
     def test01(): Int32 & Impure = 
         region r1 {
-            match runSQLite(r1, action1(), Interop/System/FilePath.filePath("e:/coding/flix/flix-basicdb/data/dbms1.sqlite")) {
+            let path1 = Basis/System/FilePath.filePath("e:/coding/flix/flix-basicdb/data/dbms1.sqlite") |> Result.getWithDefault(Basis/System/FilePath.empty());
+            match runSQLite(r1, action1(), path1) {
                 case Err(e) => {println("Error: ${e}"); 1}
                 case Ok(_) => 0
             }
