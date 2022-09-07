@@ -21,10 +21,13 @@ namespace BasicDb {
     /// analogous to Haskell's IO so we pu it in a region (even though we can't create on 
     /// outside of Impure / IO).
 
-    pub enum DbMonad[r: Region, a: Type](##java.sql.Connection -> Result[a, String] & r)
+    /// TODO - codensity and pass a region so there aren't pure expressions that 
+    /// the compiler might write...
+
+    pub enum DbMonad[r: Region, a: Type](##java.sql.Connection -> Result[a, String] \ r)
 
     instance Functor[DbMonad[r]] { 
-        pub def map(f: a -> b & ef, x: DbMonad[r, a]): DbMonad[r, b] & ef = 
+        pub def map(f: a -> b \ ef, x: DbMonad[r, a]): DbMonad[r, b] \ ef = 
             BasicDb/DbMonad.map(f, x)
     }
 
@@ -32,12 +35,12 @@ namespace BasicDb {
         pub def point(x: a): DbMonad[r, a] = 
             BasicDb/DbMonad.point(x)
 
-        pub def ap(f: DbMonad[r, a -> b & ef], x: DbMonad[r, a]): DbMonad[r, b] & ef = 
+        pub def ap(f: DbMonad[r, a -> b \ ef], x: DbMonad[r, a]): DbMonad[r, b] \ ef = 
             BasicDb/DbMonad.ap(f, x)
     }
 
     instance Monad[DbMonad[r]] { 
-        pub def flatMap(k: a -> DbMonad[r, b] & ef, x: DbMonad[r, a]): DbMonad[r, b] & ef = 
+        pub def flatMap(k: a -> DbMonad[r, b] \ ef, x: DbMonad[r, a]): DbMonad[r, b] \ ef = 
             BasicDb/DbMonad.flatMap(k, x)
     }
 
@@ -98,17 +101,17 @@ namespace BasicDb/DbMonad {
         runDbMonad(r, ma, url)
 
 
-    def apply1(ma: DbMonad[r, a], conn: ##java.sql.Connection): Result[a, String] & r = 
+    def apply1(ma: DbMonad[r, a], conn: ##java.sql.Connection): Result[a, String] \ r = 
         let DbMonad(x1) = ma;
         x1(conn)
     
     def getDbMonadRegion(): DbMonad[r, Region[r]] = 
-        DbMonad(_ -> Ok(() as Region[r]) as & r)
+        DbMonad(_ -> Ok(() as Region[r]) as \ r)
 
 
-    pub def point(x: a): DbMonad[r, a] = DbMonad(_ -> Ok(x) as & r)
+    pub def point(x: a): DbMonad[r, a] = DbMonad(_ -> Ok(x) as \ r)
 
-    pub def throwError(msg: String): DbMonad[r, a] = DbMonad(_ -> Err(msg) as & r)
+    pub def throwError(msg: String): DbMonad[r, a] = DbMonad(_ -> Err(msg) as \ r)
 
 
     pub def swapError(ma: DbMonad[r, a], msg: String): DbMonad[r, a] =
@@ -131,10 +134,10 @@ namespace BasicDb/DbMonad {
             case Err(e) => Err(f(e))
         })
 
-    pub def localConnection(r: Region[r], url: String, ma: DbMonad[r, a]): DbMonad[r, a] \ { r, Impure } =
+    pub def localConnection(r: Region[r], url: String, ma: DbMonad[r, a]): DbMonad[r, a] \ { r, IO } =
         use BasicDb/Internal/Prim.{dmGetConnection, closeConnection};
         DbMonad(_ -> 
-            match (dmGetConnection(r, url) as & r) {
+            match (dmGetConnection(r, url) as \ r) {
                 case Err(e)   => Err(e)
                 case Ok(conn) => {
                     let ans1 = apply1(ma, conn);
@@ -143,45 +146,45 @@ namespace BasicDb/DbMonad {
                     ans1
                 }
             }
-        ) as & Impure
+        ) as \ IO
 
-    pub def localSQLiteConnection(r: Region[r], path: FilePath, ma: DbMonad[r, a]): DbMonad[r, a] \ { r, Impure } = 
+    pub def localSQLiteConnection(r: Region[r], path: FilePath, ma: DbMonad[r, a]): DbMonad[r, a] \ { r, IO } = 
         use Basis/System/FilePath.{normalize};
         let url = "jdbc:sqlite:${normalize(path)}";
         localConnection(r, url, ma)
 
-    pub def localDuckDBConnection(r: Region[r], path: FilePath, ma: DbMonad[r, a]): DbMonad[r, a] \ { r, Impure } =
+    pub def localDuckDBConnection(r: Region[r], path: FilePath, ma: DbMonad[r, a]): DbMonad[r, a] \ { r, IO } =
         use Basis/System/FilePath.{normalize};
         let url = "jdbc:duckdb:${normalize(path)}";
         localConnection(r, url, ma)
 
 
     /// Needs to allow allow effects (e.g create / access arrays)
-    pub def map(fn: a -> b & ef, ma: DbMonad[r, a]): DbMonad[r, b] & ef = 
+    pub def map(fn: a -> b \ ef, ma: DbMonad[r, a]): DbMonad[r, b] \ ef = 
         DbMonad(conn -> match apply1(ma, conn) { 
-            case Ok(a) => {let ans = fn(a) as & Pure; Ok(ans)}
+            case Ok(a) => {let ans = fn(a) as \ {}; Ok(ans)}
             case Err(e) => Err(e)
-        }) as & ef
+        }) as \ ef
 
-    pub def ap(mf: DbMonad[r, a -> b & ef], ma: DbMonad[r, a]): DbMonad[r, b] & ef = 
+    pub def ap(mf: DbMonad[r, a -> b \ ef], ma: DbMonad[r, a]): DbMonad[r, b] \ ef = 
         DbMonad(conn -> match apply1(mf, conn) { 
             case Ok(f) => match apply1(ma, conn) { 
-                case Ok(a) => {let ans = f(a) as & Pure; Ok(ans)}
+                case Ok(a) => {let ans = f(a) as \ {}; Ok(ans)}
                 case Err(e) => Err(e)
             }
             case Err(e) => Err(e)
-        }) as & ef
+        }) as \ ef
 
 
 
 
-    pub def bind(ma: DbMonad[r, a], fn: a -> DbMonad[r, b] & ef): DbMonad[r, b] & ef = 
+    pub def bind(ma: DbMonad[r, a], fn: a -> DbMonad[r, b] \ ef): DbMonad[r, b] \ ef = 
         DbMonad(conn -> match apply1(ma, conn) { 
-            case Ok(a) => apply1(fn(a) as & Pure, conn)
+            case Ok(a) => apply1(fn(a) as \ {}, conn)
             case Err(e) => Err(e)
-        }) as & ef
+        }) as \ ef
 
-    pub def flatMap(fn: a -> DbMonad[r, b] & ef, ma: DbMonad[r, a]): DbMonad[r, b] & ef = bind(ma, fn)
+    pub def flatMap(fn: a -> DbMonad[r, b] \ ef, ma: DbMonad[r, a]): DbMonad[r, b] \ ef = bind(ma, fn)
 
 
 
@@ -299,14 +302,14 @@ namespace BasicDb/DbMonad {
     }
 
 
-    def liftConnectionPrim(fn: ##java.sql.Connection -> Result[a, String] & ef): DbMonad[r, a] & ef= 
-        DbMonad(conn -> fn(conn) as & r) as & ef
+    def liftConnectionPrim(fn: ##java.sql.Connection -> Result[a, String] \ ef): DbMonad[r, a] \ ef= 
+        DbMonad(conn -> fn(conn) as \ r) as \ ef
 
-    pub def liftAction(fn: Unit -> a & ef): DbMonad[r, a] & ef = 
-        DbMonad(_ -> {let a = fn() as & r; Ok(a)}) as & ef
+    pub def liftAction(fn: Unit -> a \ ef): DbMonad[r, a] \ ef = 
+        DbMonad(_ -> {let a = fn() as \ r; Ok(a)}) as \ ef
 
-    pub def liftActionResult(fn: Unit -> Result[a, String] & ef): DbMonad[r, a] & ef= 
-        DbMonad(_ -> fn() as & r) as & ef
+    pub def liftActionResult(fn: Unit -> Result[a, String] \ ef): DbMonad[r, a] \ ef= 
+        DbMonad(_ -> fn() as \ r) as \ ef
 
     // DB operations
 
@@ -405,7 +408,7 @@ namespace BasicDb/DbMonad {
         let* r = getDbMonadRegion();
         liftActionResult(_ -> next(r, rs1))
 
-    pub def rsEval(rs: ResultSet, eval: RowEvaluator[r, a]): DbMonad[r, a] & r =
+    pub def rsEval(rs: ResultSet, eval: RowEvaluator[r, a]): DbMonad[r, a] \ r =
         let RowEvaluator(f) = eval;
         let ResultSet(rs1) = rs;
         liftActionResult(_ -> f(rs1))
@@ -488,23 +491,23 @@ namespace BasicDb/DbMonad {
     /// TODO 
     /// DbMonad should be rewritten in CPS and these functions put in a common library.
 
-    pub def mapM(mf: a -> DbMonad[r, b] & ef, xs: List[a]): DbMonad[r, List[b]] & ef =
+    pub def mapM(mf: a -> DbMonad[r, b] \ ef, xs: List[a]): DbMonad[r, List[b]] \ ef =
         DbMonad(conn ->
             mapMHelper(conn, mf, xs, e -> Err(e), ks -> Ok(ks))
-        ) as & ef
+        ) as \ ef
 
     ///
     /// Helper function for `mapM`.
     ///
     def mapMHelper(conn: ##java.sql.Connection, 
-                   mf: a -> DbMonad[r, b] & ef, 
+                   mf: a -> DbMonad[r, b] \ ef, 
                    xs: List[a], 
                    fk: String -> Result[List[b], String], 
-                   sk: List[b] -> Result[List[b], String]): Result[List[b], String] & r =
+                   sk: List[b] -> Result[List[b], String]): Result[List[b], String] \ r =
         match xs {
             case Nil => sk(Nil)
             case x :: rs => {
-                let ma = mf(x) as & r;
+                let ma = mf(x) as \ r;
                 match apply1(ma, conn) {
                     case Err(e) => fk(e)
                     case Ok(x1) => mapMHelper(conn, mf, rs, fk, ks -> sk(x1 :: ks))
@@ -513,20 +516,20 @@ namespace BasicDb/DbMonad {
         }
 
 
-    pub def mapX(mf: a -> DbMonad[r, b] & ef, xs: List[a]): DbMonad[r, Unit] & ef =
+    pub def mapX(mf: a -> DbMonad[r, b] \ ef, xs: List[a]): DbMonad[r, Unit] \ ef =
         DbMonad(conn ->
             mapXHelper(conn, mf, xs, e -> Err(e), _ -> Ok())
-        ) as & ef
+        ) as \ ef
 
     def mapXHelper(conn: ##java.sql.Connection, 
-                   mf: a -> DbMonad[r, b] & ef, 
+                   mf: a -> DbMonad[r, b] \ ef, 
                    xs: List[a], 
                    fk: String -> Result[Unit, String], 
-                   sk: Unit -> Result[Unit, String]): Result[Unit, String] & r =
+                   sk: Unit -> Result[Unit, String]): Result[Unit, String] \ r =
         match xs {
             case Nil => sk()
             case x :: rs => {
-                let ma = mf(x) as & r;
+                let ma = mf(x) as \ r;
                 match apply1(ma, conn) {
                     case Err(e) => fk(e)
                     case Ok(_) => mapXHelper(conn, mf, rs, fk, sk)
@@ -535,24 +538,24 @@ namespace BasicDb/DbMonad {
         }
 
 
-    pub def mapWithIndexM(mf: (a, Int32) -> DbMonad[r, b] & ef, xs: List[a]): DbMonad[r, List[b]] & ef =
+    pub def mapWithIndexM(mf: (a, Int32) -> DbMonad[r, b] \ ef, xs: List[a]): DbMonad[r, List[b]] \ ef =
         DbMonad(conn ->
             mapWithIndexMHelper(conn, mf, 0, xs, e -> Err(e), ks -> Ok(ks))
-        ) as & ef
+        ) as \ ef
 
     ///
     /// Helper function for `mapM`.
     ///
     def mapWithIndexMHelper(conn: ##java.sql.Connection, 
-                            mf: (a, Int32) -> DbMonad[r, b] & ef, 
+                            mf: (a, Int32) -> DbMonad[r, b] \ ef, 
                             ix : Int32, 
                             xs: List[a], 
                             fk: String -> Result[List[b], String], 
-                            sk: List[b] -> Result[List[b], String]): Result[List[b], String] & r =
+                            sk: List[b] -> Result[List[b], String]): Result[List[b], String] \ r =
         match xs {
             case Nil => sk(Nil)
             case x :: rs => {
-                let ma = mf(x, ix) as & r;
+                let ma = mf(x, ix) as \ r;
                 match apply1(ma, conn) {
                     case Err(e) => fk(e)
                     case Ok(x1) => mapWithIndexMHelper(conn, mf, ix + 1, rs, fk, ks -> sk(x1 :: ks))
@@ -560,21 +563,21 @@ namespace BasicDb/DbMonad {
             }
         }
 
-    pub def mapWithIndexX(mf: (a, Int32) -> DbMonad[r, b] & ef, xs: List[a]): DbMonad[r, Unit] & ef =
+    pub def mapWithIndexX(mf: (a, Int32) -> DbMonad[r, b] \ ef, xs: List[a]): DbMonad[r, Unit] \ ef =
         DbMonad(conn ->
             mapWithIndexXHelper(conn, mf, 0, xs, e -> Err(e), _ -> Ok())
-        ) as & ef
+        ) as \ ef
 
     def mapWithIndexXHelper(conn: ##java.sql.Connection, 
-                            mf: (a, Int32) -> DbMonad[r, b] & ef,
+                            mf: (a, Int32) -> DbMonad[r, b] \ ef,
                             ix: Int32, 
                             xs: List[a], 
                             fk: String -> Result[Unit, String], 
-                            sk: Unit -> Result[Unit, String]): Result[Unit, String] & r =
+                            sk: Unit -> Result[Unit, String]): Result[Unit, String] \ r =
         match xs {
             case Nil => sk()
             case x :: rs => {
-                let ma = mf(x, ix) as & r;
+                let ma = mf(x, ix) as \ r;
                 match apply1(ma, conn) {
                     case Err(e) => fk(e)
                     case Ok(_) => mapWithIndexXHelper(conn, mf, ix + 1, rs, fk, sk)
@@ -594,7 +597,7 @@ namespace BasicDb/DbMonad {
     def sequenceHelper(conn: ##java.sql.Connection,
                        xs: List[DbMonad[r, a]],
                        fk: String -> Result[List[a], String],
-                       sk: List[a] -> Result[List[a], String]): Result[List[a], String] & r =
+                       sk: List[a] -> Result[List[a], String]): Result[List[a], String] \ r =
         match xs {
             case Nil => sk(Nil)
             case mx :: rs => match apply1(mx, conn) {
@@ -610,39 +613,39 @@ namespace BasicDb/DbMonad {
     ///
     /// `traverse` is a synonym for `mapM`.
     ///
-    pub def traverse(f: a -> DbMonad[r, b] & ef, xs: List[a]): DbMonad[r, List[b]] & ef = mapM(f, xs)
+    pub def traverse(f: a -> DbMonad[r, b] \ ef, xs: List[a]): DbMonad[r, List[b]] \ ef = mapM(f, xs)
 
     ///
     /// `traverseX` is a synonym for `mapX`.
     ///
-    pub def traverseX(f: a -> DbMonad[r, b] & ef, xs: List[a]): DbMonad[r, Unit] & ef = mapX(f, xs)
+    pub def traverseX(f: a -> DbMonad[r, b] \ ef, xs: List[a]): DbMonad[r, Unit] \ ef = mapX(f, xs)
 
     ///
     /// `forM` is `mapM` with its arguments flipped.
     ///
-    pub def forM(xs: List[a], f: a -> DbMonad[r, b] & ef): DbMonad[r, List[b]] & ef = mapM(f, xs)
+    pub def forM(xs: List[a], f: a -> DbMonad[r, b] \ ef): DbMonad[r, List[b]] \ ef = mapM(f, xs)
 
     ///
     /// `forX` is `mapX` with its arguments flipped.
     ///
-    pub def forX(xs: List[a], f: a -> DbMonad[r, b] & ef): DbMonad[r, Unit] & ef = mapX(f, xs)
+    pub def forX(xs: List[a], f: a -> DbMonad[r, b] \ ef): DbMonad[r, Unit] \ ef = mapX(f, xs)
 
 
-    pub def foldLeftM(mf: (b, a) -> DbMonad[r, b] & ef, start: b, xs: List[a]): DbMonad[r, b] & ef =
+    pub def foldLeftM(mf: (b, a) -> DbMonad[r, b] \ ef, start: b, xs: List[a]): DbMonad[r, b] \ ef =
         DbMonad(conn ->
             foldLeftMHelper(conn, mf, start, xs, e -> Err(e), ac -> Ok(ac))
-        ) as & ef
+        ) as \ ef
 
     def foldLeftMHelper(conn: ##java.sql.Connection, 
-                    mf: (b, a) -> DbMonad[r, b] & ef,
+                    mf: (b, a) -> DbMonad[r, b] \ ef,
                     acc: b, 
                     xs: List[a], 
                     fk: String -> Result[b, String], 
-                    sk: b -> Result[b, String]): Result[b, String] & r =
+                    sk: b -> Result[b, String]): Result[b, String] \ r =
         match xs {
             case Nil => sk(acc)
             case x :: rs => {
-                let ma = mf(acc, x) as & r;
+                let ma = mf(acc, x) as \ r;
                 match apply1(ma, conn) {
                     case Err(e)   => fk(e)
                     case Ok(acc1) => foldLeftMHelper(conn, mf, acc1, rs, fk, sk)
@@ -653,16 +656,16 @@ namespace BasicDb/DbMonad {
 
     /// Note `foldRightM` does not short-circuit on failure as it has to traverse the list
     /// to start at the right.
-    pub def foldRightM(mf: (a, b) -> DbMonad[r, b] & ef, start: b, xs: List[a]): DbMonad[r, b] \ { r, ef } = 
-        foldRightMHelper(mf, point(start), xs, ms -> ms as & ef)
+    pub def foldRightM(mf: (a, b) -> DbMonad[r, b] \ ef, start: b, xs: List[a]): DbMonad[r, b] \ { r, ef } = 
+        foldRightMHelper(mf, point(start), xs, ms -> ms as \ ef)
 
     ///
     /// Helper function for `foldRightM`.
     ///
-    def foldRightMHelper(f: (a, b) -> DbMonad[r, b] & ef, 
+    def foldRightMHelper(f: (a, b) -> DbMonad[r, b] \ ef, 
                             s: DbMonad[r, b], 
                             xs: List[a], 
-                            k: DbMonad[r, b] -> DbMonad[r, b] & ef): DbMonad[r, b] \ { r, ef }= 
+                            k: DbMonad[r, b] -> DbMonad[r, b] \ ef): DbMonad[r, b] \ { r, ef }= 
         match xs {
             case Nil => k(s)
             case x :: rs => foldRightMHelper(f, s, rs, ms -> k(bind(ms, s1 -> f(x, s1))))
@@ -675,15 +678,15 @@ namespace BasicDb/DbMonad {
         )
 
     def mapAccumMHelper(conn: ##java.sql.Connection,
-                        mf: (ac, a) -> DbMonad[r, (ac, b)] & ef,
+                        mf: (ac, a) -> DbMonad[r, (ac, b)] \ ef,
                         ac: ac,
                         xs: List[a],
                         fk: String -> Result[(ac, List[b]), String],
-                        sk: (ac, List[b]) -> Result[(ac, List[b]), String]): Result[(ac, List[b]), String] & r=
+                        sk: (ac, List[b]) -> Result[(ac, List[b]), String]): Result[(ac, List[b]), String] \ r=
         match xs {
             case Nil => sk(ac, Nil)
             case x :: rs => {
-                let ma = mf(ac, x) as & r;
+                let ma = mf(ac, x) as \ r;
                 match apply1(ma, conn) {
                     case Err(e)        => fk(e)
                     case Ok((ac1, x1)) => mapAccumMHelper(conn, mf, ac1, rs, fk, (ac2, ks) -> sk(ac2, x1 :: ks))
@@ -694,26 +697,26 @@ namespace BasicDb/DbMonad {
     ///
     /// `mapAccumX` is a synonym for `foldM`.
     ///
-    pub def mapAccumX(mf: (ac, a) -> DbMonad[r, ac] & ef, start: ac, xs: List[a]): DbMonad[r, ac] & ef = foldLeftM(mf, start, xs)
+    pub def mapAccumX(mf: (ac, a) -> DbMonad[r, ac] \ ef, start: ac, xs: List[a]): DbMonad[r, ac] \ ef = foldLeftM(mf, start, xs)
 
 
-    pub def filterMapM(mf: a -> DbMonad[r, Option[b]] & ef, xs: List[a]): DbMonad[r, List[b]] & ef =
+    pub def filterMapM(mf: a -> DbMonad[r, Option[b]] \ ef, xs: List[a]): DbMonad[r, List[b]] \ ef =
         DbMonad(conn ->
             filterMapMHelper(conn, mf, xs, e -> Err(e), ks -> Ok(ks))
-        ) as & ef
+        ) as \ ef
 
     ///
     /// Helper function for `filterMapM`.
     ///
     def filterMapMHelper(conn: ##java.sql.Connection,
-                         mf: a -> DbMonad[r, Option[b]] & ef,
+                         mf: a -> DbMonad[r, Option[b]] \ ef,
                          xs: List[a],
                          fk: String -> Result[List[b], String],
-                         sk: List[b] -> Result[List[b], String]): Result[List[b], String] & r =
+                         sk: List[b] -> Result[List[b], String]): Result[List[b], String] \ r =
         match xs {
             case Nil => sk(Nil)
             case x :: rs => {
-                let ma = mf(x) as & r; 
+                let ma = mf(x) as \ r; 
                 match apply1(ma, conn) {
                     case Err(e) => fk(e)
                     case Ok(ans) => match ans { 
@@ -735,7 +738,7 @@ namespace BasicDb/DbMonad {
                          ma: DbMonad[r, a],
                          n: Int32,
                          fk: String -> Result[List[a], String],
-                         sk: List[a] -> Result[List[a], String]): Result[List[a], String] & r =
+                         sk: List[a] -> Result[List[a], String]): Result[List[a], String] \ r =
         if (n <= 0) 
             sk(Nil)
         else 
@@ -754,7 +757,7 @@ namespace BasicDb/DbMonad {
                          ma: DbMonad[r, a],
                          n: Int32,
                          fk: String -> Result[Unit, String],
-                         sk: Unit -> Result[Unit, String]): Result[Unit, String] & r =
+                         sk: Unit -> Result[Unit, String]): Result[Unit, String] \ r =
         if (n <= 0) 
             sk()
         else 

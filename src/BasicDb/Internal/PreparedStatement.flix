@@ -17,118 +17,142 @@
 namespace BasicDb/Internal/PreparedStatement {
 
     pub def sql_type_null(): Int32 =
-        import static get java.sql.Types.NULL: Int32 & Pure as getNULL;
+        import static get java.sql.Types.NULL: Int32 \ {} as getNULL;
         getNULL()
 
     pub def clearParameters!(_: Region[r], x: ##java.sql.PreparedStatement): Result[Unit, String] \ Write(r) =
-        import java.sql.PreparedStatement.clearParameters(): Unit & r;
+        import java.sql.PreparedStatement.clearParameters(): Unit \ r;
         try {
             clearParameters(x);
             Ok()
         } catch {
-            case _: ##java.sql.SQLException => Err("clearParameters!")
+            case ex: ##java.lang.Exception => 
+                import java.lang.Throwable.getMessage(): String \ r;
+                Err(getMessage(ex))
         }
 
 
     pub def executeQuery(_: Region[r], x: ##java.sql.PreparedStatement): Result[##java.sql.ResultSet, String] \ Write(r) =
-        import java.sql.PreparedStatement.executeQuery(): ##java.sql.ResultSet & r;
+        import java.sql.PreparedStatement.executeQuery(): ##java.sql.ResultSet \ r;
         try {
             let ans = executeQuery(x);
             Ok(ans)
         } catch {
-            case _: ##java.sql.SQLException => Err("executeQuery")
+            case ex: ##java.lang.Exception => 
+                import java.lang.Throwable.getMessage(): String \ r;
+                Err(getMessage(ex))
         }
 
     pub def executeUpdate(_: Region[r], x: ##java.sql.PreparedStatement): Result[Int32, String] \ Write(r) =
-        import java.sql.PreparedStatement.executeUpdate(): Int32 & r;
+        import java.sql.PreparedStatement.executeUpdate(): Int32 \ r;
         try {
             let ans = executeUpdate(x);
             Ok(ans)
         } catch {
-            case _: ##java.sql.SQLException => Err("executeUpdate")
+            case ex: ##java.lang.Exception => 
+                import java.lang.Throwable.getMessage(): String \ r;
+                Err(getMessage(ex))
         }
 
 
 
     pub def setNull!(_: Region[r], ix: Int32, sqlType: Int32, x: ##java.sql.PreparedStatement): Result[Unit, String] \ Write(r) =
-        import java.sql.PreparedStatement.setNull(Int32, Int32): Unit & r;
+        import java.sql.PreparedStatement.setNull(Int32, Int32): Unit \ r;
         try {
             setNull(x, ix, sqlType);
             Ok()
         } catch {
-            case _: ##java.sql.SQLException => Err("setNull!")
+            case ex: ##java.lang.Exception => 
+                import java.lang.Throwable.getMessage(): String \ r;
+                Err(getMessage(ex))
         }
 
     pub def setString!(_: Region[r], ix: Int32, str: String, x: ##java.sql.PreparedStatement): Result[Unit, String] \ Write(r) =
-        import java.sql.PreparedStatement.setString(Int32, String): Unit & r;
+        import java.sql.PreparedStatement.setString(Int32, String): Unit \ r;
         try {
             setString(x, ix, str);
             Ok()
         } catch {
-            case _: ##java.sql.SQLException => Err("setString!")
+            case ex: ##java.lang.Exception => 
+                import java.lang.Throwable.getMessage(): String \ r;
+                Err(getMessage(ex))
         }
 
     pub def setBool!(_: Region[r], ix: Int32, b: Bool, x: ##java.sql.PreparedStatement): Result[Unit, String] \ Write(r) =
-        import java.sql.PreparedStatement.setBoolean(Int32, Bool): Unit & r;
+        import java.sql.PreparedStatement.setBoolean(Int32, Bool): Unit \ r;
         try {
             setBoolean(x, ix, b);
             Ok()
         } catch {
-            case _: ##java.sql.SQLException => Err("setBool!")
+            case ex: ##java.lang.Exception => 
+                import java.lang.Throwable.getMessage(): String \ r;
+                Err(getMessage(ex))
         }
 
     pub def setInt8!(_: Region[r], ix: Int32, n: Int8, x: ##java.sql.PreparedStatement): Result[Unit, String] \ Write(r) =
-        import java.sql.PreparedStatement.setByte(Int32, Int8): Unit & r;
+        import java.sql.PreparedStatement.setByte(Int32, Int8): Unit \ r;
         try {
             setByte(x, ix, n);
             Ok()
         } catch {
-            case _: ##java.sql.SQLException => Err("setInt8!")
+            case ex: ##java.lang.Exception => 
+                import java.lang.Throwable.getMessage(): String \ r;
+                Err(getMessage(ex))
         }
 
     pub def setInt16!(_: Region[r], ix: Int32, n: Int16, x: ##java.sql.PreparedStatement): Result[Unit, String] \ Write(r) =
-        import java.sql.PreparedStatement.setShort(Int32, Int16): Unit & r;
+        import java.sql.PreparedStatement.setShort(Int32, Int16): Unit \ r;
         try {
             setShort(x, ix, n);
             Ok()
         } catch {
-            case _: ##java.sql.SQLException => Err("setInt16!")
+            case ex: ##java.lang.Exception => 
+                import java.lang.Throwable.getMessage(): String \ r;
+                Err(getMessage(ex))
         }
 
     pub def setInt32!(_: Region[r], ix: Int32, n: Int32, x: ##java.sql.PreparedStatement): Result[Unit, String] \ Write(r) =
-        import java.sql.PreparedStatement.setInt(Int32, Int32): Unit & r;
+        import java.sql.PreparedStatement.setInt(Int32, Int32): Unit \ r;
         try {
             setInt(x, ix, n);
             Ok()
         } catch {
-            case _: ##java.sql.SQLException => Err("setInt32!")
+            case ex: ##java.lang.Exception => 
+                import java.lang.Throwable.getMessage(): String \ r;
+                Err(getMessage(ex))
         }
 
     pub def setInt64!(_: Region[r], ix: Int32, n: Int64, x: ##java.sql.PreparedStatement): Result[Unit, String] \ Write(r) =
-        import java.sql.PreparedStatement.setLong(Int32, Int64): Unit & r;
+        import java.sql.PreparedStatement.setLong(Int32, Int64): Unit \ r;
         try {
             setLong(x, ix, n);
             Ok()
         } catch {
-            case _: ##java.sql.SQLException => Err("setInt64!")
+            case ex: ##java.lang.Exception => 
+                import java.lang.Throwable.getMessage(): String \ r;
+                Err(getMessage(ex))
         }
 
     pub def setFloat32!(_: Region[r], ix: Int32, d: Float32, x: ##java.sql.PreparedStatement): Result[Unit, String] \ Write(r) =
-        import java.sql.PreparedStatement.setFloat(Int32, Float32): Unit & r;
+        import java.sql.PreparedStatement.setFloat(Int32, Float32): Unit \ r;
         try {
             setFloat(x, ix, d);
             Ok()
         } catch {
-            case _: ##java.sql.SQLException => Err("setFloat32!")
+            case ex: ##java.lang.Exception => 
+                import java.lang.Throwable.getMessage(): String \ r;
+                Err(getMessage(ex))
         }
 
     pub def setFloat64!(_: Region[r], ix: Int32, d: Float64, x: ##java.sql.PreparedStatement): Result[Unit, String] \ Write(r) =
-        import java.sql.PreparedStatement.setDouble(Int32, Float64): Unit & r;
+        import java.sql.PreparedStatement.setDouble(Int32, Float64): Unit \ r;
         try {
             setDouble(x, ix, d);
             Ok()
         } catch {
-            case _: ##java.sql.SQLException => Err("setFloat64!")
+            case ex: ##java.lang.Exception => 
+                import java.lang.Throwable.getMessage(): String \ r;
+                Err(getMessage(ex))
         }
 
 }
