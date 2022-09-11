@@ -56,9 +56,9 @@ namespace Interop/Sql/Statement {
                 Err(getMessage(ex))
         }
 
-    pub def execute!(sql: String, stmt: Statement[r]): Result[Bool, String] \ Write(r) =
+    pub def execute!(sql: String, stmt: Statement[r]): Result[Bool, String] \ {IO, Write(r)} =
         try {
-            import java.sql.Statement.execute(String): Bool \ r;
+            import java.sql.Statement.execute(String): Bool \ {IO, r};
             let Statement(stmt1) = stmt;
             let ans = execute(stmt1, sql);
             Ok(ans)

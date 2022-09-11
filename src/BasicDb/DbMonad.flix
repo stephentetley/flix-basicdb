@@ -303,7 +303,7 @@ namespace BasicDb/DbMonad {
 
     // DB operations
 
-    pub def execute(sql: String): DbMonad[r, ka, Bool] \ Write(r) = 
+    pub def executeSql!(sql: String): DbMonad[r, ka, Bool] \ {IO, Write(r)} = 
         let* stmt   = liftSetterResult!(Interop/Sql/Connection.createStatement!);
         let* ans    = liftActionResult(_ -> Interop/Sql/Statement.execute!(sql, stmt));
         let* _      = liftActionResult(_ -> Interop/Sql/Statement.close!(stmt));
@@ -314,7 +314,7 @@ namespace BasicDb/DbMonad {
     pub def setAutoCommit!(autoCommit: Bool): DbMonad[r, ka, Unit] \ Write(r) =
         liftSetterResult!(Interop/Sql/Connection.setAutoCommit!(autoCommit))
 
-    pub def commit!(): DbMonad[r, ka, Unit] \ Write(r) =
+    pub def commit!(): DbMonad[r, ka, Unit] \ {IO, Write(r)} =
         liftSetterResult!(Interop/Sql/Connection.commit!)
 
 
@@ -322,6 +322,8 @@ namespace BasicDb/DbMonad {
         liftSetterResult!(Interop/Sql/Connection.createStatement!)
 
 
+    pub def execute!(sql: String, stmt: Statement[r]): DbMonad[r, ka, Bool] \ {IO, Write(r)} =
+        liftActionResult(_ -> Interop/Sql/Statement.execute!(sql, stmt))
 
     pub def executeQuery!(sql: String, stmt: Statement[r]): DbMonad[r, ka, ResultSet[r]] \ {IO, Write(r)} =
         liftActionResult(_ -> Interop/Sql/Statement.executeQuery!(sql, stmt))
@@ -344,7 +346,7 @@ namespace BasicDb/DbMonad {
 
 
 
-    pub def psExecuteUpdate(stmt: PreparedStatement[r], setter: PreparedStatementSetter[r, a, a]): DbMonad[r, a, Int32] \ Write(r) =
+    pub def psExecuteUpdate!(stmt: PreparedStatement[r], setter: PreparedStatementSetter[r, a, a]): DbMonad[r, a, Int32] \ Write(r) =
         let* _ = liftActionResult(_ -> Interop/Sql/PreparedStatement.clearParameters!(stmt));
         let* _ = liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(() as Region[r], setter, stmt));
         liftActionResult(_ -> Interop/Sql/PreparedStatement.executeUpdate!(stmt))
@@ -404,32 +406,18 @@ namespace BasicDb/DbMonad {
             }
             case Err(e) => fk(e)
         }
-
+*/
 
     /// Note - arg order is inconsistent with List.foldLeft etc. and probably should be changed.
-    pub def foldAllRows(rs: ResultSet, step: (b, a) -> b, start: b, eval: RowEvaluator[r, a]): DbMonad[r, b] \ Write(r) = 
-        let RowEvaluator(f) = eval;
-        let ResultSet(rs1) = rs;
-        let* r = getDbMonadRegion();
-        liftActionResult(_ -> foldAllRowsHelper(r, rs1, f, step, start))
+    pub def foldAllRows(step: (b, a) -> b \ ef, start: b, eval: RowEvaluator[r, a, a], rs: ResultSet[r]): DbMonad[r, a, b] \ {ef, Write(r)} = 
+        let* more  = rsNext(rs);
+        if (more) {
+            let* a = rsEval(eval, rs);
+            foldAllRows(step, step(start, a), eval, rs)
+        } else 
+            Applicative.point(start)
 
-    /// Start with `next`
-    /// This is optimized to avoid repeated unwrapping.
-    def foldAllRowsHelper(r: Region[r], rs: ##java.sql.ResultSet, 
-                            eval: ##java.sql.ResultSet -> Result[a, String] \ Write(r),
-                            step: (b, a) -> b,
-                            ac: b): Result[b, String] \ Write(r) = 
-        use BasicDb/Internal/ResultSet.{next};                      
-        match next(r, rs) {
-            case Ok(false) => Ok(ac)
-            case Ok(true) => match eval(rs) {
-                case Ok(x) => foldAllRowsHelper(r, rs, eval, step, step(ac, x))
-                case Err(e) => Err(e)
-            }
-            case Err(e) => Err(e)
-        }
-
-
+/*
     /// TODO 
     /// DbMonad should be rewritten in CPS and these functions put in a common library.
 

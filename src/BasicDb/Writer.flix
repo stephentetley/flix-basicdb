@@ -15,45 +15,41 @@
  */
 
 namespace BasicDb/Writer {
-/*
     use Monad.{>>=};
-
     use BasicDb.DbMonad;
     use BasicDb.PreparedStatementSetter;
     
-    pub type alias RowSetter[r: Region, a: Type] = a -> PreparedStatementSetter[r, Unit]
+    pub type alias RowSetter[r: Region, a: Type, ef: Bool] = a -> PreparedStatementSetter[r, Unit, Unit] \ ef
 
 
 
-    pub def store(sqlstrings: {prepStmt :: String, tableActions :: List[String]}, 
-                    setter: RowSetter[r, a], 
-                    rows: t[a]): DbMonad[r, Int32] \ Write(r) with Foldable[t] =
-        use BasicDb/DbMonad.{flatMap, point, setAutoCommit, execute, prepareStatement, psExecuteUpdate, commit};
-        let* _          = setAutoCommit(false);
-        let* _          = Foldable.foreachM(execute, sqlstrings.tableActions);
-        let* stmt       = prepareStatement(sqlstrings.prepStmt);
+    pub def store(sqlstrings: {prepStmt = String, tableActions = List[String]}, 
+                    setter: RowSetter[r, a, ef], 
+                    rows: t[a]): DbMonad[r, Unit, Int32] \ {IO, ef, Write(r)} with Foldable[t] =
+        use BasicDb/DbMonad.{flatMap, point};
+        let* _          = BasicDb/DbMonad.setAutoCommit!(false);
+        let* _          = Foldable.foreachM(BasicDb/DbMonad.executeSql!, sqlstrings.tableActions);
+        let* stmt       = BasicDb/DbMonad.prepareStatement!(sqlstrings.prepStmt);
         let* nrows      = Foldable.foldLeftM((ac, x) -> 
-                                {let* n = psExecuteUpdate(stmt, setter(x)); point(ac+n)}, 0, rows);
-        let* _          = commit();
+                                {let* n = BasicDb/DbMonad.psExecuteUpdate!(stmt, setter(x)); point(ac+n)}, 0, rows);
+        let* _          = BasicDb/DbMonad.commit!();
         point(nrows)
 
-    pub def storeArray(sqlstrings: {prepStmt :: String, tableActions :: List[String]}, 
-                    setter: RowSetter[r, a], 
-                    rows: Array[a, r]): DbMonad[r, Int32] \ {Write(r), Read(r) } =
-        use BasicDb/DbMonad.{flatMap, point, liftAction};
-        liftAction(_ -> Array.toList(rows)) >>= store(sqlstrings, setter)
+    pub def storeArray(sqlstrings: {prepStmt = String, tableActions = List[String]}, 
+                    setter: RowSetter[r, a, ef], 
+                    rows: Array[a, r2]): DbMonad[r, Unit, Int32] \ {IO, ef, Write(r), Read(r2)} =
+        BasicDb/DbMonad.liftAction(_ -> Array.toList(rows)) >>= store(sqlstrings, setter)
 
 
-    pub def storeRelation(sqlstrings: {prepStmt :: String, tableActions :: List[String]}, 
-                    setter: RowSetter[r, a], 
-                    extractor: {| rr} -> Array[a, r] \ Write(r),
-                    reln: {| rr}): DbMonad[r, Int32] \ {Write(r), Read(r) } =
-        use BasicDb/DbMonad.{flatMap, point, liftAction};
-        liftAction(_ -> (extractor(reln) |> Array.toList)) >>= store(sqlstrings, setter)
+    pub def storeRelations(sqlstrings: {prepStmt = String, tableActions = List[String]}, 
+                    setter: RowSetter[r, a, ef], 
+                    extractor: {| rr} -> Array[a, r2] \ Write(r),
+                    reln: {| rr}): DbMonad[r, Unit, Int32] \ {IO, ef, Write(r), Write(r2)} =
+        BasicDb/DbMonad.liftAction(_ -> (extractor(reln) |> Array.toList)) >>= store(sqlstrings, setter)
         
 
     /// `append` versions without tableActions?
 
-*/
+
 }
 

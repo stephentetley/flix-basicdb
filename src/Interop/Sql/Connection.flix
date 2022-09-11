@@ -54,6 +54,8 @@ namespace Interop/Sql/Connection {
                 Err(getMessage(ex))
         }
 
+
+    /// Just modifies session connection hence not IO
     pub def setAutoCommit!(autoCommit: Bool, conn: Connection[r]): Result[Unit, String] \ Write(r)  = 
         import java.sql.Connection.setAutoCommit(Bool): Unit \ r;
         try {
@@ -66,8 +68,9 @@ namespace Interop/Sql/Connection {
                 Err(getMessage(ex))
         }
 
-    pub def commit!(conn: Connection[r]): Result[Unit, String] \ Write(r) = 
-        import java.sql.Connection.commit(): Unit \ r;
+    /// Modifies DB hence IO
+    pub def commit!(conn: Connection[r]): Result[Unit, String] \ {IO, Write(r)} = 
+        import java.sql.Connection.commit(): Unit \ {IO, r};
         try {
             let Connection(conn1) = conn;
             commit(conn1);
