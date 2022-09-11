@@ -157,6 +157,112 @@ namespace BasicDb/DbMonad {
         runDbMonad(r, ma, url)
 
 
+
+
+
+    // DB operations
+
+    pub def executeSql!(sql: String): DbMonad[r, ka, Bool] \ {IO, Write(r)} = 
+        let* stmt   = liftSetterResult!(Interop/Sql/Connection.createStatement!);
+        let* ans    = liftActionResult(_ -> Interop/Sql/Statement.execute!(sql, stmt));
+        let* _      = liftActionResult(_ -> Interop/Sql/Statement.close!(stmt));
+        point(ans)
+
+
+
+    pub def setAutoCommit!(autoCommit: Bool): DbMonad[r, ka, Unit] \ Write(r) =
+        liftSetterResult!(Interop/Sql/Connection.setAutoCommit!(autoCommit))
+
+    pub def commit!(): DbMonad[r, ka, Unit] \ {IO, Write(r)} =
+        liftSetterResult!(Interop/Sql/Connection.commit!)
+
+
+    pub def createStatement!(): DbMonad[r, ka, Statement[r]] \ Write(r) =
+        liftSetterResult!(Interop/Sql/Connection.createStatement!)
+
+
+    pub def execute!(sql: String, stmt: Statement[r]): DbMonad[r, ka, Bool] \ {IO, Write(r)} =
+        liftActionResult(_ -> Interop/Sql/Statement.execute!(sql, stmt))
+
+    pub def executeQuery!(sql: String, stmt: Statement[r]): DbMonad[r, ka, ResultSet[r]] \ {IO, Write(r)} =
+        liftActionResult(_ -> Interop/Sql/Statement.executeQuery!(sql, stmt))
+        
+
+    pub def executeUpdate!(sql: String, stmt: Statement[r]): DbMonad[r, ka, Int32] \ {IO, Write(r)} =
+        liftActionResult(_ -> Interop/Sql/Statement.executeUpdate!(sql, stmt))
+
+
+    pub def prepareStatement!(sql: String): DbMonad[r, ka, PreparedStatement[r]] \ {Read(r), Write(r)} =
+        liftSetterResult!(Interop/Sql/Connection.prepareStatement!(sql))
+        
+
+
+    pub def psExecuteQuery!(stmt: PreparedStatement[r], setter: PreparedStatementSetter[r, a, a]): DbMonad[r, ka, ResultSet[r]] \ Write(r) =
+        let* _  = liftActionResult(_ -> Interop/Sql/PreparedStatement.clearParameters!(stmt));
+        let* _  = liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(() as Region[r], setter, stmt));
+        let* rs = liftActionResult(_ -> Interop/Sql/PreparedStatement.executeQuery!(stmt));
+        point(rs)
+
+
+
+    pub def psExecuteUpdate!(stmt: PreparedStatement[r], setter: PreparedStatementSetter[r, a, a]): DbMonad[r, ka, Int32] \ Write(r) =
+        let* _ = liftActionResult(_ -> Interop/Sql/PreparedStatement.clearParameters!(stmt));
+        let* _ = liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(() as Region[r], setter, stmt));
+        liftActionResult(_ -> Interop/Sql/PreparedStatement.executeUpdate!(stmt))
+
+
+    /// ResultSet
+
+    pub def rsClose!(rs: ResultSet[r]): DbMonad[r, ka, Unit] \ Write(r) =
+        liftActionResult(_ -> Interop/Sql/ResultSet.close!(rs))
+
+    pub def rsNext(rs: ResultSet[r]): DbMonad[r, ka, Bool] \ Write(r) =
+        liftActionResult(_ -> Interop/Sql/ResultSet.next!(rs))
+
+
+    pub def rsEval(eval: RowEvaluator[r, a, a], rs: ResultSet[r]): DbMonad[r, ka, a] \ r =
+        liftActionResult(_ -> BasicDb/RowEvaluator.runRowEvaluator(() as Region[r], eval, rs))
+        
+
+
+    pub def firstRow(eval: RowEvaluator[r, a, a], rs: ResultSet[r]): DbMonad[r, ka, a] \ Write(r) = 
+        let* more   = rsNext(rs);
+        if (more) rsEval(eval, rs) else throwError("firstRow - resultset is empty")
+
+    pub def allRows(eval: RowEvaluator[r, a, a], rs: ResultSet[r]): DbMonad[r, ka, List[a]] \ Write(r) = 
+        allRowsHelper(eval, rs, ks -> ks)
+
+    /// Start with `next`
+    /// This is optimized to avoid repeated unwrapping.
+    def allRowsHelper(eval: RowEvaluator[r, a, a],
+                        rs: ResultSet[r],  
+                        acc: List[a] -> List[a]): DbMonad[r, ka, List[a]] \ Write(r) = 
+        let* more   = rsNext(rs);
+        if (more) {
+            let* a = rsEval(eval, rs);
+            allRowsHelper(eval, rs, acc >> (ks -> a :: ks))
+        } else 
+            Applicative.point(acc(Nil))
+
+
+    pub def foreachRow(eval: RowEvaluator[r, a, a], rs: ResultSet[r]): DbMonad[r, ka, Unit] \ Write(r) = 
+        let* more  = rsNext(rs);
+        if (more) {
+            let* _ = rsEval(eval, rs);
+            foreachRow(eval, rs)
+        } else 
+            Applicative.point()
+
+
+    /// Note - arg order is inconsistent with List.foldLeft etc. and probably should be changed.
+    pub def foldAllRows(step: (b, a) -> b \ ef, start: b, eval: RowEvaluator[r, a, a], rs: ResultSet[r]): DbMonad[r, ka, b] \ {ef, Write(r)} = 
+        let* more  = rsNext(rs);
+        if (more) {
+            let* a = rsEval(eval, rs);
+            foldAllRows(step, step(start, a), eval, rs)
+        } else 
+            Applicative.point(start)
+
 /*
     pub def localConnection(r: Region[r], url: String, ma: DbMonad[r, a]): DbMonad[r, a] \ { r, IO } =
         use BasicDb/Internal/Prim.{dmGetConnection, closeConnection};
@@ -301,125 +407,8 @@ namespace BasicDb/DbMonad {
 
 */
 
-    // DB operations
-
-    pub def executeSql!(sql: String): DbMonad[r, ka, Bool] \ {IO, Write(r)} = 
-        let* stmt   = liftSetterResult!(Interop/Sql/Connection.createStatement!);
-        let* ans    = liftActionResult(_ -> Interop/Sql/Statement.execute!(sql, stmt));
-        let* _      = liftActionResult(_ -> Interop/Sql/Statement.close!(stmt));
-        point(ans)
-
-
-
-    pub def setAutoCommit!(autoCommit: Bool): DbMonad[r, ka, Unit] \ Write(r) =
-        liftSetterResult!(Interop/Sql/Connection.setAutoCommit!(autoCommit))
-
-    pub def commit!(): DbMonad[r, ka, Unit] \ {IO, Write(r)} =
-        liftSetterResult!(Interop/Sql/Connection.commit!)
-
-
-    pub def createStatement!(): DbMonad[r, ka, Statement[r]] \ Write(r) =
-        liftSetterResult!(Interop/Sql/Connection.createStatement!)
-
-
-    pub def execute!(sql: String, stmt: Statement[r]): DbMonad[r, ka, Bool] \ {IO, Write(r)} =
-        liftActionResult(_ -> Interop/Sql/Statement.execute!(sql, stmt))
-
-    pub def executeQuery!(sql: String, stmt: Statement[r]): DbMonad[r, ka, ResultSet[r]] \ {IO, Write(r)} =
-        liftActionResult(_ -> Interop/Sql/Statement.executeQuery!(sql, stmt))
-        
-
-    pub def executeUpdate!(sql: String, stmt: Statement[r]): DbMonad[r, ka, Int32] \ {IO, Write(r)} =
-        liftActionResult(_ -> Interop/Sql/Statement.executeUpdate!(sql, stmt))
-
-
-    pub def prepareStatement!(sql: String): DbMonad[r, ka, PreparedStatement[r]] \ {Read(r), Write(r)} =
-        liftSetterResult!(Interop/Sql/Connection.prepareStatement!(sql))
-        
-
-
-    pub def psExecuteQuery!(stmt: PreparedStatement[r], setter: PreparedStatementSetter[r, a, a]): DbMonad[r, a, ResultSet[r]] \ Write(r) =
-        let* _  = liftActionResult(_ -> Interop/Sql/PreparedStatement.clearParameters!(stmt));
-        let* _  = liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(() as Region[r], setter, stmt));
-        let* rs = liftActionResult(_ -> Interop/Sql/PreparedStatement.executeQuery!(stmt));
-        point(rs)
-
-
-
-    pub def psExecuteUpdate!(stmt: PreparedStatement[r], setter: PreparedStatementSetter[r, a, a]): DbMonad[r, a, Int32] \ Write(r) =
-        let* _ = liftActionResult(_ -> Interop/Sql/PreparedStatement.clearParameters!(stmt));
-        let* _ = liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(() as Region[r], setter, stmt));
-        liftActionResult(_ -> Interop/Sql/PreparedStatement.executeUpdate!(stmt))
-
-
-    /// ResultSet
-
-    pub def rsClose!(rs: ResultSet[r]): DbMonad[r, a, Unit] \ Write(r) =
-        liftActionResult(_ -> Interop/Sql/ResultSet.close!(rs))
-
-    pub def rsNext(rs: ResultSet[r]): DbMonad[r, a, Bool] \ Write(r) =
-        liftActionResult(_ -> Interop/Sql/ResultSet.next!(rs))
-
-
-    pub def rsEval(eval: RowEvaluator[r, a, a], rs: ResultSet[r]): DbMonad[r, a, a] \ r =
-        liftActionResult(_ -> BasicDb/RowEvaluator.runRowEvaluator(() as Region[r], eval, rs))
-        
-
-
-    pub def firstRow(eval: RowEvaluator[r, a, a], rs: ResultSet[r]): DbMonad[r, a, a] \ Write(r) = 
-        let* more   = rsNext(rs);
-        if (more) rsEval(eval, rs) else throwError("firstRow - resultset is empty")
-
-    pub def allRows(eval: RowEvaluator[r, a, a], rs: ResultSet[r]): DbMonad[r, a, List[a]] \ Write(r) = 
-        allRowsHelper(eval, rs, ks -> ks)
-
-    /// Start with `next`
-    /// This is optimized to avoid repeated unwrapping.
-    def allRowsHelper(eval: RowEvaluator[r, a, a],
-                        rs: ResultSet[r],  
-                        acc: List[a] -> List[a]): DbMonad[r, a, List[a]] \ Write(r) = 
-        let* more   = rsNext(rs);
-        if (more) {
-            let* a = rsEval(eval, rs);
-            allRowsHelper(eval, rs, acc >> (ks -> a :: ks))
-        } else 
-            Applicative.point(acc(Nil))
-
-/*
-    pub def allRowsX(rs: ResultSet, eval: RowEvaluator[r, a]): DbMonad[r, Unit] \ Write(r) = 
-        let RowEvaluator(f) = eval;
-        let ResultSet(rs1) = rs;
-        let* r = getDbMonadRegion();
-        liftActionResult(_ -> allRowsXHelper(r, rs1, f, e -> Err(e) as \ Write(r)))
-
-    /// Start with `next`
-    def allRowsXHelper(r: Region[r], 
-                        rs: ##java.sql.ResultSet, 
-                        eval: ##java.sql.ResultSet -> Result[a, String] \ Write(r),
-                        fk: String -> Result[Unit, String]\ Write(r)): Result[Unit, String] \ Write(r) = 
-        use BasicDb/Internal/ResultSet.{next};                      
-        match next(r, rs) {
-            case Ok(false) => Ok()
-            case Ok(true) => match eval(rs) {
-                case Ok(_) => allRowsXHelper(r, rs, eval, fk)
-                case Err(e) => fk(e)
-            }
-            case Err(e) => fk(e)
-        }
-*/
-
-    /// Note - arg order is inconsistent with List.foldLeft etc. and probably should be changed.
-    pub def foldAllRows(step: (b, a) -> b \ ef, start: b, eval: RowEvaluator[r, a, a], rs: ResultSet[r]): DbMonad[r, a, b] \ {ef, Write(r)} = 
-        let* more  = rsNext(rs);
-        if (more) {
-            let* a = rsEval(eval, rs);
-            foldAllRows(step, step(start, a), eval, rs)
-        } else 
-            Applicative.point(start)
-
 /*
     /// TODO 
-    /// DbMonad should be rewritten in CPS and these functions put in a common library.
 
     pub def mapM(mf: a -> DbMonad[r, b] \ ef, xs: List[a]): DbMonad[r, List[b]] \ ef =
         DbMonad(conn ->
