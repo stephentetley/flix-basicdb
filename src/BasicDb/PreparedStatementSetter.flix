@@ -64,9 +64,9 @@ namespace BasicDb/PreparedStatementSetter {
         let PreparedStatementSetter(x1) = x;
         x1
 
-    pub def runRowEvaluator(r: Region[r], 
-                            ma: PreparedStatementSetter[r, a, a], 
-                            st: PreparedStatement[r]): Result[a, String] \ r =
+    pub def runPreparedStatementSetter!(r: Region[r], 
+                                        ma: PreparedStatementSetter[r, a, a], 
+                                        st: PreparedStatement[r]): Result[a, String] \ r =
         MonadLib/MutStateError.runMutStateError(r, getPreparedStatementSetter(ma), st)
 
     pub def point(x: a): PreparedStatementSetter[r, ka, a] = 

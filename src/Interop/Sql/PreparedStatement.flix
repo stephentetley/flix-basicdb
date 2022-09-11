@@ -30,6 +30,8 @@ namespace Interop/Sql/PreparedStatement {
 
     use Interop/Sql.PreparedStatement;
     use Interop/Sql.PreparedStatement.{PreparedStatement};
+    use Interop/Sql.ResultSet;
+    use Interop/Sql.ResultSet.{ResultSet};
 
 
     pub def getHH(stmt: PreparedStatement[r]): ##java.sql.PreparedStatement =
@@ -49,24 +51,22 @@ namespace Interop/Sql/PreparedStatement {
         }
 
 
-    pub def executeQuery(stmt: PreparedStatement[r]): Result[##java.sql.ResultSet, String] \ Write(r) =        
+    pub def executeQuery!(stmt: PreparedStatement[r]): Result[ResultSet[r], String] \ Write(r) =        
         try {
             import java.sql.PreparedStatement.executeQuery(): ##java.sql.ResultSet \ r;
             let PreparedStatement(stmt1) = stmt;
-            let ans = executeQuery(stmt1);
-            Ok(ans)
+            executeQuery(stmt1) |> ResultSet |> Ok
         } catch {
             case ex: ##java.lang.Exception => 
                 import java.lang.Throwable.getMessage(): String \ r;
                 Err(getMessage(ex))
         }
 
-    pub def executeUpdate(stmt: PreparedStatement[r]): Result[Int32, String] \ Write(r) =
+    pub def executeUpdate!(stmt: PreparedStatement[r]): Result[Int32, String] \ Write(r) =
         try {
             import java.sql.PreparedStatement.executeUpdate(): Int32 \ r;
             let PreparedStatement(stmt1) = stmt;
-            let ans = executeUpdate(stmt1);
-            Ok(ans)
+            executeUpdate(stmt1) |> Ok
         } catch {
             case ex: ##java.lang.Exception => 
                 import java.lang.Throwable.getMessage(): String \ r;

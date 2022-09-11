@@ -48,7 +48,7 @@ namespace Interop/Sql/ResultSet {
                 Err(getMessage(ex))
         }
 
-    pub def next(rs: ResultSet[r]): Result[Bool, String] \ Write(r) =
+    pub def next!(rs: ResultSet[r]): Result[Bool, String] \ Write(r) =
         try {
             import java.sql.ResultSet.next(): Bool \ r;
             let ResultSet(rs1) = rs;
