@@ -15,7 +15,7 @@
  */
 
 namespace BasicDb/Writer {
-
+/*
     use Monad.{>>=};
 
     use BasicDb.DbMonad;
@@ -54,6 +54,6 @@ namespace BasicDb/Writer {
 
     /// `append` versions without tableActions?
 
-
+*/
 }
 

@@ -16,6 +16,7 @@
 
 namespace BasicDb/Reader {
 
+/*
     use BasicDb.DbMonad;
     use BasicDb.RowEvaluator;
     use BasicDb.RowEvaluator.{RowEvaluator};
@@ -46,6 +47,6 @@ namespace BasicDb/Reader {
         foldAllRows((ac, x) -> ac <+> x, #{}, eval, sqlquery)
 
 
-
+*/
 }
 

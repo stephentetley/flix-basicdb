@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Stephen Tetley
+ * Copyright 2022 Stephen Tetley
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,33 @@
  * limitations under the License.
  */
 
-namespace BasicDb/Internal/ResultSet {
+namespace Interop/Sql {
 
-    pub def close(_: Region[r], x: ##java.sql.ResultSet): Result[Unit, String] \ Write(r) =
-        import java.sql.ResultSet.close(): Unit \ r;
+    /// Mutable
+
+    pub enum ResultSet[_: Region](##java.sql.ResultSet)
+
+    instance Scoped[ResultSet] {
+        pub def regionOf(_: ResultSet[r]): Region[r] = () as Region[r]
+    }
+
+}
+
+namespace Interop/Sql/ResultSet {
+
+    use Interop/Sql.ResultSet;
+    use Interop/Sql.ResultSet.{ResultSet};
+
+
+    pub def getHH(rs: ResultSet[r]): ##java.sql.ResultSet =
+        let ResultSet(rs1) = rs;
+        rs1
+
+    pub def close!(rs: ResultSet[r]): Result[Unit, String] \ Write(r) =
         try {
-            let ans = close(x);
+            import java.sql.ResultSet.close(): Unit \ r;
+            let ResultSet(rs1) = rs;
+            let ans = close(rs1);
             Ok(ans)
         } catch {
             case ex: ##java.lang.Exception => 
@@ -27,10 +48,11 @@ namespace BasicDb/Internal/ResultSet {
                 Err(getMessage(ex))
         }
 
-    pub def next(_: Region[r], x: ##java.sql.ResultSet): Result[Bool, String] \ Write(r) =
-        import java.sql.ResultSet.next(): Bool \ r;
+    pub def next(rs: ResultSet[r]): Result[Bool, String] \ Write(r) =
         try {
-            let ans = next(x);
+            import java.sql.ResultSet.next(): Bool \ r;
+            let ResultSet(rs1) = rs;
+            let ans = next(rs1);
             Ok(ans)
         } catch {
             case ex: ##java.lang.Exception => 
@@ -38,10 +60,11 @@ namespace BasicDb/Internal/ResultSet {
                 Err(getMessage(ex))
         }
 
-    pub def getStringAt(_: Region[r], ix: Int32, x: ##java.sql.ResultSet): Result[String, String] \ Read(r) =
-        import java.sql.ResultSet.getString(Int32): String \ r;
+    pub def getStringAt(ix: Int32, rs: ResultSet[r]): Result[String, String] \ Read(r) =
         try {
-            let ans = getString(x, ix);
+            import java.sql.ResultSet.getString(Int32): String \ r;
+            let ResultSet(rs1) = rs;
+            let ans = getString(rs1, ix);
             Ok(ans)
         } catch {
             case ex: ##java.lang.Exception => 
@@ -49,10 +72,11 @@ namespace BasicDb/Internal/ResultSet {
                 Err(getMessage(ex))
         }
 
-    pub def getStringNamed(_: Region[r], label: String, x: ##java.sql.ResultSet): Result[String, String] \ Read(r) =
-        import java.sql.ResultSet.getString(String): String \ r;
+    pub def getStringNamed(label: String, rs: ResultSet[r]): Result[String, String] \ Read(r) =
         try {
-            let ans = getString(x, label);
+            import java.sql.ResultSet.getString(String): String \ r;
+            let ResultSet(rs1) = rs;
+            let ans = getString(rs1, label);
             Ok(ans)
         } catch {
             case ex: ##java.lang.Exception => 
@@ -60,10 +84,11 @@ namespace BasicDb/Internal/ResultSet {
                 Err(getMessage(ex))
         }
 
-    pub def getBoolAt(_: Region[r], ix: Int32, x: ##java.sql.ResultSet): Result[Bool, String] \ Read(r) =
-        import java.sql.ResultSet.getBoolean(Int32): Bool \ r;
+    pub def getBoolAt(ix: Int32, rs: ResultSet[r]): Result[Bool, String] \ Read(r) =
         try {
-            let ans = getBoolean(x, ix);
+            import java.sql.ResultSet.getBoolean(Int32): Bool \ r;
+            let ResultSet(rs1) = rs;
+            let ans = getBoolean(rs1, ix);
             Ok(ans)
         } catch {
             case ex: ##java.lang.Exception => 
@@ -71,10 +96,11 @@ namespace BasicDb/Internal/ResultSet {
                 Err(getMessage(ex))
         }
 
-    pub def getBoolNamed(_: Region[r], label: String, x: ##java.sql.ResultSet): Result[Bool, String] \ Read(r) =
-        import java.sql.ResultSet.getBoolean(String): Bool \ r;
+    pub def getBoolNamed(label: String, rs: ResultSet[r]): Result[Bool, String] \ Read(r) =
         try {
-            let ans = getBoolean(x, label);
+            import java.sql.ResultSet.getBoolean(String): Bool \ r;
+            let ResultSet(rs1) = rs;
+            let ans = getBoolean(rs1, label);
             Ok(ans)
         } catch {
             case ex: ##java.lang.Exception => 
@@ -82,10 +108,11 @@ namespace BasicDb/Internal/ResultSet {
                 Err(getMessage(ex))
         }
 
-    pub def getInt8At(_: Region[r], ix: Int32, x: ##java.sql.ResultSet): Result[Int8, String] \ Read(r) =
-        import java.sql.ResultSet.getByte(Int32): Int8 \ r;
+    pub def getInt8At(ix: Int32, rs: ResultSet[r]): Result[Int8, String] \ Read(r) =
         try {
-            let ans = getByte(x, ix);
+            import java.sql.ResultSet.getByte(Int32): Int8 \ r;
+            let ResultSet(rs1) = rs;
+            let ans = getByte(rs1, ix);
             Ok(ans)
         } catch {
             case ex: ##java.lang.Exception => 
@@ -93,10 +120,11 @@ namespace BasicDb/Internal/ResultSet {
                 Err(getMessage(ex))
         }
 
-    pub def getInt8Named(_: Region[r], label: String, x: ##java.sql.ResultSet): Result[Int8, String] \ Read(r) =
-        import java.sql.ResultSet.getByte(String): Int8 \ r;
+    pub def getInt8Named(label: String, rs: ResultSet[r]): Result[Int8, String] \ Read(r) =
         try {
-            let ans = getByte(x, label);
+            import java.sql.ResultSet.getByte(String): Int8 \ r;
+            let ResultSet(rs1) = rs;
+            let ans = getByte(rs1, label);
             Ok(ans)
         } catch {
             case ex: ##java.lang.Exception => 
@@ -104,10 +132,11 @@ namespace BasicDb/Internal/ResultSet {
                 Err(getMessage(ex))
         }
 
-    pub def getInt16At(_: Region[r], ix: Int32, x: ##java.sql.ResultSet): Result[Int16, String] \ Read(r) =
-        import java.sql.ResultSet.getShort(Int32): Int16 \ r;
+    pub def getInt16At(ix: Int32, rs: ResultSet[r]): Result[Int16, String] \ Read(r) =
         try {
-            let ans = getShort(x, ix);
+            import java.sql.ResultSet.getShort(Int32): Int16 \ r;
+            let ResultSet(rs1) = rs;
+            let ans = getShort(rs1, ix);
             Ok(ans)
         } catch {
             case ex: ##java.lang.Exception => 
@@ -115,10 +144,11 @@ namespace BasicDb/Internal/ResultSet {
                 Err(getMessage(ex))
         }
 
-    pub def getInt16Named(_: Region[r], label: String, x: ##java.sql.ResultSet): Result[Int16, String] \ Read(r) =
-        import java.sql.ResultSet.getShort(String): Int16 \ r;
+    pub def getInt16Named(label: String, rs: ResultSet[r]): Result[Int16, String] \ Read(r) =
         try {
-            let ans = getShort(x, label);
+            import java.sql.ResultSet.getShort(String): Int16 \ r;
+            let ResultSet(rs1) = rs;
+            let ans = getShort(rs1, label);
             Ok(ans)
         } catch {
             case ex: ##java.lang.Exception => 
@@ -126,10 +156,11 @@ namespace BasicDb/Internal/ResultSet {
                 Err(getMessage(ex))
         }
 
-    pub def getInt32At(_: Region[r], ix: Int32, x: ##java.sql.ResultSet): Result[Int32, String] \ Read(r) =
-        import java.sql.ResultSet.getInt(Int32): Int32 \ r;
+    pub def getInt32At(ix: Int32, rs: ResultSet[r]): Result[Int32, String] \ Read(r) =
         try {
-            let ans = getInt(x, ix);
+            import java.sql.ResultSet.getInt(Int32): Int32 \ r;
+            let ResultSet(rs1) = rs;
+            let ans = getInt(rs1, ix);
             Ok(ans)
         } catch {
             case ex: ##java.lang.Exception => 
@@ -137,10 +168,11 @@ namespace BasicDb/Internal/ResultSet {
                 Err(getMessage(ex))
         }
 
-    pub def getInt32Named(_: Region[r], label: String, x: ##java.sql.ResultSet): Result[Int32, String] \ Read(r) =
-        import java.sql.ResultSet.getInt(String): Int32 \ r;
+    pub def getInt32Named(label: String, rs: ResultSet[r]): Result[Int32, String] \ Read(r) =
         try {
-            let ans = getInt(x, label);
+            import java.sql.ResultSet.getInt(String): Int32 \ r;
+            let ResultSet(rs1) = rs;
+            let ans = getInt(rs1, label);
             Ok(ans)
         } catch {
             case ex: ##java.lang.Exception => 
@@ -148,10 +180,11 @@ namespace BasicDb/Internal/ResultSet {
                 Err(getMessage(ex))
         }
 
-    pub def getInt64At(_: Region[r], ix: Int32, x: ##java.sql.ResultSet): Result[Int64, String] \ Read(r) =
-        import java.sql.ResultSet.getLong(Int32): Int64 \ r;
+    pub def getInt64At(ix: Int32, rs: ResultSet[r]): Result[Int64, String] \ Read(r) =
         try {
-            let ans = getLong(x, ix);
+            import java.sql.ResultSet.getLong(Int32): Int64 \ r;
+            let ResultSet(rs1) = rs;
+            let ans = getLong(rs1, ix);
             Ok(ans)
         } catch {
             case ex: ##java.lang.Exception => 
@@ -159,10 +192,11 @@ namespace BasicDb/Internal/ResultSet {
                 Err(getMessage(ex))
         }
 
-    pub def getInt64Named(_: Region[r], label: String, x: ##java.sql.ResultSet): Result[Int64, String] \ Read(r) =
-        import java.sql.ResultSet.getLong(String): Int64 \ r;
+    pub def getInt64Named(label: String, rs: ResultSet[r]): Result[Int64, String] \ Read(r) =
         try {
-            let ans = getLong(x, label);
+            import java.sql.ResultSet.getLong(String): Int64 \ r;
+            let ResultSet(rs1) = rs;
+            let ans = getLong(rs1, label);
             Ok(ans)
         } catch {
             case ex: ##java.lang.Exception => 
@@ -170,19 +204,21 @@ namespace BasicDb/Internal/ResultSet {
                 Err(getMessage(ex))
         }
 
-    pub def getFloat32At(_: Region[r], ix: Int32, x: ##java.sql.ResultSet): Result[Float32, String] \ Read(r) =
-        import java.sql.ResultSet.getFloat(Int32): Float32 \ r;
+    pub def getFloat32At(ix: Int32, rs: ResultSet[r]): Result[Float32, String] \ Read(r) =
         try {
-            let ans = getFloat(x, ix);
+            import java.sql.ResultSet.getFloat(Int32): Float32 \ r;
+            let ResultSet(rs1) = rs;
+            let ans = getFloat(rs1, ix);
             Ok(ans)
         } catch {
             case _: ##java.sql.SQLException => Err("getFloat32At")
         }
 
-    pub def getFloat32Named(_: Region[r], label: String, x: ##java.sql.ResultSet): Result[Float32, String] \ Read(r) =
-        import java.sql.ResultSet.getFloat(String): Float32 \ r;
+    pub def getFloat32Named(label: String, rs: ResultSet[r]): Result[Float32, String] \ Read(r) =
         try {
-            let ans = getFloat(x, label);
+            import java.sql.ResultSet.getFloat(String): Float32 \ r;
+            let ResultSet(rs1) = rs;
+            let ans = getFloat(rs1, label);
             Ok(ans)
         } catch {
             case ex: ##java.lang.Exception => 
@@ -190,10 +226,11 @@ namespace BasicDb/Internal/ResultSet {
                 Err(getMessage(ex))
         }
 
-    pub def getFloat64At(_: Region[r], ix: Int32, x: ##java.sql.ResultSet): Result[Float64, String] \ Read(r) =
-        import java.sql.ResultSet.getDouble(Int32): Float64 \ r;
+    pub def getFloat64At(ix: Int32, rs: ResultSet[r]): Result[Float64, String] \ Read(r) =
         try {
-            let ans = getDouble(x, ix);
+            import java.sql.ResultSet.getDouble(Int32): Float64 \ r;
+            let ResultSet(rs1) = rs;
+            let ans = getDouble(rs1, ix);
             Ok(ans)
         } catch {
             case ex: ##java.lang.Exception => 
@@ -201,10 +238,11 @@ namespace BasicDb/Internal/ResultSet {
                 Err(getMessage(ex))
         }
 
-    pub def getFloat64Named(_: Region[r], label: String, x: ##java.sql.ResultSet): Result[Float64, String] \ Read(r) =
-        import java.sql.ResultSet.getDouble(String): Float64 \ r;
+    pub def getFloat64Named(label: String, rs: ResultSet[r]): Result[Float64, String] \ Read(r) =
         try {
-            let ans = getDouble(x, label);
+            import java.sql.ResultSet.getDouble(String): Float64 \ r;
+            let ResultSet(rs1) = rs;
+            let ans = getDouble(rs1, label);
             Ok(ans)
         } catch {
             case ex: ##java.lang.Exception => 

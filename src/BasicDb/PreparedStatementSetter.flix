@@ -18,26 +18,36 @@
 namespace BasicDb {
 
 
-    pub enum PreparedStatementSetter[_r: Region, a: Type](##java.sql.PreparedStatement -> Result[a, String])
+    pub enum PreparedStatementSetter[r: Region, ka: Type, a: Type](MonadLib.MutStateError[r, ka, Interop/Sql.PreparedStatement[r], a])
 
-    instance Functor[PreparedStatementSetter[r]] { 
-        pub def map(f: a -> b & ef, x: PreparedStatementSetter[r, a]): PreparedStatementSetter[r, b] & ef = 
+    instance Functor[PreparedStatementSetter[r, ka]] { 
+        pub def map(f: a -> b \ ef, x: PreparedStatementSetter[r, ka, a]): PreparedStatementSetter[r, ka, b] \ ef = 
             BasicDb/PreparedStatementSetter.map(f, x)
     }
 
-    instance Applicative[PreparedStatementSetter[r]] { 
-        pub def point(x: a): PreparedStatementSetter[r, a] = 
+    instance Applicative[PreparedStatementSetter[r, ka]] { 
+        pub def point(x: a): PreparedStatementSetter[r, ka, a] = 
             BasicDb/PreparedStatementSetter.point(x)
 
-        pub def ap(f: PreparedStatementSetter[r, a -> b & ef], x: PreparedStatementSetter[r, a]): PreparedStatementSetter[r, b] & ef = 
+        pub def ap(f: PreparedStatementSetter[r, ka, a -> b \ ef], x: PreparedStatementSetter[r, ka, a]): PreparedStatementSetter[r, ka, b] \ ef = 
             BasicDb/PreparedStatementSetter.ap(f, x)
     }
 
-    instance Monad[PreparedStatementSetter[r]] { 
-        pub def flatMap(k: a -> PreparedStatementSetter[r, b] & ef, x: PreparedStatementSetter[r, a]): PreparedStatementSetter[r, b] & ef = 
+    instance Monad[PreparedStatementSetter[r, ka]] { 
+        pub def flatMap(k: a -> PreparedStatementSetter[r, ka, b] \ ef, x: PreparedStatementSetter[r, ka, a]): PreparedStatementSetter[r, ka, b] \ ef = 
             BasicDb/PreparedStatementSetter.flatMap(k, x)
     }
 
+    instance MonadLib.MonadError[PreparedStatementSetter[r, ka]] {
+        pub def throwError(msg: String): PreparedStatementSetter[r, ka, a] = 
+            BasicDb/PreparedStatementSetter.throwError(msg)
+
+        pub def mapError(f: String -> String \ ef, ma: PreparedStatementSetter[r, ka, a]): PreparedStatementSetter[r, ka, a] \ ef =
+            BasicDb/PreparedStatementSetter.mapError(f, ma)
+
+        pub def catchError(ma: PreparedStatementSetter[r, ka, a], f: String -> PreparedStatementSetter[r, ka, a] \ ef): PreparedStatementSetter[r, ka, a] \ ef =
+            BasicDb/PreparedStatementSetter.catchError(ma, f)
+    }
 
 }
 
@@ -47,204 +57,196 @@ namespace BasicDb/PreparedStatementSetter {
     use BasicDb.PreparedStatementSetter;
     use BasicDb.PreparedStatementSetter.{PreparedStatementSetter};
     
-    pub def point(x: a): PreparedStatementSetter[r, a] = PreparedStatementSetter(_ -> Ok(x))
+    use Interop/Sql.PreparedStatement;
+    use Interop/Sql.PreparedStatement.{PreparedStatement};
+
+    pub def getPreparedStatementSetter(x: PreparedStatementSetter[r, ka, a]): MonadLib.MutStateError[r, ka, PreparedStatement[r], a] = 
+        let PreparedStatementSetter(x1) = x;
+        x1
+
+    pub def runRowEvaluator(r: Region[r], 
+                            ma: PreparedStatementSetter[r, a, a], 
+                            st: PreparedStatement[r]): Result[a, String] \ r =
+        MonadLib/MutStateError.runMutStateError(r, getPreparedStatementSetter(ma), st)
+
+    pub def point(x: a): PreparedStatementSetter[r, ka, a] = 
+        PreparedStatementSetter(MonadLib/MutStateError.point(x))
+
+    pub def map(f: a -> b \ ef, x: PreparedStatementSetter[r, ka, a]): PreparedStatementSetter[r, ka, b] \ ef =
+        PreparedStatementSetter(MonadLib/MutStateError.map(f, getPreparedStatementSetter(x)))
+
+    pub def ap(mf: PreparedStatementSetter[r, ka, a -> b \ ef], ma: PreparedStatementSetter[r, ka, a]): PreparedStatementSetter[r, ka, b] \ ef =
+        PreparedStatementSetter(MonadLib/MutStateError.ap(getPreparedStatementSetter(mf), getPreparedStatementSetter(ma)))
+
+    pub def flatMap(k: a -> PreparedStatementSetter[r, ka, b] \ ef, x: PreparedStatementSetter[r, ka, a]): PreparedStatementSetter[r, ka, b]  \ ef = 
+        PreparedStatementSetter(MonadLib/MutStateError.flatMap(k >> getPreparedStatementSetter, getPreparedStatementSetter(x)))
 
 
-    pub def throwError(msg: String): PreparedStatementSetter[r, a] = PreparedStatementSetter(_ -> Err(msg))
+    pub def throwError(msg: String): PreparedStatementSetter[r, ka, a] = 
+        PreparedStatementSetter(MonadLib/MutStateError.throwError(msg))
 
-    def apply1(x: PreparedStatementSetter[r, a], r: ##java.sql.PreparedStatement): Result[a, String] =
-        let PreparedStatementSetter(f) = x;
-        f(r)
+    pub def mapError(f: String -> String \ ef, ma: PreparedStatementSetter[r, ka, a]): PreparedStatementSetter[r, ka, a] \ ef =
+        PreparedStatementSetter(MonadLib/MutStateError.mapError(f, getPreparedStatementSetter(ma)))
 
-    def getPSSRegion(): PreparedStatementSetter[r, Region[r]] = 
-        PreparedStatementSetter(_ -> Ok(() as Region[r]))
-
-    pub def map(f: a -> b & ef, x: PreparedStatementSetter[r, a]): PreparedStatementSetter[r, b] & ef =
-        PreparedStatementSetter(s ->
-            match apply1(x, s) {
-                case Ok(a) => {
-                    let ans = f(a) as & Pure;
-                    Ok(ans)
-                }
-                case Err(e) => Err(e)
-            }
-        ) as & ef
-
-    pub def ap(mf: PreparedStatementSetter[r, a -> b & ef], ma: PreparedStatementSetter[r, a]): PreparedStatementSetter[r, b] & ef =
-        PreparedStatementSetter(s ->
-            match apply1(mf, s) {
-                case Ok(f) => {
-                    match apply1(ma, s) {
-                        case Ok(a)   => Ok(f(a) as & Pure)
-                        case Err(e2) => Err(e2)
-                    }
-                }
-                case Err(e1) => Err(e1)
-            }
-        ) as & ef
+    pub def catchError(ma: PreparedStatementSetter[r, ka, a], f: String -> PreparedStatementSetter[r, ka, a] \ ef): PreparedStatementSetter[r, ka, a] \ ef =
+        PreparedStatementSetter(MonadLib/MutStateError.catchError(getPreparedStatementSetter(ma), f >> getPreparedStatementSetter))
 
 
-    pub def bind(x: PreparedStatementSetter[r, a], k: a -> PreparedStatementSetter[r, b] & ef): PreparedStatementSetter[r, b] & ef =
-        PreparedStatementSetter(s ->
-            match apply1(x, s) {
-                case Ok(a)  => {let ans = k(a) as & Pure; apply1(ans, s)}
-                case Err(e) => Err(e)
-            }
-        ) as & ef
+    def liftSetterResult!(f: PreparedStatement[r] -> Result[a, err] \ ef): PreparedStatementSetter[r, ka, a] \ ef with ToString[err] =
+        PreparedStatementSetter(MonadLib/MutStateError.liftSetterResult!(f))
+    
+    pub def liftAction(f: Unit -> a \ ef): PreparedStatementSetter[r, ka, a] \ ef =
+        PreparedStatementSetter(MonadLib/MutStateError.liftAction(f))
+    
+        
+    pub def liftActionResult(f: Unit -> Result[a, err] \ ef): PreparedStatementSetter[r, ka, a] \ ef with ToString[err] =
+        PreparedStatementSetter(MonadLib/MutStateError.liftActionResult(f))
 
-    pub def flatMap(k: a -> PreparedStatementSetter[r, b] & ef, x: PreparedStatementSetter[r, a]): PreparedStatementSetter[r, b]  & ef = 
-        bind(x, k)
 
-    def liftPrim(update: ##java.sql.PreparedStatement -> Result[a, String] & ef): PreparedStatementSetter[r, a] & ef =
-        PreparedStatementSetter(s -> update(s) as & Pure) as & ef
+/*
 
-    pub def liftOption(errMsg: String, x: Option[a]): PreparedStatementSetter[r, a] = match x {
+    def liftPrim(update: ##java.sql.PreparedStatement -> Result[a, String] \ ef): PreparedStatementSetter[r, ka, a] \ ef =
+        PreparedStatementSetter(s -> update(s) as \ Pure) as \ ef
+
+    pub def liftOption(errMsg: String, x: Option[a]): PreparedStatementSetter[r, ka, a] = match x {
         case Some(x1) => point(x1)
         case None     => throwError(errMsg)
     }
 
-    pub def liftResult(x: Result[a, String]): PreparedStatementSetter[r, a] = match x { 
+    pub def liftResult(x: Result[a, String]): PreparedStatementSetter[r, ka, a] = match x { 
         case Ok(x1)   => point(x1)
         case Err(msg) => throwError(msg)
     }
 
-    pub def liftResult1(makeErrMsg: e -> String, x: Result[a, e]): PreparedStatementSetter[r, a] = match x { 
+    pub def liftResult1(makeErrMsg: e -> String, x: Result[a, e]): PreparedStatementSetter[r, ka, a] = match x { 
         case Ok(x1) => point(x1)
         case Err(e) => throwError(makeErrMsg(e))
     }
 
-    pub def liftValidation(makeErrMsg: List[e] -> String, x: Validation[a, e]): PreparedStatementSetter[r, a] = match x { 
+    pub def liftValidation(makeErrMsg: List[e] -> String, x: Validation[a, e]): PreparedStatementSetter[r, ka, a] = match x { 
         case Success(x1) => point(x1)
         case Failure(es) => throwError(makeErrMsg(Nec.toList(es)))
     }
 
-    pub def liftAction(fn: Unit -> a & ef): PreparedStatementSetter[r, a] & ef = 
-        PreparedStatementSetter(_ -> {let a = fn() as & Pure; Ok(a)}) as & ef
+    pub def liftAction(fn: Unit -> a \ ef): PreparedStatementSetter[r, ka, a] \ ef = 
+        PreparedStatementSetter(_ -> {let a = fn() as \ Pure; Ok(a)}) as \ ef
 
-    pub def liftActionResult(fn: Unit -> Result[a, String] & ef): PreparedStatementSetter[r, a] & ef = 
-        PreparedStatementSetter(_ -> fn() as & Pure) as & ef
+    pub def liftActionResult(fn: Unit -> Result[a, String] \ ef): PreparedStatementSetter[r, ka, a] \ ef = 
+        PreparedStatementSetter(_ -> fn() as \ Pure) as \ ef
 
 
     // Note - the primitive setX! functions index from 1, we add 1 to calls
     // so FactIO's API indexes from 0.
+*/
 
-    pub def putNullAt!(ix: Int32): PreparedStatementSetter[r, Unit] \ Write(r) =
-        use BasicDb/Internal/PreparedStatement.{sql_type_null};
-        let* r      = getPSSRegion();
-        liftPrim(BasicDb/Internal/PreparedStatement.setNull!(r, ix + 1, sql_type_null()))
+    pub def putNullAt!(ix: Int32): PreparedStatementSetter[r, ka, Unit] \ Write(r) =
+        liftSetterResult!(Interop/Sql/PreparedStatement.setNull!(ix + 1, BasicDb/Internal/Types.sql_type_null()))
 
-    pub def putStringAt!(ix: Int32, str: String): PreparedStatementSetter[r, Unit] \ Write(r) =
-        let* r      = getPSSRegion();
-        liftPrim(BasicDb/Internal/PreparedStatement.setString!(r, ix + 1, str))
+    pub def putStringAt!(ix: Int32, str: String): PreparedStatementSetter[r, ka, Unit] \ Write(r) =
+        liftSetterResult!(Interop/Sql/PreparedStatement.setString!(ix + 1, str))
 
-    pub def putBoolAt!(ix: Int32, b: Bool): PreparedStatementSetter[r, Unit] \ Write(r) =
-        let* r      = getPSSRegion();
-        liftPrim(BasicDb/Internal/PreparedStatement.setBool!(r, ix + 1, b))
+    pub def putBoolAt!(ix: Int32, b: Bool): PreparedStatementSetter[r, ka, Unit] \ Write(r) =
+        liftSetterResult!(Interop/Sql/PreparedStatement.setBool!(ix + 1, b))
 
-    pub def putInt8At!(ix: Int32, n: Int8): PreparedStatementSetter[r, Unit] \ Write(r) =
-        let* r      = getPSSRegion();
-        liftPrim(BasicDb/Internal/PreparedStatement.setInt8!(r, ix + 1, n))
+    pub def putInt8At!(ix: Int32, n: Int8): PreparedStatementSetter[r, ka, Unit] \ Write(r) =
+        liftSetterResult!(Interop/Sql/PreparedStatement.setInt8!(ix + 1, n))
 
-    pub def putInt16At!(ix: Int32, n: Int16): PreparedStatementSetter[r, Unit] \ Write(r) =
-        let* r      = getPSSRegion();
-        liftPrim(BasicDb/Internal/PreparedStatement.setInt16!(r, ix + 1, n))
+    pub def putInt16At!(ix: Int32, n: Int16): PreparedStatementSetter[r, ka, Unit] \ Write(r) =
+        liftSetterResult!(Interop/Sql/PreparedStatement.setInt16!(ix + 1, n))
 
-    pub def putInt32At!(ix: Int32, n: Int32): PreparedStatementSetter[r, Unit] \ Write(r) =
-        let* r      = getPSSRegion();
-        liftPrim(BasicDb/Internal/PreparedStatement.setInt32!(r, ix + 1, n))
+    pub def putInt32At!(ix: Int32, n: Int32): PreparedStatementSetter[r, ka, Unit] \ Write(r) =
+        liftSetterResult!(Interop/Sql/PreparedStatement.setInt32!(ix + 1, n))
 
-    pub def putInt64At!(ix: Int32, n: Int64): PreparedStatementSetter[r, Unit] \ Write(r) =
-        let* r      = getPSSRegion();
-        liftPrim(BasicDb/Internal/PreparedStatement.setInt64!(r, ix + 1, n))
+    pub def putInt64At!(ix: Int32, n: Int64): PreparedStatementSetter[r, ka, Unit] \ Write(r) =
+        liftSetterResult!(Interop/Sql/PreparedStatement.setInt64!(ix + 1, n))
 
-    pub def putFloat32At!(ix: Int32, n: Float32): PreparedStatementSetter[r, Unit] \ Write(r) =
-        let* r      = getPSSRegion();
-        liftPrim(BasicDb/Internal/PreparedStatement.setFloat32!(r, ix + 1, n))
+    pub def putFloat32At!(ix: Int32, n: Float32): PreparedStatementSetter[r, ka, Unit] \ Write(r) =
+        liftSetterResult!(Interop/Sql/PreparedStatement.setFloat32!(ix + 1, n))
 
-    pub def putFloat64At!(ix: Int32, n: Float64): PreparedStatementSetter[r, Unit] \ Write(r) =
-        let* r      = getPSSRegion();
-        liftPrim(BasicDb/Internal/PreparedStatement.setFloat64!(r, ix + 1, n))
+    pub def putFloat64At!(ix: Int32, n: Float64): PreparedStatementSetter[r, ka, Unit] \ Write(r) =
+        liftSetterResult!(Interop/Sql/PreparedStatement.setFloat64!(ix + 1, n))
 
 
-    pub def putIsoLocalDateStringAt!(ix: Int32, d: Time.LocalDate): PreparedStatementSetter[r, Unit] \ Write(r) =
+    pub def putIsoLocalDateStringAt!(ix: Int32, d: Time.LocalDate): PreparedStatementSetter[r, ka, Unit] \ Write(r) =
         let fmt = Time/Format/DateTimeFormatter.iso_local_date();
         let str = Time/LocalDate.format(fmt, d);
         putStringAt!(ix, str)
 
-    pub def putIsoLocalDateTimeStringAt!(ix: Int32, dt: Time.LocalDateTime): PreparedStatementSetter[r, Unit] \ Write(r) =
+    pub def putIsoLocalDateTimeStringAt!(ix: Int32, dt: Time.LocalDateTime): PreparedStatementSetter[r, ka, Unit] \ Write(r) =
         let fmt = Time/Format/DateTimeFormatter.iso_local_date_time();
         let str = Time/LocalDateTime.format(fmt, dt);
         putStringAt!(ix, str)
 
-    pub def putIsoLocalTimeStringAt!(ix: Int32, dt: Time.LocalTime): PreparedStatementSetter[r, Unit] \ Write(r) =
+    pub def putIsoLocalTimeStringAt!(ix: Int32, dt: Time.LocalTime): PreparedStatementSetter[r, ka, Unit] \ Write(r) =
         let fmt = Time/Format/DateTimeFormatter.iso_local_time();
         let str = Time/LocalTime.format(fmt, dt);
         putStringAt!(ix, str)
 
-    pub def putOptionStringAt!(ix: Int32, x: Option[String]): PreparedStatementSetter[r, Unit] \ Write(r) = 
+    pub def putOptionStringAt!(ix: Int32, x: Option[String]): PreparedStatementSetter[r, ka, Unit] \ Write(r) = 
         match x {
             case Some(s) => putStringAt!(ix, s)
-            case None => putNullAt!(ix)
+            case None    => putNullAt!(ix)
         }
 
-    pub def putOptionBool!(ix: Int32, x: Option[Bool]): PreparedStatementSetter[r, Unit] \ Write(r) = 
+    pub def putOptionBool!(ix: Int32, x: Option[Bool]): PreparedStatementSetter[r, ka, Unit] \ Write(r) = 
         match x {
             case Some(b) => putBoolAt!(ix, b)
-            case None => putNullAt!(ix)
+            case None    => putNullAt!(ix)
         }
 
-    pub def putOptionInt8At!(ix: Int32, x: Option[Int8]): PreparedStatementSetter[r, Unit] \ Write(r) = 
+    pub def putOptionInt8At!(ix: Int32, x: Option[Int8]): PreparedStatementSetter[r, ka, Unit] \ Write(r) = 
         match x {
             case Some(n) => putInt8At!(ix, n)
-            case None => putNullAt!(ix)
+            case None    => putNullAt!(ix)
         }
 
-    pub def putOptionInt16At!(ix: Int32, x: Option[Int16]): PreparedStatementSetter[r, Unit] \ Write(r) = 
+    pub def putOptionInt16At!(ix: Int32, x: Option[Int16]): PreparedStatementSetter[r, ka, Unit] \ Write(r) = 
         match x {
             case Some(n) => putInt16At!(ix, n)
-            case None => putNullAt!(ix)
+            case None    => putNullAt!(ix)
         }
 
-    pub def putOptionInt32At!(ix: Int32, x: Option[Int32]): PreparedStatementSetter[r, Unit] \ Write(r) = 
+    pub def putOptionInt32At!(ix: Int32, x: Option[Int32]): PreparedStatementSetter[r, ka, Unit] \ Write(r) = 
         match x {
             case Some(n) => putInt32At!(ix, n)
-            case None => putNullAt!(ix)
+            case None    => putNullAt!(ix)
         }
 
-    pub def putOptionInt64At!(ix: Int32, x: Option[Int64]): PreparedStatementSetter[r, Unit] \ Write(r) = 
+    pub def putOptionInt64At!(ix: Int32, x: Option[Int64]): PreparedStatementSetter[r, ka, Unit] \ Write(r) = 
         match x {
             case Some(n) => putInt64At!(ix, n)
-            case None => putNullAt!(ix)
+            case None    => putNullAt!(ix)
         }
 
-    pub def putOptionFloat32At!(ix: Int32, x: Option[Float32]): PreparedStatementSetter[r, Unit] \ Write(r) = 
+    pub def putOptionFloat32At!(ix: Int32, x: Option[Float32]): PreparedStatementSetter[r, ka, Unit] \ Write(r) = 
         match x {
             case Some(n) => putFloat32At!(ix, n)
-            case None => putNullAt!(ix)
+            case None    => putNullAt!(ix)
         }
 
-    pub def putOptionFloat64At!(ix: Int32, x: Option[Float64]): PreparedStatementSetter[r, Unit] \ Write(r) = 
+    pub def putOptionFloat64At!(ix: Int32, x: Option[Float64]): PreparedStatementSetter[r, ka, Unit] \ Write(r) = 
         match x {
             case Some(n) => putFloat64At!(ix, n)
-            case None => putNullAt!(ix)
+            case None    => putNullAt!(ix)
         }
 
-    pub def putOptionIsoLocalDateStringAt!(ix: Int32, x: Option[Time.LocalDate]): PreparedStatementSetter[r, Unit] \ Write(r) =
+    pub def putOptionIsoLocalDateStringAt!(ix: Int32, x: Option[Time.LocalDate]): PreparedStatementSetter[r, ka, Unit] \ Write(r) =
         match x {
             case Some(n) => putIsoLocalDateStringAt!(ix, n)
             case None    => putNullAt!(ix)
         }
 
-    pub def putOptionIsoLocalDateTimeStringAt!(ix: Int32, x: Option[Time.LocalDateTime]): PreparedStatementSetter[r, Unit] \ Write(r) =
+    pub def putOptionIsoLocalDateTimeStringAt!(ix: Int32, x: Option[Time.LocalDateTime]): PreparedStatementSetter[r, ka, Unit] \ Write(r) =
         match x {
             case Some(n) => putIsoLocalDateTimeStringAt!(ix, n)
             case None    => putNullAt!(ix)
         }
 
-    pub def putOptionIsoLocalTimeStringAt!(ix: Int32, x: Option[Time.LocalTime]): PreparedStatementSetter[r, Unit] \ Write(r) =
+    pub def putOptionIsoLocalTimeStringAt!(ix: Int32, x: Option[Time.LocalTime]): PreparedStatementSetter[r, ka, Unit] \ Write(r) =
         match x {
             case Some(n) => putIsoLocalTimeStringAt!(ix, n)
             case None    => putNullAt!(ix)
         }
+
 }
 

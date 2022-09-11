@@ -1,10 +1,11 @@
 /// This is expected to be run with the sqlite-jdbc jar in the classpath, e.g on Windows:
 /// 
-/// > java -cp "./lib/*;../bin/flix-working.jar" ca.uwaterloo.flix.Main test
+/// > java -cp "./lib/*;../bin/flix.jar" ca.uwaterloo.flix.Main test
 ///
 
 namespace Test01 {
 
+/*
     use BasicDb.DbMonad;
     use BasicDb.ResultsMonad;
     use BasicDb.RowEvaluator;
@@ -15,7 +16,7 @@ namespace Test01 {
 
 
     @test
-    def test01(): Int32 & Impure = 
+    def test01(): Int32 \ IO = 
         region r1 {
             let path1 = Basis/System/FilePath.filePath("e:/coding/flix/flix-basicdb/data/dbms1.sqlite") |> Result.getWithDefault(Basis/System/FilePath.empty());
             match runSQLite(r1, action1(), path1) {
@@ -24,7 +25,7 @@ namespace Test01 {
             }
         }
 
-    def action1(): DbMonad[r, Bool] \ { Write(r), Impure }= 
+    def action1(): DbMonad[r, Bool, Bool] \ { Write(r), IO }= 
         use BasicDb/DbMonad.{flatMap, point};
         let* _      = execute("DROP TABLE IF EXISTS dbms;");
         let* _      = execute("CREATE TABLE IF NOT EXISTS dbms (name text PRIMARY KEY NOT NULL, year int);");
@@ -47,13 +48,13 @@ namespace Test01 {
         let* _ = putInt32At!( 1,  year);
         point()
 
-    def rsEvalRow(): RowEvaluator[r, Unit] \ { Read(r), Impure} = 
+    def rsEvalRow(): RowEvaluator[r, Unit] \ { Read(r), IO} = 
         use BasicDb/RowEvaluator.{flatMap, point, getStringAt, getInt32At, liftAction};
         let* name   = getStringAt(0);
         let* year   = getInt32At(1);
         let* _      = liftAction(_ -> println(name + ", " + Int32.toString(year)));
         point()
 
-
+*/
 
 }

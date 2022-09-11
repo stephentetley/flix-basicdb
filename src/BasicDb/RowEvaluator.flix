@@ -16,29 +16,49 @@
 
 namespace BasicDb {
 
-    use BasicDb.RowEvaluator;
-    use BasicDb.RowEvaluator.{RowEvaluator};
 
-    pub enum RowEvaluator[r: Region, a: Type](##java.sql.ResultSet -> Result[a, String] & r)
 
-    instance Functor[RowEvaluator[r]] { 
-        pub def map(f: a -> b & ef, x: RowEvaluator[r, a]): RowEvaluator[r, b] & ef = 
+    pub enum RowEvaluator[r: Region, ka: Type, a: Type](MonadLib.Evaluator[r, ka, Interop/Sql.ResultSet[r], a])
+
+
+    instance Functor[RowEvaluator[r, ka]] { 
+        pub def map(f: a -> b \ ef, x: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, b] \ ef = 
             BasicDb/RowEvaluator.map(f, x)
     }
 
-    instance Applicative[RowEvaluator[r]] { 
-        pub def point(x: a): RowEvaluator[r, a] = 
+    instance Applicative[RowEvaluator[r, ka]] { 
+        pub def point(x: a): RowEvaluator[r, ka, a] = 
             BasicDb/RowEvaluator.point(x)
 
-        pub def ap(f: RowEvaluator[r, a -> b & ef], x: RowEvaluator[r, a]): RowEvaluator[r, b] & ef = 
+        pub def ap(f: RowEvaluator[r, ka, a -> b \ ef], x: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, b] \ ef = 
             BasicDb/RowEvaluator.ap(f, x)
     }
 
-    instance Monad[RowEvaluator[r]] { 
-        pub def flatMap(k: a -> RowEvaluator[r, b] & ef, x: RowEvaluator[r, a]): RowEvaluator[r, b] & ef = 
+    instance Monad[RowEvaluator[r, ka]] { 
+        pub def flatMap(k: a -> RowEvaluator[r, ka, b] \ ef, x: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, b] \ ef = 
             BasicDb/RowEvaluator.flatMap(k, x)
     }
 
+    instance MonadZero[RowEvaluator[r, ka]] {
+        pub def empty(): RowEvaluator[r, ka, a] = 
+            BasicDb/RowEvaluator.empty()
+    }
+
+    instance MonadLib.MonadOr[RowEvaluator[r, ka]] {
+        pub def orelse(a: RowEvaluator[r, ka, a], b: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, a] =
+            BasicDb/RowEvaluator.orelse(a, b)
+    }
+
+    instance MonadLib.MonadError[RowEvaluator[r, ka]] {
+        pub def throwError(msg: String): RowEvaluator[r, ka, a] = 
+            BasicDb/RowEvaluator.throwError(msg)
+
+        pub def mapError(f: String -> String \ ef, ma: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, a] \ ef =
+            BasicDb/RowEvaluator.mapError(f, ma)
+
+        pub def catchError(ma: RowEvaluator[r, ka, a], f: String -> RowEvaluator[r, ka, a] \ ef): RowEvaluator[r, ka, a] \ ef =
+            BasicDb/RowEvaluator.catchError(ma, f)
+    }
 }
 
 namespace BasicDb/RowEvaluator {
@@ -46,57 +66,70 @@ namespace BasicDb/RowEvaluator {
     use BasicDb.RowEvaluator;
     use BasicDb.RowEvaluator.{RowEvaluator};
 
-    pub def point(x: a): RowEvaluator[r, a] = RowEvaluator(_ -> Ok(x) as & r)
+    use Interop/Sql.ResultSet;
+    use Interop/Sql.ResultSet.{ResultSet};
 
-    pub def throwError(msg: String): RowEvaluator[r, a] = RowEvaluator(_ -> Err(msg) as & r)
+    pub def getRowEvaluator(x: RowEvaluator[r, ka, a]): MonadLib.Evaluator[r, ka, ResultSet[r], a] = 
+        let RowEvaluator(x1) = x;
+        x1
 
-    def apply1(x: RowEvaluator[r, a], r: ##java.sql.ResultSet): Result[a, String] & r =
-        let RowEvaluator(f) = x;
-        f(r)
-
-
-    def getRowEvaluatorRegion(): RowEvaluator[r, Region[r]] = 
-        RowEvaluator(_ -> Ok(() as Region[r]) as & r)
-
-
-    pub def map(f: a -> b & ef, x: RowEvaluator[r, a]): RowEvaluator[r, b] & ef =
-        RowEvaluator(row ->
-            match apply1(x, row) {
-                case Ok(a) => {
-                    let ans = f(a) as & r;
-                    Ok(ans)
-                }
-                case Err(e) => Err(e)
-            }
-        ) as & ef
-
-    pub def ap(mf: RowEvaluator[r, a -> b & ef], ma: RowEvaluator[r, a]): RowEvaluator[r, b] & ef =
-        RowEvaluator(row ->
-            match apply1(mf, row) {
-                case Ok(f) => {
-                    match apply1(ma, row) {
-                        case Ok(a) => Ok(f(a) as & r)
-                        case Err(e2) => Err(e2)
-                    }
-                }
-                case Err(e1) => Err(e1)
-            }
-        ) as & ef
+    pub def runRowEvaluator(r: Region[r], 
+                            ma: RowEvaluator[r, a, a], 
+                            st: ResultSet[r]): Result[a, String] \ r =
+        MonadLib/Evaluator.runEvaluator(r, getRowEvaluator(ma), st)
 
 
-    pub def bind(x: RowEvaluator[r, a], k: a -> RowEvaluator[r, b] & ef): RowEvaluator[r, b] & ef =
-        flatMap(k, x)
+    pub def point(x: a): RowEvaluator[r, ka, a] = 
+        RowEvaluator(MonadLib/Evaluator.point(x))
 
-    pub def flatMap(k: a -> RowEvaluator[r, b] & ef, x: RowEvaluator[r, a]): RowEvaluator[r, b] & ef =
-        RowEvaluator(row ->
-            match apply1(x, row) {
-                case Ok(a)  => {let ans = k(a) as & r; apply1(ans, row)}
-                case Err(e) => Err(e)
-            }
-        ) as & ef
+    pub def map(f: a -> b \ ef, x: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, b] \ ef =
+        RowEvaluator(MonadLib/Evaluator.map(f, getRowEvaluator(x)))
+
+    pub def ap(mf: RowEvaluator[r, ka, a -> b \ ef], ma: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, b] \ ef =
+        RowEvaluator(MonadLib/Evaluator.ap(getRowEvaluator(mf), getRowEvaluator(ma)))
+
+    pub def flatMap(k: a -> RowEvaluator[r, ka, b] \ ef, x: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, b] \ ef =
+        RowEvaluator(MonadLib/Evaluator.flatMap(k >> getRowEvaluator, getRowEvaluator(x)))
 
 
-    pub def optional(x: RowEvaluator[r, a]): RowEvaluator[r, Option[a]] =
+    // MatchEvaluator can be MonadOr because it does not "step".
+    // It is only runs on the current match.
+
+    pub def empty(): RowEvaluator[r, ka, a] = throwError("empty")
+
+    pub def orelse(ma: RowEvaluator[r, ka, a], mb: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, a] =
+        RowEvaluator(MonadLib/Evaluator.orelse(getRowEvaluator(ma), getRowEvaluator(mb)))
+
+
+    pub def throwError(msg: String): RowEvaluator[r, ka, a] = 
+        RowEvaluator(MonadLib/Evaluator.throwError(msg))
+
+    pub def mapError(f: String -> String \ ef, ma: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, a] \ ef =
+        RowEvaluator(MonadLib/Evaluator.mapError(f, getRowEvaluator(ma)))
+
+    pub def catchError(ma: RowEvaluator[r, ka, a], f: String -> RowEvaluator[r, ka, a] \ ef): RowEvaluator[r, ka, a] \ ef =
+        RowEvaluator(MonadLib/Evaluator.catchError(getRowEvaluator(ma), f >> getRowEvaluator))
+
+    // def liftGetter(f: ResultSet[r] -> a \ ef): RowEvaluator[r, ka, a] \ ef =
+    //     RowEvaluator(MonadLib/Evaluator.liftGetter(f))
+
+    def liftGetterResult(f: ResultSet[r] -> Result[a, err] \ ef): RowEvaluator[r, ka, a] \ ef with ToString[err] =
+        RowEvaluator(MonadLib/Evaluator.liftGetterResult(f))
+    
+    pub def liftAction(f: Unit -> a \ ef): RowEvaluator[r, ka, a] \ ef =
+        RowEvaluator(MonadLib/Evaluator.liftAction(f))
+    
+        
+    pub def liftActionResult(f: Unit -> Result[a, err] \ ef): RowEvaluator[r, ka, a] \ ef with ToString[err] =
+        RowEvaluator(MonadLib/Evaluator.liftActionResult(f))
+
+
+
+/*
+
+    /// TODO are these general combinators in MonadLib?
+
+    pub def optional(x: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, Option[a]] =
         RowEvaluator(row ->
             match apply1(x, row) {
                 case Ok(a)  => Ok(Some(a))
@@ -105,7 +138,7 @@ namespace BasicDb/RowEvaluator {
         )
 
 
-    pub def alt(ma: RowEvaluator[r, a], mb: RowEvaluator[r, a]): RowEvaluator[r, a] =
+    pub def alt(ma: RowEvaluator[r, ka, a], mb: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, a] =
         RowEvaluator(row ->
             match apply1(ma, row) {
                 case Ok(a)  => Ok(a)
@@ -114,153 +147,126 @@ namespace BasicDb/RowEvaluator {
         )
 
         
-    pub def liftOption(errMsg: String, x: Option[a]): RowEvaluator[r, a] = match x { 
+    pub def liftOption(errMsg: String, x: Option[a]): RowEvaluator[r, ka, a] = match x { 
         case Some(x1) => point(x1)
         case None     => throwError(errMsg)
     }
         
-    pub def liftResult(x: Result[a, String]): RowEvaluator[r, a] = match x { 
+    pub def liftResult(x: Result[a, String]): RowEvaluator[r, ka, a] = match x { 
         case Ok(x1)   => point(x1)
         case Err(msg) => throwError(msg)
     }
 
-    pub def liftResult1(makeErrMsg: e -> String, x: Result[a, e]): RowEvaluator[r, a] = match x { 
+    pub def liftResult1(makeErrMsg: e -> String, x: Result[a, e]): RowEvaluator[r, ka, a] = match x { 
         case Ok(x1) => point(x1)
         case Err(e) => throwError(makeErrMsg(e))
     }
 
 
-    pub def liftValidation(makeErrMsg: List[e] -> String, x: Validation[a, e]): RowEvaluator[r, a] = match x { 
+    pub def liftValidation(makeErrMsg: List[e] -> String, x: Validation[a, e]): RowEvaluator[r, ka, a] = match x { 
         case Success(x1) => point(x1)
         case Failure(es) => throwError(makeErrMsg(Nec.toList(es)))
     }
 
-    def liftPrim(ask: ##java.sql.ResultSet -> Result[a, String] & ef): RowEvaluator[r, a] & ef =
-        RowEvaluator(row -> ask(row) as & r) as & ef
+    def liftPrim(ask: ##java.sql.ResultSet -> Result[a, String] \ ef): RowEvaluator[r, ka, a] \ ef =
+        RowEvaluator(row -> ask(row) as \ r) as \ ef
 
-    
-    pub def liftAction(fn: Unit -> a & ef): RowEvaluator[r, a] & ef =
-        RowEvaluator(_ -> let x = fn() as & r; Ok(x)) as & ef
-    
-        
-    pub def liftActionResult(fn: Unit -> Result[a, String] & ef): RowEvaluator[r, a] & ef =
-        RowEvaluator(_ -> fn() as & r) as & ef
+*/
 
-
-    // // Note - the primitive getX and setX! functions index from 1, we add 1 to calls
-    // // so FactIO's API indexes from 0.
+    // // Note - the Java.Sql's getX functions index from 1, we index from 0.
 
     /// This is "null safe" - if the internal result is null it is converted to the empty String.
-    pub def getStringAt(ix: Int32): RowEvaluator[r, String] \ Read(r) =
-        let* r      = getRowEvaluatorRegion();
-        let* x1     = liftPrim(BasicDb/Internal/ResultSet.getStringAt(r, ix + 1));
-        let ans     = if (Object.isNull(x1)) "" else x1;
-        point(ans)
+    pub def getStringAt(ix: Int32): RowEvaluator[r, ka, String] \ Read(r) =
+        liftGetterResult(rs -> Interop/Sql/ResultSet.getStringAt(ix + 1, rs) |> Result.map(x1 -> if (Object.isNull(x1)) "" else x1))
 
     /// This is "null safe" - if the internal result is null it is converted to the empty String.
-    pub def getStringNamed(label: String): RowEvaluator[r, String] \ Read(r) =
-        let* r      = getRowEvaluatorRegion();
-        let* x1     = liftPrim(BasicDb/Internal/ResultSet.getStringNamed(r, label));
-        let ans     = if (Object.isNull(x1)) "" else x1;
-        point(ans)
+    pub def getStringNamed(label: String): RowEvaluator[r, ka, String] \ Read(r) =
+        liftGetterResult(rs -> Interop/Sql/ResultSet.getStringNamed(label, rs) |> Result.map(x1 -> if (Object.isNull(x1)) "" else x1))
+
 
     // See Javadocs for how a bool value is interpreted...
-    pub def getBoolAt(ix: Int32): RowEvaluator[r, Bool] \ Read(r) =
-        let* r      = getRowEvaluatorRegion();
-        liftPrim(BasicDb/Internal/ResultSet.getBoolAt(r, ix + 1))
+    pub def getBoolAt(ix: Int32): RowEvaluator[r, ka, Bool] \ Read(r) =
+        liftGetterResult(Interop/Sql/ResultSet.getBoolAt(ix + 1))
 
     // See Javadocs for how a bool value is interpreted...
-    pub def getBoolNamed(label: String): RowEvaluator[r, Bool] \ Read(r) =
-        let* r      = getRowEvaluatorRegion();
-        liftPrim(BasicDb/Internal/ResultSet.getBoolNamed(r, label))
+    pub def getBoolNamed(label: String): RowEvaluator[r, ka, Bool] \ Read(r) =
+        liftGetterResult(Interop/Sql/ResultSet.getBoolNamed(label))
 
-    pub def getInt8At(ix: Int32): RowEvaluator[r, Int8] \ Read(r) =
-        let* r      = getRowEvaluatorRegion();
-        liftPrim(BasicDb/Internal/ResultSet.getInt8At(r, ix + 1))
+    pub def getInt8At(ix: Int32): RowEvaluator[r, ka, Int8] \ Read(r) =
+        liftGetterResult(Interop/Sql/ResultSet.getInt8At(ix + 1))
 
-    pub def getInt8Named(label: String): RowEvaluator[r, Int8] \ Read(r) =
-        let* r      = getRowEvaluatorRegion();
-        liftPrim(BasicDb/Internal/ResultSet.getInt8Named(r, label))
+    pub def getInt8Named(label: String): RowEvaluator[r, ka, Int8] \ Read(r) =
+        liftGetterResult(Interop/Sql/ResultSet.getInt8Named(label))
 
-    pub def getInt16At(ix: Int32): RowEvaluator[r, Int16] \ Read(r) =
-        let* r      = getRowEvaluatorRegion();
-        liftPrim(BasicDb/Internal/ResultSet.getInt16At(r, ix + 1))
+    pub def getInt16At(ix: Int32): RowEvaluator[r, ka, Int16] \ Read(r) =
+        liftGetterResult(Interop/Sql/ResultSet.getInt16At(ix + 1))
 
-    pub def getInt16Named(label: String): RowEvaluator[r, Int16] \ Read(r) =
-        let* r      = getRowEvaluatorRegion();
-        liftPrim(BasicDb/Internal/ResultSet.getInt16Named(r, label))
+    pub def getInt16Named(label: String): RowEvaluator[r, ka, Int16] \ Read(r) =
+        liftGetterResult(Interop/Sql/ResultSet.getInt16Named(label))
 
-    pub def getInt32At(ix: Int32): RowEvaluator[r, Int32] \ Read(r) =
-        let* r      = getRowEvaluatorRegion();
-        liftPrim(BasicDb/Internal/ResultSet.getInt32At(r, ix + 1))
+    pub def getInt32At(ix: Int32): RowEvaluator[r, ka, Int32] \ Read(r) =
+        liftGetterResult(Interop/Sql/ResultSet.getInt32At(ix + 1))
 
-    pub def getInt32Named(label: String): RowEvaluator[r, Int32] \ Read(r) =
-        let* r      = getRowEvaluatorRegion();
-        liftPrim(BasicDb/Internal/ResultSet.getInt32Named(r, label))
+    pub def getInt32Named(label: String): RowEvaluator[r, ka, Int32] \ Read(r) =
+        liftGetterResult(Interop/Sql/ResultSet.getInt32Named(label))
 
-    pub def getInt64At(ix: Int32): RowEvaluator[r, Int64] \ Read(r) =
-        let* r      = getRowEvaluatorRegion();
-        liftPrim(BasicDb/Internal/ResultSet.getInt64At(r, ix + 1))
+    pub def getInt64At(ix: Int32): RowEvaluator[r, ka, Int64] \ Read(r) =
+        liftGetterResult(Interop/Sql/ResultSet.getInt64At(ix + 1))
 
-    pub def getInt64Named(label: String): RowEvaluator[r, Int64] \ Read(r) =
-        let* r      = getRowEvaluatorRegion();
-        liftPrim(BasicDb/Internal/ResultSet.getInt64Named(r, label))
+    pub def getInt64Named(label: String): RowEvaluator[r, ka, Int64] \ Read(r) =
+        liftGetterResult(Interop/Sql/ResultSet.getInt64Named(label))
 
-    pub def getFloat32At(ix: Int32): RowEvaluator[r, Float32] \ Read(r) =
-        let* r      = getRowEvaluatorRegion();
-        liftPrim(BasicDb/Internal/ResultSet.getFloat32At(r, ix + 1))
+    pub def getFloat32At(ix: Int32): RowEvaluator[r, ka, Float32] \ Read(r) =
+        liftGetterResult(Interop/Sql/ResultSet.getFloat32At(ix + 1))
     
-    pub def getFloat32Named(label: String): RowEvaluator[r, Float32] \ Read(r) =
-        let* r      = getRowEvaluatorRegion();
-        liftPrim(BasicDb/Internal/ResultSet.getFloat32Named(r, label))
+    pub def getFloat32Named(label: String): RowEvaluator[r, ka, Float32] \ Read(r) =
+        liftGetterResult(Interop/Sql/ResultSet.getFloat32Named(label))
 
-    pub def getFloat64At(ix: Int32): RowEvaluator[r, Float64] \ Read(r) =
-        let* r      = getRowEvaluatorRegion();
-        liftPrim(BasicDb/Internal/ResultSet.getFloat64At(r, ix + 1))
+    pub def getFloat64At(ix: Int32): RowEvaluator[r, ka, Float64] \ Read(r) =
+        liftGetterResult(Interop/Sql/ResultSet.getFloat64At(ix + 1))
 
-    pub def getFloat64Named(label: String): RowEvaluator[r, Float64] \ Read(r) =
-        let* r      = getRowEvaluatorRegion();
-        liftPrim(BasicDb/Internal/ResultSet.getFloat64Named(r, label))
+    pub def getFloat64Named(label: String): RowEvaluator[r, ka, Float64] \ Read(r) =
+        liftGetterResult(Interop/Sql/ResultSet.getFloat64Named(label))
 
 
     /// Cell has type String...
-    pub def getLocalDateStringAt(ix: Int32): RowEvaluator[r, Time.LocalDate] \ Read(r) =
+    pub def getLocalDateStringAt(ix: Int32): RowEvaluator[r, ka, Time.LocalDate] \ Read(r) =
         let* s = getStringAt(ix);
         let fmt = Time/Format/DateTimeFormatter.iso_local_date();
-        liftResult(Time/LocalDate.parse(fmt, s))
+        MonadLib/MonadError.liftResult(Time/LocalDate.parse(fmt, s))
     
 
     /// Cell has type String...
-    pub def getLocalDateStringNamed(label: String): RowEvaluator[r, Time.LocalDate] \ Read(r) =
+    pub def getLocalDateStringNamed(label: String): RowEvaluator[r, ka, Time.LocalDate] \ Read(r) =
         let* s = getStringNamed(label);
         let fmt = Time/Format/DateTimeFormatter.iso_local_date();
-        liftResult(Time/LocalDate.parse(fmt, s))
+        MonadLib/MonadError.liftResult(Time/LocalDate.parse(fmt, s))
 
     /// Cell has type String...
-    pub def getLocalDateTimeStringAt(ix: Int32): RowEvaluator[r, Time.LocalDateTime] \ Read(r) =
+    pub def getLocalDateTimeStringAt(ix: Int32): RowEvaluator[r, ka, Time.LocalDateTime] \ Read(r) =
         let* s = getStringAt(ix);
         let fmt = Time/Format/DateTimeFormatter.iso_local_date_time();
-        liftResult(Time/LocalDateTime.parse(fmt, s))
+        MonadLib/MonadError.liftResult(Time/LocalDateTime.parse(fmt, s))
     
 
     /// Cell has type String...
-    pub def getLocalDateTimeStringNamed(label: String): RowEvaluator[r, Time.LocalDateTime] \ Read(r) =
+    pub def getLocalDateTimeStringNamed(label: String): RowEvaluator[r, ka, Time.LocalDateTime] \ Read(r) =
         let* s = getStringNamed(label);
         let fmt = Time/Format/DateTimeFormatter.iso_local_date_time();
-        liftResult(Time/LocalDateTime.parse(fmt, s))
+        MonadLib/MonadError.liftResult(Time/LocalDateTime.parse(fmt, s))
 
     /// Cell has type String...
-    pub def getLocalTimeStringAt(ix: Int32): RowEvaluator[r, Time.LocalTime] \ Read(r) =
+    pub def getLocalTimeStringAt(ix: Int32): RowEvaluator[r, ka, Time.LocalTime] \ Read(r) =
         let* s = getStringAt(ix);
         let fmt = Time/Format/DateTimeFormatter.iso_local_time();
-        liftResult(Time/LocalTime.parse(fmt, s))
+        MonadLib/MonadError.liftResult(Time/LocalTime.parse(fmt, s))
     
 
     /// Cell has type String...
-    pub def getLocalTimeStringNamed(label: String): RowEvaluator[r, Time.LocalTime] \ Read(r) =
+    pub def getLocalTimeStringNamed(label: String): RowEvaluator[r, ka, Time.LocalTime] \ Read(r) =
         let* s = getStringNamed(label);
         let fmt = Time/Format/DateTimeFormatter.iso_local_time();
-        liftResult(Time/LocalTime.parse(fmt, s))
+        MonadLib/MonadError.liftResult(Time/LocalTime.parse(fmt, s))
 
 }
 

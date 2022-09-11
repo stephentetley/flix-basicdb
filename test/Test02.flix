@@ -1,10 +1,11 @@
 /// This is expected to be run with the sqlite-jdbc jar in the classpath, e.g on Windows:
 /// 
-/// > java -cp "./lib/*;../bin/flix-working.jar" ca.uwaterloo.flix.Main test
+/// > java -cp "./lib/*;../bin/flix.jar" ca.uwaterloo.flix.Main test
 ///
 
 namespace Test02 {
 
+/*
     use BasicDb.DbMonad;
     use BasicDb.ResultsMonad;
     use BasicDb.RowEvaluator;
@@ -15,7 +16,7 @@ namespace Test02 {
 
 
     @test
-    def testRead01(): Int32 & Impure = 
+    def testRead01(): Int32 \ IO = 
         region r1 {
             let path = Basis/System/FilePath.filePath("e:/coding/flix/flix-basicdb/data/langs.sqlite") |> Result.getWithDefault(Basis/System/FilePath.empty());
             match runSQLite(r1, query1(), path) {
@@ -24,7 +25,7 @@ namespace Test02 {
             }
         }
 
-    def query1(): DbMonad[r, Bool] \ { Write(r), Impure }= 
+    def query1(): DbMonad[r, Bool, Bool] \ { Write(r), IO }= 
         use BasicDb/DbMonad.{flatMap, point};
         let* stmt   = createStatement();
         let* rs     = executeQuery(stmt, "SELECT name, year FROM langs ORDER BY year");
@@ -33,12 +34,12 @@ namespace Test02 {
         point(true)
 
 
-    def rsEvalRow(): RowEvaluator[r, Unit] \ { Read(r), Impure} = 
+    def rsEvalRow(): RowEvaluator[r, Unit] \ { Read(r), IO} = 
         use BasicDb/RowEvaluator.{flatMap, point, getStringAt, getInt32At, liftAction};
         let* name   = getStringAt(0);
         let* year   = getInt32At(1);
         let* _      = liftAction(_ -> println(name + ", " + Int32.toString(year)));
         point()
 
-
+*/
 }

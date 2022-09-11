@@ -21,35 +21,45 @@ namespace BasicDb {
     /// analogous to Haskell's IO so we pu it in a region (even though we can't create on 
     /// outside of Impure / IO).
 
-    /// TODO - codensity and pass a region so there aren't pure expressions that 
-    /// the compiler might write...
 
-    pub enum DbMonad[r: Region, a: Type](##java.sql.Connection -> Result[a, String] \ r)
-
-    instance Functor[DbMonad[r]] { 
-        pub def map(f: a -> b \ ef, x: DbMonad[r, a]): DbMonad[r, b] \ ef = 
+    pub enum DbMonad[r: Region, ka: Type, a: Type](
+        MonadLib.MutStateError[r, ka, Interop/Sql.Connection[r], a])
+    
+    instance Functor[DbMonad[r, ka]] { 
+        pub def map(f: a -> b \ ef, x: DbMonad[r, ka, a]): DbMonad[r, ka, b] \ ef = 
             BasicDb/DbMonad.map(f, x)
     }
 
-    instance Applicative[DbMonad[r]] { 
-        pub def point(x: a): DbMonad[r, a] = 
+    instance Applicative[DbMonad[r, ka]] { 
+        pub def point(x: a): DbMonad[r, ka, a] = 
             BasicDb/DbMonad.point(x)
 
-        pub def ap(f: DbMonad[r, a -> b \ ef], x: DbMonad[r, a]): DbMonad[r, b] \ ef = 
+        pub def ap(f: DbMonad[r, ka, a -> b \ ef], x: DbMonad[r, ka, a]): DbMonad[r, ka, b] \ ef = 
             BasicDb/DbMonad.ap(f, x)
     }
 
-    instance Monad[DbMonad[r]] { 
-        pub def flatMap(k: a -> DbMonad[r, b] \ ef, x: DbMonad[r, a]): DbMonad[r, b] \ ef = 
+    instance Monad[DbMonad[r, ka]] { 
+        pub def flatMap(k: a -> DbMonad[r, ka, b] \ ef, x: DbMonad[r, ka, a]): DbMonad[r, ka, b] \ ef = 
             BasicDb/DbMonad.flatMap(k, x)
     }
 
+    instance MonadLib.MonadError[DbMonad[r, ka]] {
+        pub def throwError(msg: String): DbMonad[r, ka, a] = 
+            BasicDb/DbMonad.throwError(msg)
 
-    pub enum PreparedStatement(##java.sql.PreparedStatement)
+        pub def mapError(f: String -> String \ ef, ma: DbMonad[r, ka, a]): DbMonad[r, ka, a] \ ef =
+            BasicDb/DbMonad.mapError(f, ma)
 
-    pub enum Statement(##java.sql.Statement)
+        pub def catchError(ma: DbMonad[r, ka, a], f: String -> DbMonad[r, ka, a] \ ef): DbMonad[r, ka, a] \ ef =
+            BasicDb/DbMonad.catchError(ma, f)
+    }
 
-    pub enum ResultSet(##java.sql.ResultSet)
+
+    pub type alias PreparedStatement[r: Region] = Interop/Sql.PreparedStatement[r]
+
+    pub type alias Statement[r: Region] = Interop/Sql.Statement[r]
+
+    pub type alias ResultSet[r: Region] = Interop/Sql.ResultSet[r]
 
 }
 
@@ -60,6 +70,10 @@ namespace BasicDb/DbMonad {
     use BasicDb.DbMonad;
     use BasicDb.DbMonad.{DbMonad};
 
+    use Interop/Sql.Connection;
+    use Interop/Sql.Connection.{Connection};
+
+
     use BasicDb.PreparedStatement;
     use BasicDb.PreparedStatement.{PreparedStatement};
 
@@ -67,72 +81,83 @@ namespace BasicDb/DbMonad {
     use BasicDb.PreparedStatementSetter.{PreparedStatementSetter};
 
     use BasicDb.ResultSet;
-    use BasicDb.ResultSet.{ResultSet};
-
     use BasicDb.RowEvaluator;
-    use BasicDb.RowEvaluator.{RowEvaluator};
-
     use BasicDb.Statement;
-    use BasicDb.Statement.{Statement};
+    use Interop/Sql.Statement.{Statement};
 
-    type alias PSCache = Map[String, PreparedStatement]
+    def getDbMonad(x: DbMonad[r, ka, a]): MonadLib.MutStateError[r, ka, Connection[r], a] = 
+        let DbMonad(x1) = x;
+        x1
 
-    pub def runDbMonad(r: Region[r], ma: DbMonad[r, a], url: String): Result[a, String] \ { r, Impure } = 
-        use BasicDb/Internal/Prim.{dmGetConnection, closeConnection};
-        match dmGetConnection(r, url) {
-            case Err(e) => Err(e)
+    pub def point(x: a): DbMonad[r, ka, a] = 
+        DbMonad(MonadLib/MutStateError.point(x))
+
+    /// Needs to allow allow effects (e.g create / access arrays)
+    pub def map(f: a -> b \ ef, ma: DbMonad[r, ka, a]): DbMonad[r, ka, b] \ ef = 
+        DbMonad(MonadLib/MutStateError.map(f, getDbMonad(ma)))
+
+    pub def ap(mf: DbMonad[r, ka, a -> b \ ef], ma: DbMonad[r, ka, a]): DbMonad[r, ka, b] \ ef = 
+        DbMonad(MonadLib/MutStateError.ap(getDbMonad(mf), getDbMonad(ma)))
+
+    pub def flatMap(f: a -> DbMonad[r, ka, b] \ ef, ma: DbMonad[r, ka, a]): DbMonad[r, ka, b] \ ef =
+        DbMonad(MonadLib/MutStateError.flatMap(f >> getDbMonad, getDbMonad(ma)))
+
+    pub def throwError(msg: String): DbMonad[r, ka, a] = 
+        DbMonad(MonadLib/MutStateError.throwError(msg))
+    
+    pub def mapError(f: String -> String \ ef, ma: DbMonad[r, ka, a]): DbMonad[r, ka, a] \ ef= 
+        DbMonad(MonadLib/MutStateError.mapError(f, getDbMonad(ma)))
+
+    pub def catchError(ma: DbMonad[r, ka, a], f: String -> DbMonad[r, ka, a] \ ef): DbMonad[r, ka, a] \ ef =
+        DbMonad(MonadLib/MutStateError.catchError(getDbMonad(ma), f >> getDbMonad))
+
+
+    // def liftSetter!(f: Connection[r] -> a \ ef): DbMonad[r, ka, Unit] \ ef =
+    //     DbMonad(MonadLib/MutStateError.liftSetter!(f) |> Functor.ignore)
+
+    def liftSetterResult!(f: Connection[r] -> Result[a, err] \ ef): DbMonad[r, ka, a] \ ef with ToString[err] =
+        DbMonad(MonadLib/MutStateError.liftSetterResult!(f))
+
+    pub def liftAction(f: Unit -> a \ ef): DbMonad[r, ka, a] \ ef = 
+        DbMonad(MonadLib/MutStateError.liftAction(f))
+
+    pub def liftActionResult(f: Unit -> Result[a, err] \ ef): DbMonad[r, ka, a] \ ef with ToString[err] = 
+        DbMonad(MonadLib/MutStateError.liftActionResult(f))
+
+
+    ///
+    /// Returns the result of applying `ma` to the initial state `s`.
+    ///
+    def runDbMonadHelper(r: Region[r], 
+                        ma: DbMonad[r, a, a], 
+                        s: Connection[r]): Result[a, String] \ r = 
+        MonadLib/MutStateError.runMutStateError(r, getDbMonad(ma), s)
+
+        
+    pub def runDbMonad(r: Region[r], ma: DbMonad[r, a, a], url: String): Result[a, String] \ { r, Impure } = 
+        match Interop/Sql/DriverManager.getConnection(r, url) {
+            case Err(e)   => Err(e)
             case Ok(conn) => {
-                let ans    = apply1(ma, conn);
-                /// ensure conn is closed whether or not previous line is `Ok`
-                discard closeConnection(r, conn);
+                let ans = runDbMonadHelper(r, ma, conn);
+                /// ensure conn is closed whether or not ans is `Ok`
+                discard Interop/Sql/Connection.closeConnection!(conn);
                 ans
             }
         }
         
 
-    pub def runSQLite(r: Region[r], ma: DbMonad[r, a], path: FilePath): Result[a, String] \ { r, Impure } = 
+    pub def runSQLite(r: Region[r], ma: DbMonad[r, a, a], path: FilePath): Result[a, String] \ { r, Impure } = 
         use Basis/System/FilePath.{normalize};
         let url = "jdbc:sqlite:${normalize(path)}";
         runDbMonad(r, ma, url)
 
-    pub def runDuckDB(r: Region[r], ma: DbMonad[r, a], path: FilePath): Result[a, String] \ { r, Impure } = 
+    pub def runDuckDB(r: Region[r], ma: DbMonad[r, a, a], path: FilePath): Result[a, String] \ { r, Impure } = 
         use Basis/System/FilePath.{normalize};
         let url = "jdbc:duckdb:${normalize(path)}";
         runDbMonad(r, ma, url)
 
 
-    def apply1(ma: DbMonad[r, a], conn: ##java.sql.Connection): Result[a, String] \ r = 
-        let DbMonad(x1) = ma;
-        x1(conn)
-    
-    def getDbMonadRegion(): DbMonad[r, Region[r]] = 
-        DbMonad(_ -> Ok(() as Region[r]) as \ r)
-
-
-    pub def point(x: a): DbMonad[r, a] = DbMonad(_ -> Ok(x) as \ r)
-
-    pub def throwError(msg: String): DbMonad[r, a] = DbMonad(_ -> Err(msg) as \ r)
-
-
-    pub def swapError(ma: DbMonad[r, a], msg: String): DbMonad[r, a] =
-        DbMonad(conn -> match apply1(ma, conn) { 
-            case Ok(a)  => Ok(a)
-            case Err(_) => Err(msg)
-        })
-
-    
-    pub def catchError(ma: DbMonad[r, a], handle: String -> DbMonad[r, a]): DbMonad[r, a] =
-        DbMonad(conn -> match apply1(ma, conn) { 
-            case Ok(a) => Ok(a)
-            case Err(e) => apply1(handle(e), conn)
-        })
-
-
-    pub def mapError(f: String -> String, ma: DbMonad[r, a]): DbMonad[r, a] =
-        DbMonad(conn -> match apply1(ma, conn) { 
-            case Ok(a) => Ok(a)
-            case Err(e) => Err(f(e))
-        })
+/*
 
     pub def localConnection(r: Region[r], url: String, ma: DbMonad[r, a]): DbMonad[r, a] \ { r, IO } =
         use BasicDb/Internal/Prim.{dmGetConnection, closeConnection};
@@ -159,32 +184,6 @@ namespace BasicDb/DbMonad {
         localConnection(r, url, ma)
 
 
-    /// Needs to allow allow effects (e.g create / access arrays)
-    pub def map(fn: a -> b \ ef, ma: DbMonad[r, a]): DbMonad[r, b] \ ef = 
-        DbMonad(conn -> match apply1(ma, conn) { 
-            case Ok(a) => {let ans = fn(a) as \ {}; Ok(ans)}
-            case Err(e) => Err(e)
-        }) as \ ef
-
-    pub def ap(mf: DbMonad[r, a -> b \ ef], ma: DbMonad[r, a]): DbMonad[r, b] \ ef = 
-        DbMonad(conn -> match apply1(mf, conn) { 
-            case Ok(f) => match apply1(ma, conn) { 
-                case Ok(a) => {let ans = f(a) as \ {}; Ok(ans)}
-                case Err(e) => Err(e)
-            }
-            case Err(e) => Err(e)
-        }) as \ ef
-
-
-
-
-    pub def bind(ma: DbMonad[r, a], fn: a -> DbMonad[r, b] \ ef): DbMonad[r, b] \ ef = 
-        DbMonad(conn -> match apply1(ma, conn) { 
-            case Ok(a) => apply1(fn(a) as \ {}, conn)
-            case Err(e) => Err(e)
-        }) as \ ef
-
-    pub def flatMap(fn: a -> DbMonad[r, b] \ ef, ma: DbMonad[r, a]): DbMonad[r, b] \ ef = bind(ma, fn)
 
 
 
@@ -305,11 +304,7 @@ namespace BasicDb/DbMonad {
     def liftConnectionPrim(fn: ##java.sql.Connection -> Result[a, String] \ ef): DbMonad[r, a] \ ef= 
         DbMonad(conn -> fn(conn) as \ r) as \ ef
 
-    pub def liftAction(fn: Unit -> a \ ef): DbMonad[r, a] \ ef = 
-        DbMonad(_ -> {let a = fn() as \ r; Ok(a)}) as \ ef
 
-    pub def liftActionResult(fn: Unit -> Result[a, String] \ ef): DbMonad[r, a] \ ef= 
-        DbMonad(_ -> fn() as \ r) as \ ef
 
     // DB operations
 
@@ -323,46 +318,29 @@ namespace BasicDb/DbMonad {
         let* ans    = liftActionResult(_ -> executeStatement(r, stmt, sql));
         let* _      = liftActionResult(_ -> closeStatement(r, stmt));
         point(ans)
+*/
+
+
+    pub def setAutoCommit!(autoCommit: Bool): DbMonad[r, ka, Unit] \ Write(r) =
+        liftSetterResult!(Interop/Sql/Connection.setAutoCommit!(autoCommit))
+
+    pub def commit!(): DbMonad[r, ka, Unit] \ Write(r) =
+        liftSetterResult!(Interop/Sql/Connection.commit!)
+
+
+    pub def createStatement!(): DbMonad[r, ka, Statement[r]] \ Write(r) =
+        liftSetterResult!(Interop/Sql/Connection.createStatement!)
 
 
 
-    pub def setAutoCommit(autoCommit: Bool): DbMonad[r, Unit] \ Write(r) =
-        use BasicDb/Internal/Prim.{setAutoCommit};
-        let* r = getDbMonadRegion();
-        liftConnectionPrim(setAutoCommit(r, autoCommit))
+    pub def executeQuery(sql: String, stmt: Statement[r]): DbMonad[r, ka, ResultSet[r]] \ {IO, Write(r)} =
+        liftActionResult(_ -> Interop/Sql/Statement.executeQuery!(sql, stmt))
+        
 
+    pub def executeUpdate!(sql: String, stmt: Statement[r]): DbMonad[r, ka, Int32] \ {IO, Write(r)} =
+        liftActionResult(_ -> Interop/Sql/Statement.executeUpdate!(sql, stmt))
 
-    pub def commit(): DbMonad[r, Unit] \ Write(r) =
-        use BasicDb/Internal/Prim.{commit};
-        let* r = getDbMonadRegion();
-        liftConnectionPrim(commit(r))
-
-
-    pub def createStatement(): DbMonad[r, Statement] \ Write(r) =
-        use BasicDb/Internal/Prim.{createStatement};
-        let* r = getDbMonadRegion();
-        liftConnectionPrim(x1 -> { let ans = createStatement(r, x1); Result.map(Statement, ans)})
-
-
-
-    pub def executeQuery(stmt: Statement, sql: String): DbMonad[r, ResultSet] \ Write(r) =
-        let body = () -> { 
-            let Statement(stmt1) = stmt;
-            let* r = getDbMonadRegion();
-            let* rs = liftActionResult(_ -> BasicDb/Internal/Prim.executeQuery(r, stmt1, sql));
-            point(ResultSet(rs))
-        };
-        swapError(body(), "executeQuery: ${sql}")
-
-    pub def executeUpdate(stmt: Statement, sql: String): DbMonad[r, Int32] \ Write(r) =
-        let body = () -> { 
-            let Statement(stmt1) = stmt;
-            let* r = getDbMonadRegion();
-            let* n = liftActionResult(_ -> BasicDb/Internal/Prim.executeUpdate(r, stmt1, sql));
-            point(n)
-        };
-        swapError(body(), "executeUpdate: ${sql}")
-
+/*
 
     pub def prepareStatement(sql: String): DbMonad[r, PreparedStatement] \ Write(r) =
         use BasicDb/Internal/Prim.{prepareStatement};
@@ -766,7 +744,7 @@ namespace BasicDb/DbMonad {
                 case Ok(_)  => replicateXHelper(conn, ma, n - 1, fk, sk)
             }        
 
-
+*/
 
 }
 
