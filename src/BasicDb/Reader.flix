@@ -16,21 +16,21 @@
 
 namespace BasicDb/Reader {
 
-/*
+
     use BasicDb.DbMonad;
     use BasicDb.RowEvaluator;
     use BasicDb.RowEvaluator.{RowEvaluator};
 
 
-    pub def allRows(eval: RowEvaluator[r, a], sqlquery: String): DbMonad[r, List[a]] \ Write(r) =
+    pub def allRows(sql: String, eval: RowEvaluator[r, a, a]): DbMonad[r, a, List[a]] \ {IO, Write(r)} =
         use BasicDb/DbMonad.{flatMap, point}; 
-        let* stmt   = BasicDb/DbMonad.createStatement();
-        let* rs     = BasicDb/DbMonad.executeQuery(stmt, sqlquery);
-        let* rows   = BasicDb/DbMonad.allRows(rs, eval);
-        let* _      = BasicDb/DbMonad.rsClose(rs);
+        let* stmt   = BasicDb/DbMonad.createStatement!();
+        let* rs     = BasicDb/DbMonad.executeQuery!(sql, stmt);
+        let* rows   = BasicDb/DbMonad.allRows(eval, rs);
+        let* _      = BasicDb/DbMonad.rsClose!(rs);
         point(rows)
 
-
+/*
     /// TODO `combine` should allow effects
     pub def foldAllRows(combine: (b, a) -> b, 
                         ac: b, 
