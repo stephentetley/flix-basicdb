@@ -65,7 +65,7 @@ namespace BasicDb {
 
 namespace BasicDb/DbMonad {
 
-    use Basis/System.FilePath;
+    use Basis/System.Path;
 
     use BasicDb.DbMonad;
     use BasicDb.DbMonad.{DbMonad};
@@ -146,13 +146,13 @@ namespace BasicDb/DbMonad {
         }
         
 
-    pub def runSQLite(r: Region[r], ma: DbMonad[r, a, a], path: FilePath): Result[a, String] \ { r, Impure } = 
-        use Basis/System/FilePath.{normalize};
+    pub def runSQLite(r: Region[r], ma: DbMonad[r, a, a], path: Path): Result[a, String] \ { r, Impure } = 
+        use Basis/System/Path.{normalize};
         let url = "jdbc:sqlite:${normalize(path)}";
         runDbMonad(r, ma, url)
 
-    pub def runDuckDB(r: Region[r], ma: DbMonad[r, a, a], path: FilePath): Result[a, String] \ { r, Impure } = 
-        use Basis/System/FilePath.{normalize};
+    pub def runDuckDB(r: Region[r], ma: DbMonad[r, a, a], path: Path): Result[a, String] \ { r, Impure } = 
+        use Basis/System/Path.{normalize};
         let url = "jdbc:duckdb:${normalize(path)}";
         runDbMonad(r, ma, url)
 

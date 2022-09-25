@@ -15,7 +15,7 @@ namespace Test02 {
     @test
     def testRead01(): Int32 \ IO = 
         region r1 {
-            let path = Basis/System/FilePath.filePath("e:/coding/flix/flix-basicdb/data/langs.sqlite") |> Result.getWithDefault(Basis/System/FilePath.empty());
+            let path = Basis/System/Path.newPath("e:/coding/flix/flix-basicdb/data/langs.sqlite") |> Result.getWithDefault(Basis/System/Path.empty());
             match BasicDb/DbMonad.runSQLite(r1, query1(), path) {
                 case Err(e) => {println("Error: ${e}"); 1}
                 case Ok(_)  => 0

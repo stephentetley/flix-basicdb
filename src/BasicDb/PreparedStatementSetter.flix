@@ -64,6 +64,7 @@ namespace BasicDb/PreparedStatementSetter {
         let PreparedStatementSetter(x1) = x;
         x1
 
+    /// The state param `st` is expected to be mutated...
     pub def runPreparedStatementSetter!(r: Region[r], 
                                         ma: PreparedStatementSetter[r, a, a], 
                                         st: PreparedStatement[r]): Result[a, String] \ r =
