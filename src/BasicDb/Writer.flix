@@ -19,13 +19,13 @@ namespace BasicDb/Writer {
     use BasicDb.DbMonad;
     use BasicDb.PreparedStatementSetter;
     
-    pub type alias RowSetter[r: Region, a: Type, ef: Bool] = a -> PreparedStatementSetter[r, Unit, Unit] \ ef
+    pub type alias RowSetter[r: Region, row: Type, a: Type, ef: Bool] = row -> PreparedStatementSetter[r, a, a] \ ef
 
 
 
     pub def store(sqlstrings: {prepStmt = String, tableActions = List[String]}, 
-                    setter: RowSetter[r, a, ef], 
-                    rows: t[a]): DbMonad[r, Unit, Int32] \ {IO, ef, Write(r)} with Foldable[t] =
+                    setter: RowSetter[r, row, ka, ef], 
+                    rows: t[row]): DbMonad[r, ka, Int32] \ {IO, ef, Write(r)} with Foldable[t] =
         use BasicDb/DbMonad.{flatMap, point};
         let* _          = BasicDb/DbMonad.setAutoCommit!(false);
         let* _          = Foldable.foreachM(BasicDb/DbMonad.executeSql!, sqlstrings.tableActions);
@@ -36,15 +36,15 @@ namespace BasicDb/Writer {
         point(nrows)
 
     pub def storeArray(sqlstrings: {prepStmt = String, tableActions = List[String]}, 
-                    setter: RowSetter[r, a, ef], 
-                    rows: Array[a, r2]): DbMonad[r, Unit, Int32] \ {IO, ef, Write(r), Read(r2)} =
+                    setter: RowSetter[r, row, ka, ef], 
+                    rows: Array[row, r2]): DbMonad[r, ka, Int32] \ {IO, ef, Write(r), Read(r2)} =
         BasicDb/DbMonad.liftAction(_ -> Array.toList(rows)) >>= store(sqlstrings, setter)
 
 
     pub def storeRelations(sqlstrings: {prepStmt = String, tableActions = List[String]}, 
-                    setter: RowSetter[r, a, ef], 
-                    extractor: {| rr} -> Array[a, r2] \ Write(r),
-                    reln: {| rr}): DbMonad[r, Unit, Int32] \ {IO, ef, Write(r), Write(r2)} =
+                    setter: RowSetter[r, row, ka, ef], 
+                    extractor: {| rr} -> Array[row, r2] \ Write(r),
+                    reln: {| rr}): DbMonad[r, ka, Int32] \ {IO, ef, Write(r), Write(r2)} =
         BasicDb/DbMonad.liftAction(_ -> (extractor(reln) |> Array.toList)) >>= store(sqlstrings, setter)
         
 
