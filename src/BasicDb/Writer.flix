@@ -24,7 +24,7 @@ namespace BasicDb/Writer {
 
 
     pub def store(sqlstrings: {prepStmt = String, tableActions = List[String]}, 
-                    setter: RowSetter[r, row, ka, ef], 
+                    setter: RowSetter[r, row, a, ef], 
                     rows: t[row]): DbMonad[r, ka, Int32] \ {IO, ef, Write(r)} with Foldable[t] =
         use BasicDb/DbMonad.{flatMap, point};
         let* _          = BasicDb/DbMonad.setAutoCommit!(false);
@@ -36,13 +36,13 @@ namespace BasicDb/Writer {
         point(nrows)
 
     pub def storeArray(sqlstrings: {prepStmt = String, tableActions = List[String]}, 
-                    setter: RowSetter[r, row, ka, ef], 
+                    setter: RowSetter[r, row, a, ef], 
                     rows: Array[row, r2]): DbMonad[r, ka, Int32] \ {IO, ef, Write(r), Read(r2)} =
         BasicDb/DbMonad.liftAction(_ -> Array.toList(rows)) >>= store(sqlstrings, setter)
 
 
     pub def storeRelations(sqlstrings: {prepStmt = String, tableActions = List[String]}, 
-                    setter: RowSetter[r, row, ka, ef], 
+                    setter: RowSetter[r, row, a, ef], 
                     extractor: {| rr} -> Array[row, r2] \ Write(r),
                     reln: {| rr}): DbMonad[r, ka, Int32] \ {IO, ef, Write(r), Write(r2)} =
         BasicDb/DbMonad.liftAction(_ -> (extractor(reln) |> Array.toList)) >>= store(sqlstrings, setter)
