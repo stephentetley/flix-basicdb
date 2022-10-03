@@ -16,7 +16,7 @@ namespace TestBig {
     @test
     def test01(): Int32 \ IO = 
         region r1 {
-            let path1 = Basis/System/Path.newPath("e:/coding/flix/flix-basicdb/data/numbers.sqlite") |> Result.getWithDefault(Basis/System/Path.empty());
+            let path1 = Basis/NIO/File/Path.newPath("e:/coding/flix/flix-basicdb/data/numbers.sqlite") |> Result.getWithDefault(Basis/NIO/File/Path.empty());
             match BasicDb/DbMonad.runSQLite(r1, storeNumbers(1000, "small"), path1) {
                 case Err(e) => println("Error: ${e}")
                 case Ok(b)  => println("Ok: ${b}")
@@ -32,7 +32,7 @@ namespace TestBig {
             0
         }
 
-    def storeNumbers(n: Int32, tableName: String): DbMonad[r, ka, Bool] \ { Write(r), IO }= 
+    def storeNumbers(n: Int32, tableName: String): DbMonad[r, ka, Int32] \ { Write(r), IO }= 
         use Applicative.{*>, point};
         use BasicDb/DbMonad.{flatMap};
         let* _      = BasicDb/DbMonad.executeSql!("DROP TABLE IF EXISTS ${tableName};");
@@ -40,9 +40,9 @@ namespace TestBig {
         let* pstmt  = BasicDb/DbMonad.prepareStatement!("INSERT INTO ${tableName}(integer_value, accum) VALUES(?, ?)");
         let* _      = BasicDb/DbMonad.setAutoCommit!(false);
         let nums    = List.range(0, n);
-        let* _      = Foldable.foldLeftM((acc, i) -> BasicDb/DbMonad.psExecuteUpdate!(pstmt, setPStmt!(i, acc)) *> point(acc+1), 0 , nums);
+        let* ans    = Foldable.foldLeftM((acc, i) -> BasicDb/DbMonad.psExecuteUpdate!(pstmt, setPStmt!(i, acc)) *> point(acc+1), 0 , nums);
         let* _      = BasicDb/DbMonad.commit!();
-        point(true)
+        point(ans)
 
     def setPStmt!(ival: Int32, acc: Int32): PreparedStatementSetter[r, ka, Unit] \ Write(r) = 
         use BasicDb/PreparedStatementSetter.{flatMap, point, putInt32At!};

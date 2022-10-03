@@ -61,14 +61,7 @@ namespace BasicDb/Writer {
         BasicDb/DbMonad.liftAction(_ -> (extractor(reln) |> Array.toList)) >>= store(sqlstrings, setter)
         
 
-    /// is tail-recursive flatMap good enough? No this has stack overflow
-    // def listFoldLeftM(f: (b, a) -> m[b] \ ef, s: b, l: List[a]): m[b] \ ef with Monad[m] = 
-    //     use Applicative.{point};
-    //     match l {
-    //         case Nil     => point(s)
-    //         case x :: xs => f(s, x) >>= ans -> listFoldLeftM(f, ans, xs)
-    //     }
-
+    /// Note - Foldable.foldLeftM should be fine and we don't need this...
     pub def foldLeftM(f: (b, a) -> m[b] \ ef, s: b, l: List[a]): m[b] \ ef with Monad[m] = 
         foldLeftMHelper(f, Applicative.point(s), l)
 
