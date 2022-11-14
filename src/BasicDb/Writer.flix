@@ -28,7 +28,7 @@ namespace BasicDb/Writer {
                     rows: t[row]): DbMonad[r, ka, Int32] \ {IO, ef, Write(r)} with Foldable[t] =
         use BasicDb/DbMonad.{flatMap, point};
         let* _          = BasicDb/DbMonad.setAutoCommit!(false);
-        let* _          = Foldable.foreachM(BasicDb/DbMonad.executeSql!, sqlstrings.tableActions);
+        let* _          = Foldable.forEachM(BasicDb/DbMonad.executeSql!, sqlstrings.tableActions);
         let* stmt       = BasicDb/DbMonad.prepareStatement!(sqlstrings.prepStmt);
         let* nrows      = Foldable.foldLeftM((ac, x) -> 
                                 {let* n = BasicDb/DbMonad.psExecuteUpdate!(stmt, setter(x)); point(ac+n)}, 0, rows);
@@ -41,7 +41,7 @@ namespace BasicDb/Writer {
                     rows: List[row]): DbMonad[r, ka, Int32] \ {IO, ef, Write(r)} =
         use BasicDb/DbMonad.{flatMap, point};
         let* _          = BasicDb/DbMonad.setAutoCommit!(false);
-        let* _          = Foldable.foreachM(BasicDb/DbMonad.executeSql!, sqlstrings.tableActions);
+        let* _          = Foldable.forEachM(BasicDb/DbMonad.executeSql!, sqlstrings.tableActions);
         let* stmt       = BasicDb/DbMonad.prepareStatement!(sqlstrings.prepStmt);
         let* nrows      = foldLeftM((ac, x) -> 
                                 {let* n = BasicDb/DbMonad.psExecuteUpdate!(stmt, setter(x)); point(ac+n)}, 0, rows);
