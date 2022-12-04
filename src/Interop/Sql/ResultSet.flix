@@ -21,7 +21,7 @@ namespace Interop/Sql {
     pub enum ResultSet[_: Region](##java.sql.ResultSet)
 
     instance Scoped[ResultSet] {
-        pub def regionOf(_: ResultSet[r]): Region[r] = () as Region[r]
+        pub def regionOf(_: ResultSet[r]): Region[r] = unsafe_cast () as Region[r]
     }
 
 }

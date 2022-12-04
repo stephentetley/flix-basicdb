@@ -21,7 +21,7 @@ namespace Interop/Sql {
     pub enum PreparedStatement[_: Region](##java.sql.PreparedStatement)
 
     instance Scoped[PreparedStatement] {
-        pub def regionOf(_: PreparedStatement[r]): Region[r] = () as Region[r]
+        pub def regionOf(_: PreparedStatement[r]): Region[r] = unsafe_cast () as Region[r]
     }
 
 }

@@ -22,7 +22,7 @@ namespace Interop/Sql {
     pub enum Connection[_: Region](##java.sql.Connection)
 
     instance Scoped[Connection] {
-        pub def regionOf(_: Connection[r]): Region[r] = () as Region[r]
+        pub def regionOf(_: Connection[r]): Region[r] = unsafe_cast () as Region[r]
     }
 
 }

@@ -75,7 +75,7 @@ namespace BasicDb/DbMonad {
 
 
     use BasicDb.PreparedStatement;
-    use BasicDb.PreparedStatement.{PreparedStatement};
+    use Interop/Sql.PreparedStatement.{PreparedStatement};
 
     use BasicDb.PreparedStatementSetter;
     use BasicDb.PreparedStatementSetter.{PreparedStatementSetter};
@@ -198,16 +198,18 @@ namespace BasicDb/DbMonad {
 
 
     pub def psExecuteQuery!(stmt: PreparedStatement[r], setter: PreparedStatementSetter[r, a, a]): DbMonad[r, ka, ResultSet[r]] \ Write(r) =
+        let r   = Scoped.regionOf(stmt);
         let* _  = liftActionResult(_ -> Interop/Sql/PreparedStatement.clearParameters!(stmt));
-        let* _  = liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(() as Region[r], setter, stmt));
+        let* _  = liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(r, setter, stmt));
         let* rs = liftActionResult(_ -> Interop/Sql/PreparedStatement.executeQuery!(stmt));
         point(rs)
 
 
 
     pub def psExecuteUpdate!(stmt: PreparedStatement[r], setter: PreparedStatementSetter[r, a, a]): DbMonad[r, ka, Int32] \ Write(r) =
-        let* _ = liftActionResult(_ -> Interop/Sql/PreparedStatement.clearParameters!(stmt));
-        let* _ = liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(() as Region[r], setter, stmt));
+        let r   = Scoped.regionOf(stmt);
+        let* _  = liftActionResult(_ -> Interop/Sql/PreparedStatement.clearParameters!(stmt));
+        let* _  = liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(r, setter, stmt));
         liftActionResult(_ -> Interop/Sql/PreparedStatement.executeUpdate!(stmt))
 
 
@@ -221,7 +223,7 @@ namespace BasicDb/DbMonad {
 
 
     pub def rsEval(eval: RowEvaluator[r, a, a], rs: ResultSet[r]): DbMonad[r, ka, a] \ r =
-        liftActionResult(_ -> BasicDb/RowEvaluator.runRowEvaluator(() as Region[r], eval, rs))
+        liftActionResult(_ -> BasicDb/RowEvaluator.runRowEvaluator(Scoped.regionOf(rs), eval, rs))
         
 
 

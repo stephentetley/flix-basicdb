@@ -6,9 +6,9 @@
 namespace Test02 {
 
 
-    use BasicDb.DbMonad;
-    use BasicDb.RowEvaluator;
-    use BasicDb.PreparedStatementSetter;
+    use BasicDb.DbMonad
+    use BasicDb.RowEvaluator
+    use BasicDb.PreparedStatementSetter
 
 
 

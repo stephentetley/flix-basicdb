@@ -22,7 +22,7 @@ namespace Interop/Sql {
     pub enum Statement[_: Region](##java.sql.Statement)
 
     instance Scoped[Statement] {
-        pub def regionOf(_: Statement[r]): Region[r] = () as Region[r]
+        pub def regionOf(_: Statement[r]): Region[r] = unsafe_cast () as Region[r]
     }
 
 }
