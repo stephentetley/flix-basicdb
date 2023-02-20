@@ -19,7 +19,7 @@ https://github.com/stephentetley/flix-time
 
 https://github.com/stephentetley/basis-base
 
-https://github.com/stephentetley/monad-lib
+https://github.com/stephentetley/graded-lib
 
 https://github.com/stephentetley/interop-base
 

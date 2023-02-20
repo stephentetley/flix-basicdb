@@ -20,9 +20,6 @@ namespace Interop/Sql {
 
     pub enum PreparedStatement[_: Region](##java.sql.PreparedStatement)
 
-    instance Scoped[PreparedStatement] {
-        pub def regionOf(_: PreparedStatement[r]): Region[r] = unsafe_cast () as Region[r]
-    }
 
 }
 
@@ -38,7 +35,7 @@ namespace Interop/Sql/PreparedStatement {
         let PreparedStatement(stmt1) = stmt;
         stmt1
 
-    pub def clearParameters!(stmt: PreparedStatement[r]): Result[Unit, String] \ Write(r) =
+    pub def clearParameters!(stmt: PreparedStatement[r]): Result[String, Unit] \ Write(r) =
         try {
             import java.sql.PreparedStatement.clearParameters(): Unit \ r;
             let PreparedStatement(stmt1) = stmt;
@@ -51,7 +48,7 @@ namespace Interop/Sql/PreparedStatement {
         }
 
 
-    pub def executeQuery!(stmt: PreparedStatement[r]): Result[ResultSet[r], String] \ Write(r) =        
+    pub def executeQuery!(stmt: PreparedStatement[r]): Result[String, ResultSet[r]] \ Write(r) =        
         try {
             import java.sql.PreparedStatement.executeQuery(): ##java.sql.ResultSet \ r;
             let PreparedStatement(stmt1) = stmt;
@@ -62,7 +59,7 @@ namespace Interop/Sql/PreparedStatement {
                 Err(getMessage(ex))
         }
 
-    pub def executeUpdate!(stmt: PreparedStatement[r]): Result[Int32, String] \ Write(r) =
+    pub def executeUpdate!(stmt: PreparedStatement[r]): Result[String, Int32] \ Write(r) =
         try {
             import java.sql.PreparedStatement.executeUpdate(): Int32 \ r;
             let PreparedStatement(stmt1) = stmt;
@@ -75,7 +72,7 @@ namespace Interop/Sql/PreparedStatement {
 
 
 
-    pub def setNull!(ix: Int32, sqlType: Int32, stmt: PreparedStatement[r]): Result[Unit, String] \ Write(r) =
+    pub def setNull!(ix: Int32, sqlType: Int32, stmt: PreparedStatement[r]): Result[String, Unit] \ Write(r) =
         try {
             import java.sql.PreparedStatement.setNull(Int32, Int32): Unit \ r;
             let PreparedStatement(stmt1) = stmt;
@@ -87,7 +84,7 @@ namespace Interop/Sql/PreparedStatement {
                 Err(getMessage(ex))
         }
 
-    pub def setString!(ix: Int32, str: String, stmt: PreparedStatement[r]): Result[Unit, String] \ Write(r) =
+    pub def setString!(ix: Int32, str: String, stmt: PreparedStatement[r]): Result[String, Unit] \ Write(r) =
         try {
             import java.sql.PreparedStatement.setString(Int32, String): Unit \ r;
             let PreparedStatement(stmt1) = stmt;
@@ -99,7 +96,7 @@ namespace Interop/Sql/PreparedStatement {
                 Err(getMessage(ex))
         }
 
-    pub def setBool!(ix: Int32, b: Bool, stmt: PreparedStatement[r]): Result[Unit, String] \ Write(r) =
+    pub def setBool!(ix: Int32, b: Bool, stmt: PreparedStatement[r]): Result[String, Unit] \ Write(r) =
         try {
             import java.sql.PreparedStatement.setBoolean(Int32, Bool): Unit \ r;
             let PreparedStatement(stmt1) = stmt;
@@ -111,7 +108,7 @@ namespace Interop/Sql/PreparedStatement {
                 Err(getMessage(ex))
         }
 
-    pub def setInt8!(ix: Int32, n: Int8, stmt: PreparedStatement[r]): Result[Unit, String] \ Write(r) =
+    pub def setInt8!(ix: Int32, n: Int8, stmt: PreparedStatement[r]): Result[String, Unit] \ Write(r) =
         try {
             import java.sql.PreparedStatement.setByte(Int32, Int8): Unit \ r;
             let PreparedStatement(stmt1) = stmt;
@@ -123,7 +120,7 @@ namespace Interop/Sql/PreparedStatement {
                 Err(getMessage(ex))
         }
 
-    pub def setInt16!(ix: Int32, n: Int16, stmt: PreparedStatement[r]): Result[Unit, String] \ Write(r) =
+    pub def setInt16!(ix: Int32, n: Int16, stmt: PreparedStatement[r]): Result[String, Unit] \ Write(r) =
         try {
             import java.sql.PreparedStatement.setShort(Int32, Int16): Unit \ r;
             let PreparedStatement(stmt1) = stmt;
@@ -135,7 +132,7 @@ namespace Interop/Sql/PreparedStatement {
                 Err(getMessage(ex))
         }
 
-    pub def setInt32!(ix: Int32, n: Int32, stmt: PreparedStatement[r]): Result[Unit, String] \ Write(r) =
+    pub def setInt32!(ix: Int32, n: Int32, stmt: PreparedStatement[r]): Result[String, Unit] \ Write(r) =
         try {
             import java.sql.PreparedStatement.setInt(Int32, Int32): Unit \ r;        
             let PreparedStatement(stmt1) = stmt;
@@ -147,7 +144,7 @@ namespace Interop/Sql/PreparedStatement {
                 Err(getMessage(ex))
         }
 
-    pub def setInt64!(ix: Int32, n: Int64, stmt: PreparedStatement[r]): Result[Unit, String] \ Write(r) =
+    pub def setInt64!(ix: Int32, n: Int64, stmt: PreparedStatement[r]): Result[String, Unit] \ Write(r) =
         try {
             import java.sql.PreparedStatement.setLong(Int32, Int64): Unit \ r;
             let PreparedStatement(stmt1) = stmt;
@@ -159,7 +156,7 @@ namespace Interop/Sql/PreparedStatement {
                 Err(getMessage(ex))
         }
 
-    pub def setFloat32!(ix: Int32, d: Float32, stmt: PreparedStatement[r]): Result[Unit, String] \ Write(r) =
+    pub def setFloat32!(ix: Int32, d: Float32, stmt: PreparedStatement[r]): Result[String, Unit] \ Write(r) =
         try {
             import java.sql.PreparedStatement.setFloat(Int32, Float32): Unit \ r;
             let PreparedStatement(stmt1) = stmt;
@@ -171,7 +168,7 @@ namespace Interop/Sql/PreparedStatement {
                 Err(getMessage(ex))
         }
 
-    pub def setFloat64!(ix: Int32, d: Float64, stmt: PreparedStatement[r]): Result[Unit, String] \ Write(r) =
+    pub def setFloat64!(ix: Int32, d: Float64, stmt: PreparedStatement[r]): Result[String, Unit] \ Write(r) =
         try {
             import java.sql.PreparedStatement.setDouble(Int32, Float64): Unit \ r;
             let PreparedStatement(stmt1) = stmt;

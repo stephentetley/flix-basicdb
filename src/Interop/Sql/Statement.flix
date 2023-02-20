@@ -21,9 +21,6 @@ namespace Interop/Sql {
 
     pub enum Statement[_: Region](##java.sql.Statement)
 
-    instance Scoped[Statement] {
-        pub def regionOf(_: Statement[r]): Region[r] = unsafe_cast () as Region[r]
-    }
 
 }
 
@@ -44,7 +41,7 @@ namespace Interop/Sql/Statement {
 
 
 
-    pub def close!(stmt: Statement[r]): Result[Unit, String] \ Write(r) = 
+    pub def close!(stmt: Statement[r]): Result[String, Unit] \ Write(r) = 
         try {
             import java.sql.Statement.close(): Unit \ r;
             let Statement(stmt1) = stmt;
@@ -56,7 +53,7 @@ namespace Interop/Sql/Statement {
                 Err(getMessage(ex))
         }
 
-    pub def execute!(sql: String, stmt: Statement[r]): Result[Bool, String] \ {IO, Write(r)} =
+    pub def execute!(sql: String, stmt: Statement[r]): Result[String, Bool] \ {IO, Write(r)} =
         try {
             import java.sql.Statement.execute(String): Bool \ {IO, r};
             let Statement(stmt1) = stmt;
@@ -68,7 +65,7 @@ namespace Interop/Sql/Statement {
                 Err(getMessage(ex))
         }
 
-    pub def executeQuery!(sql: String, stmt: Statement[r]): Result[ResultSet[r], String] \ {IO, Write(r)} = 
+    pub def executeQuery!(sql: String, stmt: Statement[r]): Result[String, ResultSet[r]] \ {IO, Write(r)} = 
         try {
             import java.sql.Statement.executeQuery(String): ##java.sql.ResultSet \ {IO, r};
             let Statement(stmt1) = stmt;
@@ -79,7 +76,7 @@ namespace Interop/Sql/Statement {
                 Err(getMessage(ex))
         }
 
-    pub def executeUpdate!(sql: String, stmt: Statement[r]): Result[Int32, String] \ {IO, Write(r)} = 
+    pub def executeUpdate!(sql: String, stmt: Statement[r]): Result[String, Int32] \ {IO, Write(r)} = 
         try {
             import java.sql.Statement.executeUpdate(String): Int32 \ {IO, r};
             let Statement(stmt1) = stmt;

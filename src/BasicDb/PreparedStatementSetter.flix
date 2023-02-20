@@ -67,7 +67,7 @@ namespace BasicDb/PreparedStatementSetter {
     /// The state param `st` is expected to be mutated...
     pub def runPreparedStatementSetter!(r: Region[r], 
                                         ma: PreparedStatementSetter[r, a, a], 
-                                        st: PreparedStatement[r]): Result[a, String] \ r =
+                                        st: PreparedStatement[r]): Result[String, a] \ r =
         MonadLib/MutStateError.runMutStateError(r, getPreparedStatementSetter(ma), st)
 
     pub def point(x: a): PreparedStatementSetter[r, ka, a] = 
@@ -93,20 +93,20 @@ namespace BasicDb/PreparedStatementSetter {
         PreparedStatementSetter(MonadLib/MutStateError.catchError(getPreparedStatementSetter(ma), f >> getPreparedStatementSetter))
 
 
-    def liftSetterResult!(f: PreparedStatement[r] -> Result[a, err] \ ef): PreparedStatementSetter[r, ka, a] \ ef with ToString[err] =
+    def liftSetterResult!(f: PreparedStatement[r] -> Result[err, a] \ ef): PreparedStatementSetter[r, ka, a] \ ef with ToString[err] =
         PreparedStatementSetter(MonadLib/MutStateError.liftSetterResult!(f))
     
     pub def liftAction(f: Unit -> a \ ef): PreparedStatementSetter[r, ka, a] \ ef =
         PreparedStatementSetter(MonadLib/MutStateError.liftAction(f))
     
         
-    pub def liftActionResult(f: Unit -> Result[a, err] \ ef): PreparedStatementSetter[r, ka, a] \ ef with ToString[err] =
+    pub def liftActionResult(f: Unit -> Result[err, a] \ ef): PreparedStatementSetter[r, ka, a] \ ef with ToString[err] =
         PreparedStatementSetter(MonadLib/MutStateError.liftActionResult(f))
 
 
 /*
 
-    def liftPrim(update: ##java.sql.PreparedStatement -> Result[a, String] \ ef): PreparedStatementSetter[r, ka, a] \ ef =
+    def liftPrim(update: ##java.sql.PreparedStatement -> Result[String, a] \ ef): PreparedStatementSetter[r, ka, a] \ ef =
         PreparedStatementSetter(s -> update(s) as \ Pure) as \ ef
 
     pub def liftOption(errMsg: String, x: Option[a]): PreparedStatementSetter[r, ka, a] = match x {
@@ -114,12 +114,12 @@ namespace BasicDb/PreparedStatementSetter {
         case None     => throwError(errMsg)
     }
 
-    pub def liftResult(x: Result[a, String]): PreparedStatementSetter[r, ka, a] = match x { 
+    pub def liftResult(x: Result[String, a]): PreparedStatementSetter[r, ka, a] = match x { 
         case Ok(x1)   => point(x1)
         case Err(msg) => throwError(msg)
     }
 
-    pub def liftResult1(makeErrMsg: e -> String, x: Result[a, e]): PreparedStatementSetter[r, ka, a] = match x { 
+    pub def liftResult1(makeErrMsg: e -> String, x: Result[e, a]): PreparedStatementSetter[r, ka, a] = match x { 
         case Ok(x1) => point(x1)
         case Err(e) => throwError(makeErrMsg(e))
     }
@@ -132,7 +132,7 @@ namespace BasicDb/PreparedStatementSetter {
     pub def liftAction(fn: Unit -> a \ ef): PreparedStatementSetter[r, ka, a] \ ef = 
         PreparedStatementSetter(_ -> {let a = fn() as \ Pure; Ok(a)}) as \ ef
 
-    pub def liftActionResult(fn: Unit -> Result[a, String] \ ef): PreparedStatementSetter[r, ka, a] \ ef = 
+    pub def liftActionResult(fn: Unit -> Result[String, a] \ ef): PreparedStatementSetter[r, ka, a] \ ef = 
         PreparedStatementSetter(_ -> fn() as \ Pure) as \ ef
 
 

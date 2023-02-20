@@ -21,10 +21,6 @@ namespace Interop/Sql {
 
     pub enum Connection[_: Region](##java.sql.Connection)
 
-    instance Scoped[Connection] {
-        pub def regionOf(_: Connection[r]): Region[r] = unsafe_cast () as Region[r]
-    }
-
 }
 
 namespace Interop/Sql/Connection {
@@ -42,7 +38,7 @@ namespace Interop/Sql/Connection {
         conn1
 
     
-    pub def closeConnection!(conn: Connection[r]): Result[Unit, String] \ Write(r) = 
+    pub def closeConnection!(conn: Connection[r]): Result[String, Unit] \ Write(r) = 
         import java.sql.Connection.close(): Unit \ r;
         try {
             let Connection(conn1) = conn;
@@ -56,7 +52,7 @@ namespace Interop/Sql/Connection {
 
 
     /// Just modifies session connection hence not IO
-    pub def setAutoCommit!(autoCommit: Bool, conn: Connection[r]): Result[Unit, String] \ Write(r)  = 
+    pub def setAutoCommit!(autoCommit: Bool, conn: Connection[r]): Result[String, Unit] \ Write(r)  = 
         import java.sql.Connection.setAutoCommit(Bool): Unit \ r;
         try {
             let Connection(conn1) = conn;
@@ -69,7 +65,7 @@ namespace Interop/Sql/Connection {
         }
 
     /// Modifies DB hence IO
-    pub def commit!(conn: Connection[r]): Result[Unit, String] \ {IO, Write(r)} = 
+    pub def commit!(conn: Connection[r]): Result[String, Unit] \ {IO, Write(r)} = 
         import java.sql.Connection.commit(): Unit \ {IO, r};
         try {
             let Connection(conn1) = conn;
@@ -82,7 +78,7 @@ namespace Interop/Sql/Connection {
         }
 
 
-    pub def createStatement!(conn: Connection[r]): Result[Statement[r], String] \ Write(r) = 
+    pub def createStatement!(conn: Connection[r]): Result[String, Statement[r]] \ Write(r) = 
         import java.sql.Connection.createStatement(): ##java.sql.Statement \ r;
         try {
             let Connection(conn1) = conn;
@@ -94,7 +90,7 @@ namespace Interop/Sql/Connection {
         }
 
     pub def prepareStatement!(sql: String, 
-                            conn: Connection[r]): Result[PreparedStatement[r], String] \ { Read(r), Write(r) } = 
+                            conn: Connection[r]): Result[String, PreparedStatement[r]] \ { Read(r), Write(r) } = 
         try {
             import java.sql.Connection.prepareStatement(String): ##java.sql.PreparedStatement \ r;
             let Connection(conn1) = conn;

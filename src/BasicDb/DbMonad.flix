@@ -115,13 +115,13 @@ namespace BasicDb/DbMonad {
     // def liftSetter!(f: Connection[r] -> a \ ef): DbMonad[r, ka, Unit] \ ef =
     //     DbMonad(MonadLib/MutStateError.liftSetter!(f) |> Functor.ignore)
 
-    def liftSetterResult!(f: Connection[r] -> Result[a, err] \ ef): DbMonad[r, ka, a] \ ef with ToString[err] =
+    def liftSetterResult!(f: Connection[r] -> Result[err, a] \ ef): DbMonad[r, ka, a] \ ef with ToString[err] =
         DbMonad(MonadLib/MutStateError.liftSetterResult!(f))
 
     pub def liftAction(f: Unit -> a \ ef): DbMonad[r, ka, a] \ ef = 
         DbMonad(MonadLib/MutStateError.liftAction(f))
 
-    pub def liftActionResult(f: Unit -> Result[a, err] \ ef): DbMonad[r, ka, a] \ ef with ToString[err] = 
+    pub def liftActionResult(f: Unit -> Result[err, a] \ ef): DbMonad[r, ka, a] \ ef with ToString[err] = 
         DbMonad(MonadLib/MutStateError.liftActionResult(f))
 
 
@@ -130,11 +130,11 @@ namespace BasicDb/DbMonad {
     ///
     def runDbMonadHelper(r: Region[r], 
                         ma: DbMonad[r, a, a], 
-                        s: Connection[r]): Result[a, String] \ r = 
+                        s: Connection[r]): Result[String, a] \ r = 
         MonadLib/MutStateError.runMutStateError(r, getDbMonad(ma), s)
 
         
-    pub def runDbMonad(r: Region[r], ma: DbMonad[r, a, a], url: String): Result[a, String] \ { r, Impure } = 
+    pub def runDbMonad(r: Region[r], ma: DbMonad[r, a, a], url: String): Result[String, a] \ { r, Impure } = 
         match Interop/Sql/DriverManager.getConnection(r, url) {
             case Err(e)   => Err(e)
             case Ok(conn) => {
@@ -146,12 +146,12 @@ namespace BasicDb/DbMonad {
         }
         
 
-    pub def runSQLite(r: Region[r], ma: DbMonad[r, a, a], path: Path): Result[a, String] \ { r, Impure } = 
+    pub def runSQLite(r: Region[r], ma: DbMonad[r, a, a], path: Path): Result[String, a] \ { r, Impure } = 
         use Basis/NIO/File/Path.{normalize};
         let url = "jdbc:sqlite:${normalize(path)}";
         runDbMonad(r, ma, url)
 
-    pub def runDuckDB(r: Region[r], ma: DbMonad[r, a, a], path: Path): Result[a, String] \ { r, Impure } = 
+    pub def runDuckDB(r: Region[r], ma: DbMonad[r, a, a], path: Path): Result[String, a] \ { r, Impure } = 
         use Basis/NIO/File/Path.{normalize};
         let url = "jdbc:duckdb:${normalize(path)}";
         runDbMonad(r, ma, url)
@@ -326,7 +326,7 @@ namespace BasicDb/DbMonad {
     ///
     /// By definition this never fails.
     ///
-    pub def result(ma: DbMonad[r, a]): DbMonad[r, Result[a, String]] = 
+    pub def result(ma: DbMonad[r, a]): DbMonad[r, Result[String, a]] = 
         DbMonad(conn -> match apply1(ma, conn) {
             case Ok(a) => Ok(Ok(a))
             case Err(e) => Ok(Err(e))
@@ -392,17 +392,17 @@ namespace BasicDb/DbMonad {
         case None => throwError(errMsg)
     }
 
-    pub def liftResult(x: Result[a, String]): DbMonad[r, a] = match x { 
+    pub def liftResult(x: Result[String, a]): DbMonad[r, a] = match x { 
         case Ok(x1)   => point(x1)
         case Err(msg) => throwError(msg)
     }
 
-    pub def liftResult1(x: Result[a, e], makeErrMsg: e -> String): DbMonad[r, a] = match x { 
+    pub def liftResult1(x: Result[e, a], makeErrMsg: e -> String): DbMonad[r, a] = match x { 
         case Ok(x1) => point(x1)
         case Err(e) => throwError(makeErrMsg(e))
     }
 
-    pub def liftValidation(x: Validation[a, e], makeErrMsg: List[e] -> String): DbMonad[r, a] = match x { 
+    pub def liftValidation(x: Validation[e, a], makeErrMsg: List[e] -> String): DbMonad[r, a] = match x { 
         case Success(x1) => point(x1)
         case Failure(es) => throwError(makeErrMsg(Nec.toList(es)))
     }
@@ -423,8 +423,8 @@ namespace BasicDb/DbMonad {
     def mapMHelper(conn: ##java.sql.Connection, 
                    mf: a -> DbMonad[r, b] \ ef, 
                    xs: List[a], 
-                   fk: String -> Result[List[b], String], 
-                   sk: List[b] -> Result[List[b], String]): Result[List[b], String] \ r =
+                   fk: String -> Result[String, List[b]], 
+                   sk: List[b] -> Result[String, List[b]]): Result[String, List[b]] \ r =
         match xs {
             case Nil => sk(Nil)
             case x :: rs => {
@@ -445,8 +445,8 @@ namespace BasicDb/DbMonad {
     def mapXHelper(conn: ##java.sql.Connection, 
                    mf: a -> DbMonad[r, b] \ ef, 
                    xs: List[a], 
-                   fk: String -> Result[Unit, String], 
-                   sk: Unit -> Result[Unit, String]): Result[Unit, String] \ r =
+                   fk: String -> Result[String, Unit], 
+                   sk: Unit -> Result[String, Unit]): Result[String, Unit] \ r =
         match xs {
             case Nil => sk()
             case x :: rs => {
@@ -471,8 +471,8 @@ namespace BasicDb/DbMonad {
                             mf: (a, Int32) -> DbMonad[r, b] \ ef, 
                             ix : Int32, 
                             xs: List[a], 
-                            fk: String -> Result[List[b], String], 
-                            sk: List[b] -> Result[List[b], String]): Result[List[b], String] \ r =
+                            fk: String -> Result[String, List[b]], 
+                            sk: List[b] -> Result[String, List[b]]): Result[String, List[b]] \ r =
         match xs {
             case Nil => sk(Nil)
             case x :: rs => {
@@ -493,8 +493,8 @@ namespace BasicDb/DbMonad {
                             mf: (a, Int32) -> DbMonad[r, b] \ ef,
                             ix: Int32, 
                             xs: List[a], 
-                            fk: String -> Result[Unit, String], 
-                            sk: Unit -> Result[Unit, String]): Result[Unit, String] \ r =
+                            fk: String -> Result[String, Unit], 
+                            sk: Unit -> Result[String, Unit]): Result[String, Unit] \ r =
         match xs {
             case Nil => sk()
             case x :: rs => {
@@ -517,8 +517,8 @@ namespace BasicDb/DbMonad {
     ///
     def sequenceHelper(conn: ##java.sql.Connection,
                        xs: List[DbMonad[r, a]],
-                       fk: String -> Result[List[a], String],
-                       sk: List[a] -> Result[List[a], String]): Result[List[a], String] \ r =
+                       fk: String -> Result[String, List[a]],
+                       sk: List[a] -> Result[String, List[a]]): Result[String, List[a]] \ r =
         match xs {
             case Nil => sk(Nil)
             case mx :: rs => match apply1(mx, conn) {
@@ -561,8 +561,8 @@ namespace BasicDb/DbMonad {
                     mf: (b, a) -> DbMonad[r, b] \ ef,
                     acc: b, 
                     xs: List[a], 
-                    fk: String -> Result[b, String], 
-                    sk: b -> Result[b, String]): Result[b, String] \ r =
+                    fk: String -> Result[String, b], 
+                    sk: b -> Result[String, b]): Result[String, b] \ r =
         match xs {
             case Nil => sk(acc)
             case x :: rs => {
@@ -602,8 +602,8 @@ namespace BasicDb/DbMonad {
                         mf: (ac, a) -> DbMonad[r, (ac, b)] \ ef,
                         ac: ac,
                         xs: List[a],
-                        fk: String -> Result[(ac, List[b]), String],
-                        sk: (ac, List[b]) -> Result[(ac, List[b]), String]): Result[(ac, List[b]), String] \ r=
+                        fk: String -> Result[String, (ac, List[b])],
+                        sk: (ac, List[b]) -> Result[String, (ac, List[b])]): Result[String, (ac, List[b])] \ r=
         match xs {
             case Nil => sk(ac, Nil)
             case x :: rs => {
@@ -632,8 +632,8 @@ namespace BasicDb/DbMonad {
     def filterMapMHelper(conn: ##java.sql.Connection,
                          mf: a -> DbMonad[r, Option[b]] \ ef,
                          xs: List[a],
-                         fk: String -> Result[List[b], String],
-                         sk: List[b] -> Result[List[b], String]): Result[List[b], String] \ r =
+                         fk: String -> Result[String, List[b]],
+                         sk: List[b] -> Result[String, List[b]]): Result[String, List[b]] \ r =
         match xs {
             case Nil => sk(Nil)
             case x :: rs => {
@@ -658,8 +658,8 @@ namespace BasicDb/DbMonad {
     def replicateMHelper(conn: ##java.sql.Connection,
                          ma: DbMonad[r, a],
                          n: Int32,
-                         fk: String -> Result[List[a], String],
-                         sk: List[a] -> Result[List[a], String]): Result[List[a], String] \ r =
+                         fk: String -> Result[String, List[a]],
+                         sk: List[a] -> Result[String, List[a]]): Result[String, List[a]] \ r =
         if (n <= 0) 
             sk(Nil)
         else 
@@ -677,8 +677,8 @@ namespace BasicDb/DbMonad {
     def replicateXHelper(conn: ##java.sql.Connection,
                          ma: DbMonad[r, a],
                          n: Int32,
-                         fk: String -> Result[Unit, String],
-                         sk: Unit -> Result[Unit, String]): Result[Unit, String] \ r =
+                         fk: String -> Result[String, Unit],
+                         sk: Unit -> Result[String, Unit]): Result[String, Unit] \ r =
         if (n <= 0) 
             sk()
         else 

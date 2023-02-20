@@ -75,7 +75,7 @@ namespace BasicDb/RowEvaluator {
 
     pub def runRowEvaluator(r: Region[r], 
                             ma: RowEvaluator[r, a, a], 
-                            st: ResultSet[r]): Result[a, String] \ r =
+                            st: ResultSet[r]): Result[String, a] \ r =
         MonadLib/Evaluator.runEvaluator(r, getRowEvaluator(ma), st)
 
 
@@ -113,14 +113,14 @@ namespace BasicDb/RowEvaluator {
     // def liftGetter(f: ResultSet[r] -> a \ ef): RowEvaluator[r, ka, a] \ ef =
     //     RowEvaluator(MonadLib/Evaluator.liftGetter(f))
 
-    def liftGetterResult(f: ResultSet[r] -> Result[a, err] \ ef): RowEvaluator[r, ka, a] \ ef with ToString[err] =
+    def liftGetterResult(f: ResultSet[r] -> Result[err, a] \ ef): RowEvaluator[r, ka, a] \ ef with ToString[err] =
         RowEvaluator(MonadLib/Evaluator.liftGetterResult(f))
     
     pub def liftAction(f: Unit -> a \ ef): RowEvaluator[r, ka, a] \ ef =
         RowEvaluator(MonadLib/Evaluator.liftAction(f))
     
         
-    pub def liftActionResult(f: Unit -> Result[a, err] \ ef): RowEvaluator[r, ka, a] \ ef with ToString[err] =
+    pub def liftActionResult(f: Unit -> Result[err, a] \ ef): RowEvaluator[r, ka, a] \ ef with ToString[err] =
         RowEvaluator(MonadLib/Evaluator.liftActionResult(f))
 
 
@@ -152,12 +152,12 @@ namespace BasicDb/RowEvaluator {
         case None     => throwError(errMsg)
     }
         
-    pub def liftResult(x: Result[a, String]): RowEvaluator[r, ka, a] = match x { 
+    pub def liftResult(x: Result[String, a]): RowEvaluator[r, ka, a] = match x { 
         case Ok(x1)   => point(x1)
         case Err(msg) => throwError(msg)
     }
 
-    pub def liftResult1(makeErrMsg: e -> String, x: Result[a, e]): RowEvaluator[r, ka, a] = match x { 
+    pub def liftResult1(makeErrMsg: e -> String, x: Result[e, a]): RowEvaluator[r, ka, a] = match x { 
         case Ok(x1) => point(x1)
         case Err(e) => throwError(makeErrMsg(e))
     }
@@ -168,7 +168,7 @@ namespace BasicDb/RowEvaluator {
         case Failure(es) => throwError(makeErrMsg(Nec.toList(es)))
     }
 
-    def liftPrim(ask: ##java.sql.ResultSet -> Result[a, String] \ ef): RowEvaluator[r, ka, a] \ ef =
+    def liftPrim(ask: ##java.sql.ResultSet -> Result[String, a] \ ef): RowEvaluator[r, ka, a] \ ef =
         RowEvaluator(row -> ask(row) as \ r) as \ ef
 
 */
