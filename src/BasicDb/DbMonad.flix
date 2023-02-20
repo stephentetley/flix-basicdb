@@ -22,15 +22,14 @@ namespace BasicDb {
     /// outside of Impure / IO).
 
 
-    pub enum DbMonad[r: Region, ka: Type, a: Type](
-        MonadLib.MutStateError[r, ka, Interop/Sql.Connection[r], a])
+    pub enum DbMonad[r: Region, ka: Type, ef: Bool, a: Type](Graded.MutStateError[ka, Interop/Sql.Connection[r], ef, a])
     
-    instance Functor[DbMonad[r, ka]] { 
+    instance GradedFunctor[DbMonad[r, ka]] { 
         pub def map(f: a -> b \ ef, x: DbMonad[r, ka, a]): DbMonad[r, ka, b] \ ef = 
             BasicDb/DbMonad.map(f, x)
     }
 
-    instance Applicative[DbMonad[r, ka]] { 
+    instance GradedApplicative[DbMonad[r, ka]] { 
         pub def point(x: a): DbMonad[r, ka, a] = 
             BasicDb/DbMonad.point(x)
 
@@ -38,12 +37,12 @@ namespace BasicDb {
             BasicDb/DbMonad.ap(f, x)
     }
 
-    instance Monad[DbMonad[r, ka]] { 
+    instance GradedMonad[DbMonad[r, ka]] { 
         pub def flatMap(k: a -> DbMonad[r, ka, b] \ ef, x: DbMonad[r, ka, a]): DbMonad[r, ka, b] \ ef = 
             BasicDb/DbMonad.flatMap(k, x)
     }
 
-    instance MonadLib.MonadError[DbMonad[r, ka]] {
+    instance GradedError[DbMonad[r, ka]] {
         pub def throwError(msg: String): DbMonad[r, ka, a] = 
             BasicDb/DbMonad.throwError(msg)
 
@@ -85,44 +84,44 @@ namespace BasicDb/DbMonad {
     use BasicDb.Statement;
     use Interop/Sql.Statement.{Statement};
 
-    def getDbMonad(x: DbMonad[r, ka, a]): MonadLib.MutStateError[r, ka, Connection[r], a] = 
+    def getDbMonad(x: DbMonad[r, ka, a]): Graded.MutStateError[r, ka, Connection[r], a] = 
         let DbMonad(x1) = x;
         x1
 
     pub def point(x: a): DbMonad[r, ka, a] = 
-        DbMonad(MonadLib/MutStateError.point(x))
+        DbMonad(Graded/MutStateError.point(x))
 
     /// Needs to allow allow effects (e.g create / access arrays)
     pub def map(f: a -> b \ ef, ma: DbMonad[r, ka, a]): DbMonad[r, ka, b] \ ef = 
-        DbMonad(MonadLib/MutStateError.map(f, getDbMonad(ma)))
+        DbMonad(Graded/MutStateError.map(f, getDbMonad(ma)))
 
     pub def ap(mf: DbMonad[r, ka, a -> b \ ef], ma: DbMonad[r, ka, a]): DbMonad[r, ka, b] \ ef = 
-        DbMonad(MonadLib/MutStateError.ap(getDbMonad(mf), getDbMonad(ma)))
+        DbMonad(Graded/MutStateError.ap(getDbMonad(mf), getDbMonad(ma)))
 
     pub def flatMap(f: a -> DbMonad[r, ka, b] \ ef, ma: DbMonad[r, ka, a]): DbMonad[r, ka, b] \ ef =
-        DbMonad(MonadLib/MutStateError.flatMap(f >> getDbMonad, getDbMonad(ma)))
+        DbMonad(Graded/MutStateError.flatMap(f >> getDbMonad, getDbMonad(ma)))
 
     pub def throwError(msg: String): DbMonad[r, ka, a] = 
-        DbMonad(MonadLib/MutStateError.throwError(msg))
+        DbMonad(Graded/MutStateError.throwError(msg))
     
     pub def mapError(f: String -> String \ ef, ma: DbMonad[r, ka, a]): DbMonad[r, ka, a] \ ef= 
-        DbMonad(MonadLib/MutStateError.mapError(f, getDbMonad(ma)))
+        DbMonad(Graded/MutStateError.mapError(f, getDbMonad(ma)))
 
     pub def catchError(ma: DbMonad[r, ka, a], f: String -> DbMonad[r, ka, a] \ ef): DbMonad[r, ka, a] \ ef =
-        DbMonad(MonadLib/MutStateError.catchError(getDbMonad(ma), f >> getDbMonad))
+        DbMonad(Graded/MutStateError.catchError(getDbMonad(ma), f >> getDbMonad))
 
 
     // def liftSetter!(f: Connection[r] -> a \ ef): DbMonad[r, ka, Unit] \ ef =
-    //     DbMonad(MonadLib/MutStateError.liftSetter!(f) |> Functor.ignore)
+    //     DbMonad(Graded/MutStateError.liftSetter!(f) |> Functor.ignore)
 
     def liftSetterResult!(f: Connection[r] -> Result[err, a] \ ef): DbMonad[r, ka, a] \ ef with ToString[err] =
-        DbMonad(MonadLib/MutStateError.liftSetterResult!(f))
+        DbMonad(Graded/MutStateError.liftSetterResult!(f))
 
     pub def liftAction(f: Unit -> a \ ef): DbMonad[r, ka, a] \ ef = 
-        DbMonad(MonadLib/MutStateError.liftAction(f))
+        DbMonad(Graded/MutStateError.liftAction(f))
 
     pub def liftActionResult(f: Unit -> Result[err, a] \ ef): DbMonad[r, ka, a] \ ef with ToString[err] = 
-        DbMonad(MonadLib/MutStateError.liftActionResult(f))
+        DbMonad(Graded/MutStateError.liftActionResult(f))
 
 
     ///
@@ -131,7 +130,7 @@ namespace BasicDb/DbMonad {
     def runDbMonadHelper(r: Region[r], 
                         ma: DbMonad[r, a, a], 
                         s: Connection[r]): Result[String, a] \ r = 
-        MonadLib/MutStateError.runMutStateError(r, getDbMonad(ma), s)
+        Graded/MutStateError.runMutStateError(r, getDbMonad(ma), s)
 
         
     pub def runDbMonad(r: Region[r], ma: DbMonad[r, a, a], url: String): Result[String, a] \ { r, Impure } = 

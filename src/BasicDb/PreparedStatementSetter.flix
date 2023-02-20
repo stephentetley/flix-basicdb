@@ -18,14 +18,14 @@
 namespace BasicDb {
 
 
-    pub enum PreparedStatementSetter[r: Region, ka: Type, a: Type](MonadLib.MutStateError[r, ka, Interop/Sql.PreparedStatement[r], a])
+    pub enum PreparedStatementSetter[r: Region, ka: Type, ef: Bool, a: Type](Graded.MutStateError[ka, Interop/Sql.PreparedStatement[r], ef, a])
 
-    instance Functor[PreparedStatementSetter[r, ka]] { 
+    instance GradedFunctor[PreparedStatementSetter[r, ka]] { 
         pub def map(f: a -> b \ ef, x: PreparedStatementSetter[r, ka, a]): PreparedStatementSetter[r, ka, b] \ ef = 
             BasicDb/PreparedStatementSetter.map(f, x)
     }
 
-    instance Applicative[PreparedStatementSetter[r, ka]] { 
+    instance GradedApplicative[PreparedStatementSetter[r, ka]] { 
         pub def point(x: a): PreparedStatementSetter[r, ka, a] = 
             BasicDb/PreparedStatementSetter.point(x)
 
@@ -33,12 +33,12 @@ namespace BasicDb {
             BasicDb/PreparedStatementSetter.ap(f, x)
     }
 
-    instance Monad[PreparedStatementSetter[r, ka]] { 
+    instance GradedMonad[PreparedStatementSetter[r, ka]] { 
         pub def flatMap(k: a -> PreparedStatementSetter[r, ka, b] \ ef, x: PreparedStatementSetter[r, ka, a]): PreparedStatementSetter[r, ka, b] \ ef = 
             BasicDb/PreparedStatementSetter.flatMap(k, x)
     }
 
-    instance MonadLib.MonadError[PreparedStatementSetter[r, ka]] {
+    instance GradedError[PreparedStatementSetter[r, ka]] {
         pub def throwError(msg: String): PreparedStatementSetter[r, ka, a] = 
             BasicDb/PreparedStatementSetter.throwError(msg)
 
@@ -60,7 +60,7 @@ namespace BasicDb/PreparedStatementSetter {
     use Interop/Sql.PreparedStatement;
     use Interop/Sql.PreparedStatement.{PreparedStatement};
 
-    pub def getPreparedStatementSetter(x: PreparedStatementSetter[r, ka, a]): MonadLib.MutStateError[r, ka, PreparedStatement[r], a] = 
+    pub def getPreparedStatementSetter(x: PreparedStatementSetter[r, ka, a]): Graded.MutStateError[r, ka, PreparedStatement[r], a] = 
         let PreparedStatementSetter(x1) = x;
         x1
 
@@ -68,40 +68,40 @@ namespace BasicDb/PreparedStatementSetter {
     pub def runPreparedStatementSetter!(r: Region[r], 
                                         ma: PreparedStatementSetter[r, a, a], 
                                         st: PreparedStatement[r]): Result[String, a] \ r =
-        MonadLib/MutStateError.runMutStateError(r, getPreparedStatementSetter(ma), st)
+        Graded/MutStateError.runMutStateError(r, getPreparedStatementSetter(ma), st)
 
     pub def point(x: a): PreparedStatementSetter[r, ka, a] = 
-        PreparedStatementSetter(MonadLib/MutStateError.point(x))
+        PreparedStatementSetter(Graded/MutStateError.point(x))
 
     pub def map(f: a -> b \ ef, x: PreparedStatementSetter[r, ka, a]): PreparedStatementSetter[r, ka, b] \ ef =
-        PreparedStatementSetter(MonadLib/MutStateError.map(f, getPreparedStatementSetter(x)))
+        PreparedStatementSetter(Graded/MutStateError.map(f, getPreparedStatementSetter(x)))
 
     pub def ap(mf: PreparedStatementSetter[r, ka, a -> b \ ef], ma: PreparedStatementSetter[r, ka, a]): PreparedStatementSetter[r, ka, b] \ ef =
-        PreparedStatementSetter(MonadLib/MutStateError.ap(getPreparedStatementSetter(mf), getPreparedStatementSetter(ma)))
+        PreparedStatementSetter(Graded/MutStateError.ap(getPreparedStatementSetter(mf), getPreparedStatementSetter(ma)))
 
     pub def flatMap(k: a -> PreparedStatementSetter[r, ka, b] \ ef, x: PreparedStatementSetter[r, ka, a]): PreparedStatementSetter[r, ka, b]  \ ef = 
-        PreparedStatementSetter(MonadLib/MutStateError.flatMap(k >> getPreparedStatementSetter, getPreparedStatementSetter(x)))
+        PreparedStatementSetter(Graded/MutStateError.flatMap(k >> getPreparedStatementSetter, getPreparedStatementSetter(x)))
 
 
     pub def throwError(msg: String): PreparedStatementSetter[r, ka, a] = 
-        PreparedStatementSetter(MonadLib/MutStateError.throwError(msg))
+        PreparedStatementSetter(Graded/MutStateError.throwError(msg))
 
     pub def mapError(f: String -> String \ ef, ma: PreparedStatementSetter[r, ka, a]): PreparedStatementSetter[r, ka, a] \ ef =
-        PreparedStatementSetter(MonadLib/MutStateError.mapError(f, getPreparedStatementSetter(ma)))
+        PreparedStatementSetter(Graded/MutStateError.mapError(f, getPreparedStatementSetter(ma)))
 
     pub def catchError(ma: PreparedStatementSetter[r, ka, a], f: String -> PreparedStatementSetter[r, ka, a] \ ef): PreparedStatementSetter[r, ka, a] \ ef =
-        PreparedStatementSetter(MonadLib/MutStateError.catchError(getPreparedStatementSetter(ma), f >> getPreparedStatementSetter))
+        PreparedStatementSetter(Graded/MutStateError.catchError(getPreparedStatementSetter(ma), f >> getPreparedStatementSetter))
 
 
     def liftSetterResult!(f: PreparedStatement[r] -> Result[err, a] \ ef): PreparedStatementSetter[r, ka, a] \ ef with ToString[err] =
-        PreparedStatementSetter(MonadLib/MutStateError.liftSetterResult!(f))
+        PreparedStatementSetter(Graded/MutStateError.liftSetterResult!(f))
     
     pub def liftAction(f: Unit -> a \ ef): PreparedStatementSetter[r, ka, a] \ ef =
-        PreparedStatementSetter(MonadLib/MutStateError.liftAction(f))
+        PreparedStatementSetter(Graded/MutStateError.liftAction(f))
     
         
     pub def liftActionResult(f: Unit -> Result[err, a] \ ef): PreparedStatementSetter[r, ka, a] \ ef with ToString[err] =
-        PreparedStatementSetter(MonadLib/MutStateError.liftActionResult(f))
+        PreparedStatementSetter(Graded/MutStateError.liftActionResult(f))
 
 
 /*

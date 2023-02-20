@@ -18,15 +18,15 @@ namespace BasicDb {
 
 
 
-    pub enum RowEvaluator[r: Region, ka: Type, a: Type](MonadLib.Evaluator[r, ka, Interop/Sql.ResultSet[r], a])
+    pub enum RowEvaluator[r: Region, ka: Type, ef: Bool, a: Type](Graded.EnvError[ka, Interop/Sql.ResultSet[r], ef, a])
 
 
-    instance Functor[RowEvaluator[r, ka]] { 
-        pub def map(f: a -> b \ ef, x: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, b] \ ef = 
+    instance GradedFunctor[RowEvaluator[r, ka]] { 
+        pub def map(f: a -> b \ ef1, x: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1, b] = 
             BasicDb/RowEvaluator.map(f, x)
     }
 
-    instance Applicative[RowEvaluator[r, ka]] { 
+    instance GradedApplicative[RowEvaluator[r, ka]] { 
         pub def point(x: a): RowEvaluator[r, ka, a] = 
             BasicDb/RowEvaluator.point(x)
 
@@ -34,22 +34,22 @@ namespace BasicDb {
             BasicDb/RowEvaluator.ap(f, x)
     }
 
-    instance Monad[RowEvaluator[r, ka]] { 
+    instance GradedMonad[RowEvaluator[r, ka]] { 
         pub def flatMap(k: a -> RowEvaluator[r, ka, b] \ ef, x: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, b] \ ef = 
             BasicDb/RowEvaluator.flatMap(k, x)
     }
 
-    instance MonadZero[RowEvaluator[r, ka]] {
+    instance GradedZero[RowEvaluator[r, ka]] {
         pub def empty(): RowEvaluator[r, ka, a] = 
             BasicDb/RowEvaluator.empty()
     }
 
-    instance MonadLib.MonadOr[RowEvaluator[r, ka]] {
+    instance GradedOr[RowEvaluator[r, ka]] {
         pub def orelse(a: RowEvaluator[r, ka, a], b: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, a] =
             BasicDb/RowEvaluator.orelse(a, b)
     }
 
-    instance MonadLib.MonadError[RowEvaluator[r, ka]] {
+    instance GradedError[RowEvaluator[r, ka]] {
         pub def throwError(msg: String): RowEvaluator[r, ka, a] = 
             BasicDb/RowEvaluator.throwError(msg)
 
@@ -59,37 +59,38 @@ namespace BasicDb {
         pub def catchError(ma: RowEvaluator[r, ka, a], f: String -> RowEvaluator[r, ka, a] \ ef): RowEvaluator[r, ka, a] \ ef =
             BasicDb/RowEvaluator.catchError(ma, f)
     }
+
 }
 
 namespace BasicDb/RowEvaluator {
 
-    use BasicDb.RowEvaluator;
-    use BasicDb.RowEvaluator.{RowEvaluator};
+    use BasicDb.RowEvaluator
+    use BasicDb.RowEvaluator.{RowEvaluator}
 
-    use Interop/Sql.ResultSet;
-    use Interop/Sql.ResultSet.{ResultSet};
+    use Interop/Sql.ResultSet
+    use Interop/Sql.ResultSet.{ResultSet}
 
-    pub def getRowEvaluator(x: RowEvaluator[r, ka, a]): MonadLib.Evaluator[r, ka, ResultSet[r], a] = 
+    pub def getRowEvaluator(x: RowEvaluator[r, ka, ef, a]): Graded.EnvError[ka, ResultSet[r], ef, a] = 
         let RowEvaluator(x1) = x;
         x1
 
-    pub def runRowEvaluator(r: Region[r], 
-                            ma: RowEvaluator[r, a, a], 
-                            st: ResultSet[r]): Result[String, a] \ r =
-        MonadLib/Evaluator.runEvaluator(r, getRowEvaluator(ma), st)
+    pub def runRowEvaluator(_: Region[r], 
+                            ma: RowEvaluator[r, a, ef, a], 
+                            e: ResultSet[r]): Result[String, a] \ {r, ef} =
+        Graded/EnvError.runEnvError(getRowEvaluator(ma), e)
 
 
-    pub def point(x: a): RowEvaluator[r, ka, a] = 
-        RowEvaluator(MonadLib/Evaluator.point(x))
+    pub def point(x: a): RowEvaluator[r, ka, Pure, a] = 
+        RowEvaluator(Graded/EnvError.point(x))
 
-    pub def map(f: a -> b \ ef, x: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, b] \ ef =
-        RowEvaluator(MonadLib/Evaluator.map(f, getRowEvaluator(x)))
+    pub def map(f: a -> b \ ef1, x: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1, b]=
+        RowEvaluator(Graded/EnvError.map(f, getRowEvaluator(x)))
 
     pub def ap(mf: RowEvaluator[r, ka, a -> b \ ef], ma: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, b] \ ef =
-        RowEvaluator(MonadLib/Evaluator.ap(getRowEvaluator(mf), getRowEvaluator(ma)))
+        RowEvaluator(Graded/EnvError.ap(getRowEvaluator(mf), getRowEvaluator(ma)))
 
     pub def flatMap(k: a -> RowEvaluator[r, ka, b] \ ef, x: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, b] \ ef =
-        RowEvaluator(MonadLib/Evaluator.flatMap(k >> getRowEvaluator, getRowEvaluator(x)))
+        RowEvaluator(Graded/EnvError.flatMap(k >> getRowEvaluator, getRowEvaluator(x)))
 
 
     // MatchEvaluator can be MonadOr because it does not "step".
@@ -98,36 +99,36 @@ namespace BasicDb/RowEvaluator {
     pub def empty(): RowEvaluator[r, ka, a] = throwError("empty")
 
     pub def orelse(ma: RowEvaluator[r, ka, a], mb: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, a] =
-        RowEvaluator(MonadLib/Evaluator.orelse(getRowEvaluator(ma), getRowEvaluator(mb)))
+        RowEvaluator(Graded/EnvError.orelse(getRowEvaluator(ma), getRowEvaluator(mb)))
 
 
     pub def throwError(msg: String): RowEvaluator[r, ka, a] = 
-        RowEvaluator(MonadLib/Evaluator.throwError(msg))
+        RowEvaluator(Graded/EnvError.throwError(msg))
 
     pub def mapError(f: String -> String \ ef, ma: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, a] \ ef =
-        RowEvaluator(MonadLib/Evaluator.mapError(f, getRowEvaluator(ma)))
+        RowEvaluator(Graded/EnvError.mapError(f, getRowEvaluator(ma)))
 
     pub def catchError(ma: RowEvaluator[r, ka, a], f: String -> RowEvaluator[r, ka, a] \ ef): RowEvaluator[r, ka, a] \ ef =
-        RowEvaluator(MonadLib/Evaluator.catchError(getRowEvaluator(ma), f >> getRowEvaluator))
+        RowEvaluator(Graded/EnvError.catchError(getRowEvaluator(ma), f >> getRowEvaluator))
 
     // def liftGetter(f: ResultSet[r] -> a \ ef): RowEvaluator[r, ka, a] \ ef =
-    //     RowEvaluator(MonadLib/Evaluator.liftGetter(f))
+    //     RowEvaluator(Graded/EnvError.liftGetter(f))
 
     def liftGetterResult(f: ResultSet[r] -> Result[err, a] \ ef): RowEvaluator[r, ka, a] \ ef with ToString[err] =
-        RowEvaluator(MonadLib/Evaluator.liftGetterResult(f))
+        RowEvaluator(Graded/EnvError.liftGetterResult(f))
     
     pub def liftAction(f: Unit -> a \ ef): RowEvaluator[r, ka, a] \ ef =
-        RowEvaluator(MonadLib/Evaluator.liftAction(f))
+        RowEvaluator(Graded/EnvError.liftAction(f))
     
         
     pub def liftActionResult(f: Unit -> Result[err, a] \ ef): RowEvaluator[r, ka, a] \ ef with ToString[err] =
-        RowEvaluator(MonadLib/Evaluator.liftActionResult(f))
+        RowEvaluator(Graded/EnvError.liftActionResult(f))
 
 
 
 /*
 
-    /// TODO are these general combinators in MonadLib?
+    /// TODO are these general combinators in Graded?
 
     pub def optional(x: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, Option[a]] =
         RowEvaluator(row ->
@@ -233,40 +234,40 @@ namespace BasicDb/RowEvaluator {
     pub def getLocalDateStringAt(ix: Int32): RowEvaluator[r, ka, Time.LocalDate] \ Read(r) =
         let* s = getStringAt(ix);
         let fmt = Time/Format/DateTimeFormatter.iso_local_date();
-        MonadLib/MonadError.liftResult(Time/LocalDate.parse(fmt, s))
+        GradedError.liftResult(Time/LocalDate.parse(fmt, s))
     
 
     /// Cell has type String...
     pub def getLocalDateStringNamed(label: String): RowEvaluator[r, ka, Time.LocalDate] \ Read(r) =
         let* s = getStringNamed(label);
         let fmt = Time/Format/DateTimeFormatter.iso_local_date();
-        MonadLib/MonadError.liftResult(Time/LocalDate.parse(fmt, s))
+        GradedError.liftResult(Time/LocalDate.parse(fmt, s))
 
     /// Cell has type String...
     pub def getLocalDateTimeStringAt(ix: Int32): RowEvaluator[r, ka, Time.LocalDateTime] \ Read(r) =
         let* s = getStringAt(ix);
         let fmt = Time/Format/DateTimeFormatter.iso_local_date_time();
-        MonadLib/MonadError.liftResult(Time/LocalDateTime.parse(fmt, s))
+        GradedError.liftResult(Time/LocalDateTime.parse(fmt, s))
     
 
     /// Cell has type String...
     pub def getLocalDateTimeStringNamed(label: String): RowEvaluator[r, ka, Time.LocalDateTime] \ Read(r) =
         let* s = getStringNamed(label);
         let fmt = Time/Format/DateTimeFormatter.iso_local_date_time();
-        MonadLib/MonadError.liftResult(Time/LocalDateTime.parse(fmt, s))
+        GradedError.liftResult(Time/LocalDateTime.parse(fmt, s))
 
     /// Cell has type String...
     pub def getLocalTimeStringAt(ix: Int32): RowEvaluator[r, ka, Time.LocalTime] \ Read(r) =
         let* s = getStringAt(ix);
         let fmt = Time/Format/DateTimeFormatter.iso_local_time();
-        MonadLib/MonadError.liftResult(Time/LocalTime.parse(fmt, s))
+        GradedError.liftResult(Time/LocalTime.parse(fmt, s))
     
 
     /// Cell has type String...
     pub def getLocalTimeStringNamed(label: String): RowEvaluator[r, ka, Time.LocalTime] \ Read(r) =
         let* s = getStringNamed(label);
         let fmt = Time/Format/DateTimeFormatter.iso_local_time();
-        MonadLib/MonadError.liftResult(Time/LocalTime.parse(fmt, s))
+        GradedError.liftResult(Time/LocalTime.parse(fmt, s))
 
 }
 
