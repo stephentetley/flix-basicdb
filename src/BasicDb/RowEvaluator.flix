@@ -27,15 +27,17 @@ namespace BasicDb {
     }
 
     instance GradedApplicative[RowEvaluator[r, ka]] { 
-        pub def point(x: a): RowEvaluator[r, ka, a] = 
+        pub def point(x: a): RowEvaluator[r, ka, Pure, a] = 
             BasicDb/RowEvaluator.point(x)
 
-        pub def ap(f: RowEvaluator[r, ka, a -> b \ ef], x: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, b] \ ef = 
+        pub def ap(f: RowEvaluator[r, ka, ef1, a -> b \ ef2], 
+                    x: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1 and ef2, b] = 
             BasicDb/RowEvaluator.ap(f, x)
     }
 
     instance GradedMonad[RowEvaluator[r, ka]] { 
-        pub def flatMap(k: a -> RowEvaluator[r, ka, b] \ ef, x: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, b] \ ef = 
+        pub def flatMap(k: a -> RowEvaluator[r, ka, ef1, b] \ ef2, 
+                        x: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1 and ef2, b] = 
             BasicDb/RowEvaluator.flatMap(k, x)
     }
 
@@ -45,18 +47,21 @@ namespace BasicDb {
     }
 
     instance GradedOr[RowEvaluator[r, ka]] {
-        pub def orelse(a: RowEvaluator[r, ka, a], b: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, a] =
+        pub def orelse(a: RowEvaluator[r, ka, ef1, a], 
+                        b: RowEvaluator[r, ka, ef2, a]): RowEvaluator[r, ka, ef1 and ef2, a] =
             BasicDb/RowEvaluator.orelse(a, b)
     }
 
     instance GradedError[RowEvaluator[r, ka]] {
-        pub def throwError(msg: String): RowEvaluator[r, ka, a] = 
+        pub def throwError(msg: String): RowEvaluator[r, ka, ef, a] = 
             BasicDb/RowEvaluator.throwError(msg)
 
-        pub def mapError(f: String -> String \ ef, ma: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, a] \ ef =
+        pub def mapError(f: String -> String \ ef1, 
+                        ma: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1, a] =
             BasicDb/RowEvaluator.mapError(f, ma)
 
-        pub def catchError(ma: RowEvaluator[r, ka, a], f: String -> RowEvaluator[r, ka, a] \ ef): RowEvaluator[r, ka, a] \ ef =
+        pub def catchError(ma: RowEvaluator[r, ka, ef, a], 
+                            f: String -> RowEvaluator[r, ka, ef1, a] \ ef2): RowEvaluator[r, ka, ef and ef1 and ef2, a] =
             BasicDb/RowEvaluator.catchError(ma, f)
     }
 
@@ -83,45 +88,51 @@ namespace BasicDb/RowEvaluator {
     pub def point(x: a): RowEvaluator[r, ka, Pure, a] = 
         RowEvaluator(Graded/EnvError.point(x))
 
-    pub def map(f: a -> b \ ef1, x: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1, b]=
+    pub def map(f: a -> b \ ef1, 
+                x: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1, b]=
         RowEvaluator(Graded/EnvError.map(f, getRowEvaluator(x)))
 
-    pub def ap(mf: RowEvaluator[r, ka, a -> b \ ef], ma: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, b] \ ef =
+    pub def ap(mf: RowEvaluator[r, ka, ef1, a -> b \ ef2], 
+                ma: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1 and ef2, b] =
         RowEvaluator(Graded/EnvError.ap(getRowEvaluator(mf), getRowEvaluator(ma)))
 
-    pub def flatMap(k: a -> RowEvaluator[r, ka, b] \ ef, x: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, b] \ ef =
+    pub def flatMap(k: a -> RowEvaluator[r, ka, ef1, b] \ ef2, 
+                    x: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1 and ef2, b] =
         RowEvaluator(Graded/EnvError.flatMap(k >> getRowEvaluator, getRowEvaluator(x)))
 
 
     // MatchEvaluator can be MonadOr because it does not "step".
-    // It is only runs on the current match.
+    // It is only applied to the current match.
 
-    pub def empty(): RowEvaluator[r, ka, a] = throwError("empty")
+    pub def empty(): RowEvaluator[r, ka, ef, a] = throwError("empty")
 
-    pub def orelse(ma: RowEvaluator[r, ka, a], mb: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, a] =
+    pub def orelse(ma: RowEvaluator[r, ka, ef1, a], 
+                    mb: RowEvaluator[r, ka, ef2, a]): RowEvaluator[r, ka, ef1 and ef2, a] =
         RowEvaluator(Graded/EnvError.orelse(getRowEvaluator(ma), getRowEvaluator(mb)))
 
 
-    pub def throwError(msg: String): RowEvaluator[r, ka, a] = 
+    pub def throwError(msg: String): RowEvaluator[r, ka, ef, a] = 
         RowEvaluator(Graded/EnvError.throwError(msg))
 
-    pub def mapError(f: String -> String \ ef, ma: RowEvaluator[r, ka, a]): RowEvaluator[r, ka, a] \ ef =
+    pub def mapError(f: String -> String \ ef1, 
+                    ma: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1, a] =
         RowEvaluator(Graded/EnvError.mapError(f, getRowEvaluator(ma)))
 
-    pub def catchError(ma: RowEvaluator[r, ka, a], f: String -> RowEvaluator[r, ka, a] \ ef): RowEvaluator[r, ka, a] \ ef =
+    pub def catchError(ma: RowEvaluator[r, ka, ef, a], 
+                        f: String -> RowEvaluator[r, ka, ef1, a] \ ef2): RowEvaluator[r, ka, ef and ef1 and ef2, a] =
         RowEvaluator(Graded/EnvError.catchError(getRowEvaluator(ma), f >> getRowEvaluator))
 
     // def liftGetter(f: ResultSet[r] -> a \ ef): RowEvaluator[r, ka, a] \ ef =
     //     RowEvaluator(Graded/EnvError.liftGetter(f))
 
-    def liftGetterResult(f: ResultSet[r] -> Result[err, a] \ ef): RowEvaluator[r, ka, a] \ ef with ToString[err] =
+    def liftGetterResult(f: ResultSet[r] -> Result[err, a] \ ef): RowEvaluator[r, ka, ef, a] with ToString[err] =
         RowEvaluator(Graded/EnvError.liftGetterResult(f))
     
-    pub def liftAction(f: Unit -> a \ ef): RowEvaluator[r, ka, a] \ ef =
+    pub def liftAction(f: Unit -> a \ ef): RowEvaluator[r, ka, ef, a]  =
         RowEvaluator(Graded/EnvError.liftAction(f))
     
         
-    pub def liftActionResult(f: Unit -> Result[err, a] \ ef): RowEvaluator[r, ka, a] \ ef with ToString[err] =
+    pub def liftActionResult(f: Unit -> Result[err, a] \ ef): RowEvaluator[r, ka, ef, a] with ToString[err] =
         RowEvaluator(Graded/EnvError.liftActionResult(f))
 
 
@@ -177,7 +188,7 @@ namespace BasicDb/RowEvaluator {
     // // Note - the Java.Sql's getX functions index from 1, we index from 0.
 
     /// This is "null safe" - if the internal result is null it is converted to the empty String.
-    pub def getStringAt(ix: Int32): RowEvaluator[r, ka, String] \ Read(r) =
+    pub def getStringAt(ix: Int32): RowEvaluator[r, ka, r, String] =
         liftGetterResult(rs -> Interop/Sql/ResultSet.getStringAt(ix + 1, rs) |> Result.map(x1 -> if (Object.isNull(x1)) "" else x1))
 
     /// This is "null safe" - if the internal result is null it is converted to the empty String.

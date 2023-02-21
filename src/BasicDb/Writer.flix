@@ -19,13 +19,13 @@ namespace BasicDb/Writer {
     use BasicDb.DbMonad;
     use BasicDb.PreparedStatementSetter;
     
-    pub type alias RowSetter[r: Region, row: Type, a: Type, ef: Bool] = row -> PreparedStatementSetter[r, a, a] \ ef
+    pub type alias RowSetter[r: Region, row: Type, ef: Bool, a: Type] = row -> PreparedStatementSetter[r, a, ef, a]
 
 
 
     pub def store(sqlstrings: {prepStmt = String, tableActions = List[String]}, 
-                    setter: RowSetter[r, row, a, ef], 
-                    rows: t[row]): DbMonad[r, ka, Int32] \ {IO, ef, Write(r)} with Foldable[t] =
+                    setter: RowSetter[r, row, ef, a], 
+                    rows: t[row]): DbMonad[r, ka, ef, Int32] \ {IO, ef, ef, Write(r)} with Foldable[t] =
         use BasicDb/DbMonad.{flatMap, point};
         let* _          = BasicDb/DbMonad.setAutoCommit!(false);
         let* _          = Foldable.forEachM(BasicDb/DbMonad.executeSql!, sqlstrings.tableActions);
@@ -37,8 +37,8 @@ namespace BasicDb/Writer {
 
 
     pub def storeList(sqlstrings: {prepStmt = String, tableActions = List[String]}, 
-                    setter: RowSetter[r, row, a, ef], 
-                    rows: List[row]): DbMonad[r, ka, Int32] \ {IO, ef, Write(r)} =
+                    setter: RowSetter[r, row, ef, a], 
+                    rows: List[row]): DbMonad[r, ka, ef, Int32] \ {IO, ef, Write(r)} =
         use BasicDb/DbMonad.{flatMap, point};
         let* _          = BasicDb/DbMonad.setAutoCommit!(false);
         let* _          = Foldable.forEachM(BasicDb/DbMonad.executeSql!, sqlstrings.tableActions);
@@ -49,28 +49,30 @@ namespace BasicDb/Writer {
         point(nrows)
 
     pub def storeArray(sqlstrings: {prepStmt = String, tableActions = List[String]}, 
-                    setter: RowSetter[r, row, a, ef], 
-                    rows: Array[row, r2]): DbMonad[r, ka, Int32] \ {IO, ef, Write(r), Read(r2)} =
+                    setter: RowSetter[r, row, ef, a], 
+                    rows: Array[row, r2]): DbMonad[r, ka, ef, Int32] \ {IO, ef, Write(r), Read(r2)} =
         BasicDb/DbMonad.liftAction(_ -> Array.toList(rows)) >>= store(sqlstrings, setter)
 
 
-    pub def storeRelations(sqlstrings: {prepStmt = String, tableActions = List[String]}, 
-                    setter: RowSetter[r, row, a, ef], 
-                    extractor: {| rr} -> Array[row, r2] \ Write(r),
-                    reln: {| rr}): DbMonad[r, ka, Int32] \ {IO, ef, Write(r), Write(r2)} =
-        BasicDb/DbMonad.liftAction(_ -> (extractor(reln) |> Array.toList)) >>= store(sqlstrings, setter)
+    // pub def storeRelations(sqlstrings: {prepStmt = String, tableActions = List[String]}, 
+    //                 setter: RowSetter[r, row, ef, a], 
+    //                 extractor: {| rr} -> Array[row, r2] \ Write(r),
+    //                 reln: {| rr}): DbMonad[r, ka, ef, Int32] \ {IO, ef, Write(r), Write(r2)} =
+    //     BasicDb/DbMonad.liftAction(_ -> (extractor(reln) |> Array.toList)) >>= store(sqlstrings, setter)
         
 
-    /// Note - Foldable.foldLeftM should be fine and we don't need this...
-    pub def foldLeftM(f: (b, a) -> m[b] \ ef, s: b, l: List[a]): m[b] \ ef with Monad[m] = 
-        foldLeftMHelper(f, Applicative.point(s), l)
+    /// Note - Foldable.foldLeftM uses Monad not GradedMonad...
+    pub def foldLeftM[m: Bool -> Type -> Type, ef: Bool, ef1: Bool, a: Type, b: Type]
+                        (f: (b, a) -> m[ef, b] \ ef1, s: b, l: List[a]): m[ef and ef1, b] with GradedMonad[m] = 
+        foldLeftMHelper(f, GradedApplicative.point(s), l)
 
-    def foldLeftMHelper(f: (b, a) -> m[b] \ ef,
-                        ms: m[b], 
-                        xs: List[a]): m[b] \ ef with Monad[m] =
+    def foldLeftMHelper[m: Bool -> Type -> Type, ef: Bool, ef1: Bool, a: Type, b: Type]
+                        (f: (b, a) -> m[ef, b] \ ef1,
+                        acc: m[ef and ef1, b], 
+                        xs: List[a]): m[ef and ef1, b] with GradedMonad[m] =
         match xs {
-            case Nil     => ms
-            case x :: rs => {let ms1 = Monad.flatMap(s -> f(s, x), ms); foldLeftMHelper(f, ms1, rs) }
+            case Nil     => acc
+            case x :: rs => {let ms1 = GradedMonad.flatMap(s -> f(s, x), acc); foldLeftMHelper(f, ms1, rs) }
         }
 
     /// `append` versions without tableActions?

@@ -128,16 +128,16 @@ namespace BasicDb/DbMonad {
     /// Returns the result of applying `ma` to the initial state `s`.
     ///
     def runDbMonadHelper(r: Region[r], 
-                        ma: DbMonad[r, a, a], 
-                        s: Connection[r]): Result[String, a] \ r = 
-        Graded/MutStateError.runMutStateError(r, getDbMonad(ma), s)
+                        ma: DbMonad[r, a, ef, a], 
+                        s: Connection[r]): Result[String, a] \ {r, ef} = 
+        Graded/MutStateError.runMutStateError(getDbMonad(ma), s)
 
         
-    pub def runDbMonad(r: Region[r], ma: DbMonad[r, a, a], url: String): Result[String, a] \ { r, Impure } = 
-        match Interop/Sql/DriverManager.getConnection(r, url) {
+    pub def runDbMonad(rc: Region[r], ma: DbMonad[r, a, a], url: String): Result[String, a] \ { r, Impure } = 
+        match Interop/Sql/DriverManager.getConnection(rc, url) {
             case Err(e)   => Err(e)
             case Ok(conn) => {
-                let ans = runDbMonadHelper(r, ma, conn);
+                let ans = runDbMonadHelper(rc, ma, conn);
                 /// ensure conn is closed whether or not ans is `Ok`
                 discard Interop/Sql/Connection.closeConnection!(conn);
                 ans
@@ -196,8 +196,8 @@ namespace BasicDb/DbMonad {
         
 
 
-    pub def psExecuteQuery!(stmt: PreparedStatement[r], setter: PreparedStatementSetter[r, a, a]): DbMonad[r, ka, ResultSet[r]] \ Write(r) =
-        let r   = Scoped.regionOf(stmt);
+    pub def psExecuteQuery!(stmt: PreparedStatement[r], setter: PreparedStatementSetter[r, a, ef, a]): DbMonad[r, ka, ResultSet[r]] \ Write(r) =
+        let r   = ???; // Scoped.regionOf(stmt);
         let* _  = liftActionResult(_ -> Interop/Sql/PreparedStatement.clearParameters!(stmt));
         let* _  = liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(r, setter, stmt));
         let* rs = liftActionResult(_ -> Interop/Sql/PreparedStatement.executeQuery!(stmt));
@@ -206,7 +206,7 @@ namespace BasicDb/DbMonad {
 
 
     pub def psExecuteUpdate!(stmt: PreparedStatement[r], setter: PreparedStatementSetter[r, a, a]): DbMonad[r, ka, Int32] \ Write(r) =
-        let r   = Scoped.regionOf(stmt);
+        let r   = ???; // Scoped.regionOf(stmt);
         let* _  = liftActionResult(_ -> Interop/Sql/PreparedStatement.clearParameters!(stmt));
         let* _  = liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(r, setter, stmt));
         liftActionResult(_ -> Interop/Sql/PreparedStatement.executeUpdate!(stmt))
@@ -222,7 +222,8 @@ namespace BasicDb/DbMonad {
 
 
     pub def rsEval(eval: RowEvaluator[r, a, a], rs: ResultSet[r]): DbMonad[r, ka, a] \ r =
-        liftActionResult(_ -> BasicDb/RowEvaluator.runRowEvaluator(Scoped.regionOf(rs), eval, rs))
+        let rc = ???; // Scoped.regionOf(rs);
+        liftActionResult(_ -> BasicDb/RowEvaluator.runRowEvaluator(rc, eval, rs))
         
 
 

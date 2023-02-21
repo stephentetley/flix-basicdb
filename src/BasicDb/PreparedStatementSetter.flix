@@ -21,15 +21,16 @@ namespace BasicDb {
     pub enum PreparedStatementSetter[r: Region, ka: Type, ef: Bool, a: Type](Graded.MutStateError[ka, Interop/Sql.PreparedStatement[r], ef, a])
 
     instance GradedFunctor[PreparedStatementSetter[r, ka]] { 
-        pub def map(f: a -> b \ ef, x: PreparedStatementSetter[r, ka, a]): PreparedStatementSetter[r, ka, b] \ ef = 
+        pub def map(f: a -> b \ ef1, x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1, b] = 
             BasicDb/PreparedStatementSetter.map(f, x)
     }
 
     instance GradedApplicative[PreparedStatementSetter[r, ka]] { 
-        pub def point(x: a): PreparedStatementSetter[r, ka, a] = 
+        pub def point(x: a): PreparedStatementSetter[r, ka, Pure, a] = 
             BasicDb/PreparedStatementSetter.point(x)
 
-        pub def ap(f: PreparedStatementSetter[r, ka, a -> b \ ef], x: PreparedStatementSetter[r, ka, a]): PreparedStatementSetter[r, ka, b] \ ef = 
+        pub def ap(f: PreparedStatementSetter[r, ka, ef1, a -> b \ ef2], 
+                    x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1 and ef2, b] = 
             BasicDb/PreparedStatementSetter.ap(f, x)
     }
 
