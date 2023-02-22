@@ -22,7 +22,7 @@ namespace BasicDb/Reader {
     use BasicDb.RowEvaluator.{RowEvaluator};
 
 
-    pub def allRows(sql: String, eval: RowEvaluator[r, a, a]): DbMonad[r, a, List[a]] \ {IO, Write(r)} =
+    pub def allRows(sql: String, eval: RowEvaluator[r, a, ef, a]): DbMonad[r, a, ef, List[a]] \ {IO, Write(r)} =
         use BasicDb/DbMonad.{flatMap, point}; 
         let* stmt   = BasicDb/DbMonad.createStatement!();
         let* rs     = BasicDb/DbMonad.executeQuery!(sql, stmt);
@@ -31,10 +31,10 @@ namespace BasicDb/Reader {
         point(rows)
 
     /// `combine` should allow effects
-    pub def foldAllRows(combine: (b, a) -> b \ ef, 
+    pub def foldAllRows(combine: (b, a) -> b \ ef1, 
                         ac: b, 
                         sql: String, 
-                        eval: RowEvaluator[r, a, a]): DbMonad[r, a, b] \ {IO, ef, Write(r)} =
+                        eval: RowEvaluator[r, a, ef, a]): DbMonad[r, a, ef and ef1, b] \ {IO, ef, Write(r)} =
         use BasicDb/DbMonad.{flatMap, point}; 
         let* stmt   = BasicDb/DbMonad.createStatement!();
         let* rs     = BasicDb/DbMonad.executeQuery!(sql, stmt);
@@ -43,7 +43,7 @@ namespace BasicDb/Reader {
         point(b)
 
 
-    pub def allRelations(sql: String, eval: RowEvaluator[r, #{| reln}, #{| reln}]): DbMonad[r, #{| reln}, #{| reln}] \ {IO, Write(r)} =
+    pub def allRelations(sql: String, eval: RowEvaluator[r, #{| reln}, ef, #{| reln}]): DbMonad[r, #{| reln}, ef, #{| reln}] \ {IO, Write(r)} =
         foldAllRows((ac, x) -> ac <+> x, #{}, sql, eval)
 
 

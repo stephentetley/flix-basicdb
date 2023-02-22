@@ -42,7 +42,7 @@ namespace BasicDb {
     }
 
     instance GradedZero[RowEvaluator[r, ka]] {
-        pub def empty(): RowEvaluator[r, ka, a] = 
+        pub def empty(): RowEvaluator[r, ka, ef, a] = 
             BasicDb/RowEvaluator.empty()
     }
 
@@ -192,90 +192,90 @@ namespace BasicDb/RowEvaluator {
         liftGetterResult(rs -> Interop/Sql/ResultSet.getStringAt(ix + 1, rs) |> Result.map(x1 -> if (Object.isNull(x1)) "" else x1))
 
     /// This is "null safe" - if the internal result is null it is converted to the empty String.
-    pub def getStringNamed(label: String): RowEvaluator[r, ka, String] \ Read(r) =
+    pub def getStringNamed(label: String): RowEvaluator[r, ka, r, String] =
         liftGetterResult(rs -> Interop/Sql/ResultSet.getStringNamed(label, rs) |> Result.map(x1 -> if (Object.isNull(x1)) "" else x1))
 
 
     // See Javadocs for how a bool value is interpreted...
-    pub def getBoolAt(ix: Int32): RowEvaluator[r, ka, Bool] \ Read(r) =
+    pub def getBoolAt(ix: Int32): RowEvaluator[r, ka, r, Bool] =
         liftGetterResult(Interop/Sql/ResultSet.getBoolAt(ix + 1))
 
     // See Javadocs for how a bool value is interpreted...
-    pub def getBoolNamed(label: String): RowEvaluator[r, ka, Bool] \ Read(r) =
+    pub def getBoolNamed(label: String): RowEvaluator[r, ka, r, Bool] =
         liftGetterResult(Interop/Sql/ResultSet.getBoolNamed(label))
 
-    pub def getInt8At(ix: Int32): RowEvaluator[r, ka, Int8] \ Read(r) =
+    pub def getInt8At(ix: Int32): RowEvaluator[r, ka, r, Int8] =
         liftGetterResult(Interop/Sql/ResultSet.getInt8At(ix + 1))
 
-    pub def getInt8Named(label: String): RowEvaluator[r, ka, Int8] \ Read(r) =
+    pub def getInt8Named(label: String): RowEvaluator[r, ka, r, Int8] =
         liftGetterResult(Interop/Sql/ResultSet.getInt8Named(label))
 
-    pub def getInt16At(ix: Int32): RowEvaluator[r, ka, Int16] \ Read(r) =
+    pub def getInt16At(ix: Int32): RowEvaluator[r, ka, r, Int16] =
         liftGetterResult(Interop/Sql/ResultSet.getInt16At(ix + 1))
 
-    pub def getInt16Named(label: String): RowEvaluator[r, ka, Int16] \ Read(r) =
+    pub def getInt16Named(label: String): RowEvaluator[r, ka, r, Int16] =
         liftGetterResult(Interop/Sql/ResultSet.getInt16Named(label))
 
-    pub def getInt32At(ix: Int32): RowEvaluator[r, ka, Int32] \ Read(r) =
+    pub def getInt32At(ix: Int32): RowEvaluator[r, ka, r, Int32] =
         liftGetterResult(Interop/Sql/ResultSet.getInt32At(ix + 1))
 
-    pub def getInt32Named(label: String): RowEvaluator[r, ka, Int32] \ Read(r) =
+    pub def getInt32Named(label: String): RowEvaluator[r, ka, r, Int32] =
         liftGetterResult(Interop/Sql/ResultSet.getInt32Named(label))
 
-    pub def getInt64At(ix: Int32): RowEvaluator[r, ka, Int64] \ Read(r) =
+    pub def getInt64At(ix: Int32): RowEvaluator[r, ka, r, Int64] =
         liftGetterResult(Interop/Sql/ResultSet.getInt64At(ix + 1))
 
-    pub def getInt64Named(label: String): RowEvaluator[r, ka, Int64] \ Read(r) =
+    pub def getInt64Named(label: String): RowEvaluator[r, ka, r, Int64] =
         liftGetterResult(Interop/Sql/ResultSet.getInt64Named(label))
 
-    pub def getFloat32At(ix: Int32): RowEvaluator[r, ka, Float32] \ Read(r) =
+    pub def getFloat32At(ix: Int32): RowEvaluator[r, ka, r, Float32] =
         liftGetterResult(Interop/Sql/ResultSet.getFloat32At(ix + 1))
     
-    pub def getFloat32Named(label: String): RowEvaluator[r, ka, Float32] \ Read(r) =
+    pub def getFloat32Named(label: String): RowEvaluator[r, ka, r, Float32] =
         liftGetterResult(Interop/Sql/ResultSet.getFloat32Named(label))
 
-    pub def getFloat64At(ix: Int32): RowEvaluator[r, ka, Float64] \ Read(r) =
+    pub def getFloat64At(ix: Int32): RowEvaluator[r, ka, r, Float64] =
         liftGetterResult(Interop/Sql/ResultSet.getFloat64At(ix + 1))
 
-    pub def getFloat64Named(label: String): RowEvaluator[r, ka, Float64] \ Read(r) =
+    pub def getFloat64Named(label: String): RowEvaluator[r, ka, r, Float64] =
         liftGetterResult(Interop/Sql/ResultSet.getFloat64Named(label))
 
 
     /// Cell has type String...
-    pub def getLocalDateStringAt(ix: Int32): RowEvaluator[r, ka, Time.LocalDate] \ Read(r) =
+    pub def getLocalDateStringAt(ix: Int32): RowEvaluator[r, ka, r, Time.LocalDate] =
         let* s = getStringAt(ix);
         let fmt = Time/Format/DateTimeFormatter.iso_local_date();
         GradedError.liftResult(Time/LocalDate.parse(fmt, s))
     
 
     /// Cell has type String...
-    pub def getLocalDateStringNamed(label: String): RowEvaluator[r, ka, Time.LocalDate] \ Read(r) =
+    pub def getLocalDateStringNamed(label: String): RowEvaluator[r, ka, r, Time.LocalDate] =
         let* s = getStringNamed(label);
         let fmt = Time/Format/DateTimeFormatter.iso_local_date();
         GradedError.liftResult(Time/LocalDate.parse(fmt, s))
 
     /// Cell has type String...
-    pub def getLocalDateTimeStringAt(ix: Int32): RowEvaluator[r, ka, Time.LocalDateTime] \ Read(r) =
+    pub def getLocalDateTimeStringAt(ix: Int32): RowEvaluator[r, ka, r, Time.LocalDateTime] =
         let* s = getStringAt(ix);
         let fmt = Time/Format/DateTimeFormatter.iso_local_date_time();
         GradedError.liftResult(Time/LocalDateTime.parse(fmt, s))
     
 
     /// Cell has type String...
-    pub def getLocalDateTimeStringNamed(label: String): RowEvaluator[r, ka, Time.LocalDateTime] \ Read(r) =
+    pub def getLocalDateTimeStringNamed(label: String): RowEvaluator[r, ka, r, Time.LocalDateTime] =
         let* s = getStringNamed(label);
         let fmt = Time/Format/DateTimeFormatter.iso_local_date_time();
         GradedError.liftResult(Time/LocalDateTime.parse(fmt, s))
 
     /// Cell has type String...
-    pub def getLocalTimeStringAt(ix: Int32): RowEvaluator[r, ka, Time.LocalTime] \ Read(r) =
+    pub def getLocalTimeStringAt(ix: Int32): RowEvaluator[r, ka, r, Time.LocalTime] =
         let* s = getStringAt(ix);
         let fmt = Time/Format/DateTimeFormatter.iso_local_time();
         GradedError.liftResult(Time/LocalTime.parse(fmt, s))
     
 
     /// Cell has type String...
-    pub def getLocalTimeStringNamed(label: String): RowEvaluator[r, ka, Time.LocalTime] \ Read(r) =
+    pub def getLocalTimeStringNamed(label: String): RowEvaluator[r, ka, r, Time.LocalTime] =
         let* s = getStringNamed(label);
         let fmt = Time/Format/DateTimeFormatter.iso_local_time();
         GradedError.liftResult(Time/LocalTime.parse(fmt, s))
