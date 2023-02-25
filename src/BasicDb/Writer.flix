@@ -15,22 +15,22 @@
  */
 
 namespace BasicDb/Writer {
-    use Monad.{>>=};
+    use GradedMonad.{>>=};
     use BasicDb.DbMonad;
     use BasicDb.PreparedStatementSetter;
     
     pub type alias RowSetter[r: Region, row: Type, ef: Bool, a: Type] = row -> PreparedStatementSetter[r, a, ef, a]
 
-/*
+
 
     pub def store(sqlstrings: {prepStmt = String, tableActions = List[String]}, 
                     setter: RowSetter[r, row, ef, a], 
-                    rows: t[row]): DbMonad[r, ka, ef, Int32] \ {IO, ef, ef, Write(r)} with Foldable[t] =
+                    rows: t[row]): DbMonad[r, ka, r and ef and Impure, Int32] with GradedFoldable[t] =
         use BasicDb/DbMonad.{flatMap, point};
         let* _          = BasicDb/DbMonad.setAutoCommit!(false);
-        let* _          = Foldable.forEachM(BasicDb/DbMonad.executeSql!, sqlstrings.tableActions);
+        let* _          = GradedFoldable.forEachM(BasicDb/DbMonad.executeSql!, sqlstrings.tableActions);
         let* stmt       = BasicDb/DbMonad.prepareStatement!(sqlstrings.prepStmt);
-        let* nrows      = Foldable.foldLeftM((ac, x) -> 
+        let* nrows      = GradedFoldable.foldLeftM((ac, x) -> 
                                 {let* n = BasicDb/DbMonad.psExecuteUpdate!(stmt, setter(x)); point(ac+n)}, 0, rows);
         let* _          = BasicDb/DbMonad.commit!();
         point(nrows)
@@ -38,19 +38,19 @@ namespace BasicDb/Writer {
 
     pub def storeList(sqlstrings: {prepStmt = String, tableActions = List[String]}, 
                     setter: RowSetter[r, row, ef, a], 
-                    rows: List[row]): DbMonad[r, ka, ef, Int32] \ {IO, ef, Write(r)} =
+                    rows: List[row]): DbMonad[r, ka, r and ef and Impure, Int32] =
         use BasicDb/DbMonad.{flatMap, point};
         let* _          = BasicDb/DbMonad.setAutoCommit!(false);
-        let* _          = Foldable.forEachM(BasicDb/DbMonad.executeSql!, sqlstrings.tableActions);
+        let* _          = GradedFoldable.forEachM(BasicDb/DbMonad.executeSql!, sqlstrings.tableActions);
         let* stmt       = BasicDb/DbMonad.prepareStatement!(sqlstrings.prepStmt);
-        let* nrows      = foldLeftM((ac, x) -> 
+        let* nrows      = GradedFoldable.foldLeftM((ac, x) -> 
                                 {let* n = BasicDb/DbMonad.psExecuteUpdate!(stmt, setter(x)); point(ac+n)}, 0, rows);
         let* _          = BasicDb/DbMonad.commit!();
         point(nrows)
 
     pub def storeArray(sqlstrings: {prepStmt = String, tableActions = List[String]}, 
                     setter: RowSetter[r, row, ef, a], 
-                    rows: Array[row, r2]): DbMonad[r, ka, ef, Int32] \ {IO, ef, Write(r), Read(r2)} =
+                    rows: Array[row, r2]): DbMonad[r, ka, r and r2 and ef and Impure, Int32] =
         BasicDb/DbMonad.liftAction(_ -> Array.toList(rows)) >>= store(sqlstrings, setter)
 
 
@@ -60,7 +60,7 @@ namespace BasicDb/Writer {
     //                 reln: {| rr}): DbMonad[r, ka, ef, Int32] \ {IO, ef, Write(r), Write(r2)} =
     //     BasicDb/DbMonad.liftAction(_ -> (extractor(reln) |> Array.toList)) >>= store(sqlstrings, setter)
         
-
+/*
     /// Note - Foldable.foldLeftM uses Monad not GradedMonad...
     pub def foldLeftM[m: Bool -> Type -> Type, ef: Bool, ef1: Bool, a: Type, b: Type]
                         (f: (b, a) -> m[ef, b] \ ef1, s: b, l: List[a]): m[ef and ef1, b] with GradedMonad[m] = 
