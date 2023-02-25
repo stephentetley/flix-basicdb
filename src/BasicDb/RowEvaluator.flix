@@ -82,8 +82,7 @@ namespace BasicDb/RowEvaluator {
     /// TODO `RowEvaluator` should probably not have a Region type param and `EnvError` is probably 
     /// not quite the right monad (should be an env-like monad where the region is "mutable read-only").
     /// This wopuld remove the need for the effect cast.
-    pub def runRowEvaluator(_: Region[r], 
-                            ma: RowEvaluator[r, a, ef, a], 
+    pub def runRowEvaluator(ma: RowEvaluator[r, a, ef, a], 
                             e: ResultSet[r]): Result[String, a] \ {r, ef} =
         Graded/EnvError.runEnvError(Graded.extendEff(upcast(identity), getRowEvaluator(ma)), e)
 

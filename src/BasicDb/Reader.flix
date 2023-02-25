@@ -21,33 +21,34 @@ namespace BasicDb/Reader {
     use BasicDb.RowEvaluator;
     use BasicDb.RowEvaluator.{RowEvaluator};
 
-/*
 
-    pub def allRows(sql: String, eval: RowEvaluator[r, a, ef, a]): DbMonad[r, a, ef, List[a]] \ {IO, Write(r)} =
+
+    pub def allRows(rc: Region[r1], sql: String, eval: RowEvaluator[r1, a, ef, a]): DbMonad[r, a, r and r1 and ef and Impure, List[a]] =
         use BasicDb/DbMonad.{flatMap, point}; 
-        let* stmt   = BasicDb/DbMonad.createStatement!();
-        let* rs     = BasicDb/DbMonad.executeQuery!(sql, stmt);
+        let* stmt   = BasicDb/DbMonad.createStatement!(rc);
+        let* rs     = BasicDb/DbMonad.executeQuery!(rc, sql, stmt);
         let* rows   = BasicDb/DbMonad.allRows(eval, rs);
         let* _      = BasicDb/DbMonad.rsClose!(rs);
         point(rows)
 
     /// `combine` should allow effects
-    pub def foldAllRows(combine: (b, a) -> b \ ef1, 
+    pub def foldAllRows(rc: Region[r1], 
+                        combine: (b, a) -> b \ ef1, 
                         ac: b, 
                         sql: String, 
-                        eval: RowEvaluator[r, a, ef, a]): DbMonad[r, a, ef and ef1, b] \ {IO, ef, Write(r)} =
+                        eval: RowEvaluator[r1, a, ef, a]): DbMonad[r, a, r and r1 and ef and ef1 and Impure, b] =
         use BasicDb/DbMonad.{flatMap, point}; 
-        let* stmt   = BasicDb/DbMonad.createStatement!();
-        let* rs     = BasicDb/DbMonad.executeQuery!(sql, stmt);
+        let* stmt   = BasicDb/DbMonad.createStatement!(rc);
+        let* rs     = BasicDb/DbMonad.executeQuery!(rc, sql, stmt);
         let* b      = BasicDb/DbMonad.foldAllRows(combine, ac, eval, rs);
         let* _      = BasicDb/DbMonad.rsClose!(rs);
         point(b)
 
 
-    pub def allRelations(sql: String, eval: RowEvaluator[r, #{| reln}, ef, #{| reln}]): DbMonad[r, #{| reln}, ef, #{| reln}] \ {IO, Write(r)} =
-        foldAllRows((ac, x) -> ac <+> x, #{}, sql, eval)
+    pub def allRelations(rc: Region[r1], sql: String, eval: RowEvaluator[r1, #{| reln}, ef, #{| reln}]): DbMonad[r, #{| reln}, r and r1 and ef and Impure, #{| reln}] =
+        foldAllRows(rc, (ac, x) -> ac <+> x, #{}, sql, eval)
 
-*/
+
 
 }
 

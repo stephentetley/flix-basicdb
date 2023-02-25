@@ -60,23 +60,6 @@ namespace BasicDb/Writer {
     //                 reln: {| rr}): DbMonad[r, ka, ef, Int32] \ {IO, ef, Write(r), Write(r2)} =
     //     BasicDb/DbMonad.liftAction(_ -> (extractor(reln) |> Array.toList)) >>= store(sqlstrings, setter)
         
-/*
-    /// Note - Foldable.foldLeftM uses Monad not GradedMonad...
-    pub def foldLeftM[m: Bool -> Type -> Type, ef: Bool, ef1: Bool, a: Type, b: Type]
-                        (f: (b, a) -> m[ef, b] \ ef1, s: b, l: List[a]): m[ef and ef1, b] with GradedMonad[m] = 
-        foldLeftMHelper(f, GradedApplicative.point(s), l)
 
-    def foldLeftMHelper[m: Bool -> Type -> Type, ef: Bool, ef1: Bool, a: Type, b: Type]
-                        (f: (b, a) -> m[ef, b] \ ef1,
-                        acc: m[ef and ef1, b], 
-                        xs: List[a]): m[ef and ef1, b] with GradedMonad[m] =
-        match xs {
-            case Nil     => acc
-            case x :: rs => {let ms1 = GradedMonad.flatMap(s -> f(s, x), acc); foldLeftMHelper(f, ms1, rs) }
-        }
-
-    /// `append` versions without tableActions?
-
-*/
 }
 

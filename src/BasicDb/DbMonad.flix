@@ -188,17 +188,17 @@ namespace BasicDb/DbMonad {
         liftSetterResult!(Interop/Sql/Connection.createStatement!(rc))
 
 
-    pub def execute!(sql: String, stmt: Statement[r]): DbMonad[r, ka, r and Impure, Bool] =
+    pub def execute!(sql: String, stmt: Statement[r1]): DbMonad[r, ka, r1 and Impure, Bool] =
         liftActionResult(_ -> Interop/Sql/Statement.execute!(sql, stmt))
 
-    pub def executeQuery!(sql: String, stmt: Statement[r]): DbMonad[r, ka, r and Impure, ResultSet[r]] =
-        liftActionResult(_ -> Interop/Sql/Statement.executeQuery!(sql, stmt))
+    pub def executeQuery!(rc: Region[r2], sql: String, stmt: Statement[r1]): DbMonad[r, ka, r1 and r2 and Impure, ResultSet[r2]] =
+        liftActionResult(_ -> Interop/Sql/Statement.executeQuery!(rc, sql, stmt))
         
 
-    pub def executeUpdate!(sql: String, stmt: Statement[r]): DbMonad[r, ka, r and Impure, Int32] =
+    pub def executeUpdate!(sql: String, stmt: Statement[r1]): DbMonad[r, ka, r1 and Impure, Int32] =
         liftActionResult(_ -> Interop/Sql/Statement.executeUpdate!(sql, stmt))
 
-
+    /// TODO supply allocating region...
     pub def prepareStatement!(sql: String): DbMonad[r, ka, r, PreparedStatement[r]] =
         liftSetterResult!(Interop/Sql/Connection.prepareStatement!(sql))
         
@@ -217,18 +217,20 @@ namespace BasicDb/DbMonad {
         liftActionResult(_ -> Interop/Sql/PreparedStatement.executeUpdate!(stmt))
 
 
+    /// TODO - need to properly calculate which regions are used 
+
     /// ResultSet
 
-    pub def rsClose!(rs: ResultSet[r]): DbMonad[r, ka, r, Unit] =
+    pub def rsClose!(rs: ResultSet[r1]): DbMonad[r, ka, r1, Unit] =
         liftActionResult(_ -> Interop/Sql/ResultSet.close!(rs))
 
-    pub def rsNext(rs: ResultSet[r]): DbMonad[r, ka, r, Bool]  =
+    pub def rsNext(rs: ResultSet[r1]): DbMonad[r, ka, r1, Bool]  =
         liftActionResult(_ -> Interop/Sql/ResultSet.next!(rs))
 
 
-    pub def rsEval(eval: RowEvaluator[r, a, ef, a], rs: ResultSet[r]): DbMonad[r, ka, ef and r, a] =
-        let rc = ???; // Scoped.regionOf(rs);
-        liftActionResult(_ -> BasicDb/RowEvaluator.runRowEvaluator(rc, eval, rs))
+    pub def rsEval(eval: RowEvaluator[r1, a, ef, a], rs: ResultSet[r1]): DbMonad[r, ka, ef and r1, a] = 
+        liftActionResult(_ -> BasicDb/RowEvaluator.runRowEvaluator(eval, rs))
+
         
 
 
@@ -236,14 +238,14 @@ namespace BasicDb/DbMonad {
         let* more   = rsNext(rs);
         if (more) rsEval(eval, rs) else throwError("firstRow - resultset is empty")
 
-    pub def allRows(eval: RowEvaluator[r, a, ef, a], rs: ResultSet[r]): DbMonad[r, ka, ef and r, List[a]] = 
+    pub def allRows(eval: RowEvaluator[r1, a, ef, a], rs: ResultSet[r1]): DbMonad[r, ka, ef and r and r1, List[a]] = 
         allRowsHelper(eval, rs, ks -> ks)
 
     /// Start with `next`
     /// This is optimized to avoid repeated unwrapping.
-    def allRowsHelper(eval: RowEvaluator[r, a, ef, a],
-                        rs: ResultSet[r],  
-                        acc: List[a] -> List[a]): DbMonad[r, ka, ef and r, List[a]] = 
+    def allRowsHelper(eval: RowEvaluator[r1, a, ef, a],
+                        rs: ResultSet[r1],  
+                        acc: List[a] -> List[a]): DbMonad[r, ka, ef and r and r1, List[a]] = 
         let* more   = rsNext(rs);
         if (more) {
             let* a = rsEval(eval, rs);
@@ -252,7 +254,7 @@ namespace BasicDb/DbMonad {
             GradedApplicative.point(acc(Nil))
 
 
-    pub def foreachRow(eval: RowEvaluator[r, a, ef, a], rs: ResultSet[r]): DbMonad[r, ka, ef and r, Unit] = 
+    pub def foreachRow(eval: RowEvaluator[r1, a, ef, a], rs: ResultSet[r1]): DbMonad[r, ka, ef and r1, Unit] = 
         let* more  = rsNext(rs);
         if (more) {
             let* _ = rsEval(eval, rs);
@@ -262,7 +264,7 @@ namespace BasicDb/DbMonad {
 
 
     /// Note - arg order is inconsistent with List.foldLeft etc. and probably should be changed.
-    pub def foldAllRows(step: (b, a) -> b \ ef1, start: b, eval: RowEvaluator[r, a, ef, a], rs: ResultSet[r]): DbMonad[r, ka, ef and ef1 and r, b] = 
+    pub def foldAllRows(step: (b, a) -> b \ ef1, start: b, eval: RowEvaluator[r1, a, ef, a], rs: ResultSet[r1]): DbMonad[r, ka, ef and ef1 and r1, b] = 
         let* more  = rsNext(rs);
         if (more) {
             let* a = rsEval(eval, rs);

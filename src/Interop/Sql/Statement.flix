@@ -65,9 +65,9 @@ namespace Interop/Sql/Statement {
                 Err(getMessage(ex))
         }
 
-    pub def executeQuery!(sql: String, stmt: Statement[r]): Result[String, ResultSet[r]] \ {IO, Write(r)} = 
+    pub def executeQuery!(_: Region[r1], sql: String, stmt: Statement[r]): Result[String, ResultSet[r1]] \ {IO, Write(r)} = 
         try {
-            import java.sql.Statement.executeQuery(String): ##java.sql.ResultSet \ {IO, r};
+            import java.sql.Statement.executeQuery(String): ##java.sql.ResultSet \ {IO, r, r1};
             let Statement(stmt1) = stmt;
             executeQuery(stmt1, sql) |> ResultSet |> Ok
         } catch {
