@@ -21,7 +21,7 @@ namespace BasicDb/Writer {
     
     pub type alias RowSetter[r: Region, row: Type, ef: Bool, a: Type] = row -> PreparedStatementSetter[r, a, ef, a]
 
-
+/*
 
     pub def store(sqlstrings: {prepStmt = String, tableActions = List[String]}, 
                     setter: RowSetter[r, row, ef, a], 
@@ -77,6 +77,6 @@ namespace BasicDb/Writer {
 
     /// `append` versions without tableActions?
 
-
+*/
 }
 

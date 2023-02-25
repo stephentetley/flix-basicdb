@@ -48,9 +48,9 @@ namespace Interop/Sql/PreparedStatement {
         }
 
 
-    pub def executeQuery!(stmt: PreparedStatement[r]): Result[String, ResultSet[r]] \ Write(r) =        
+    pub def executeQuery!(stmt: PreparedStatement[r]): Result[String, ResultSet[r]] \ { Write(r), IO } =
         try {
-            import java.sql.PreparedStatement.executeQuery(): ##java.sql.ResultSet \ r;
+            import java.sql.PreparedStatement.executeQuery(): ##java.sql.ResultSet \ {r, IO};
             let PreparedStatement(stmt1) = stmt;
             executeQuery(stmt1) |> ResultSet |> Ok
         } catch {
@@ -59,9 +59,9 @@ namespace Interop/Sql/PreparedStatement {
                 Err(getMessage(ex))
         }
 
-    pub def executeUpdate!(stmt: PreparedStatement[r]): Result[String, Int32] \ Write(r) =
+    pub def executeUpdate!(stmt: PreparedStatement[r]): Result[String, Int32] \ { Write(r), IO } =
         try {
-            import java.sql.PreparedStatement.executeUpdate(): Int32 \ r;
+            import java.sql.PreparedStatement.executeUpdate(): Int32 \ {r, IO};
             let PreparedStatement(stmt1) = stmt;
             executeUpdate(stmt1) |> Ok
         } catch {

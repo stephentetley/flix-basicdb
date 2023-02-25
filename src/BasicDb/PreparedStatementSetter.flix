@@ -26,7 +26,7 @@ namespace BasicDb {
     }
 
     instance GradedApplicative[PreparedStatementSetter[r, ka]] { 
-        pub def point(x: a): PreparedStatementSetter[r, ka, Pure, a] = 
+        pub def point(x: a): PreparedStatementSetter[r, ka, ef, a] = 
             BasicDb/PreparedStatementSetter.point(x)
 
         pub def ap(f: PreparedStatementSetter[r, ka, ef1, a -> b \ ef2], 
@@ -45,7 +45,7 @@ namespace BasicDb {
             BasicDb/PreparedStatementSetter.throwError(msg)
 
         pub def mapError(f: String -> String \ ef1, 
-                            ma: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef1, a] =
+                            ma: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1, a] =
             BasicDb/PreparedStatementSetter.mapError(f, ma)
 
         pub def catchError(ma: PreparedStatementSetter[r, ka, ef, a], 
@@ -69,12 +69,11 @@ namespace BasicDb/PreparedStatementSetter {
         x1
 
     /// The state param `st` is expected to be mutated...
-    pub def runPreparedStatementSetter!(r: Region[r], 
-                                        ma: PreparedStatementSetter[r, a, ef, a], 
+    pub def runPreparedStatementSetter!(ma: PreparedStatementSetter[r, a, ef, a], 
                                         st: PreparedStatement[r]): Result[String, a] \ {ef, r} =
-        Graded/MutStateError.runMutStateError(r, getPreparedStatementSetter(ma), st)
+        Graded/MutStateError.runMutStateError(Graded.extendEff(upcast(identity), getPreparedStatementSetter(ma)), st)
 
-    pub def point(x: a): PreparedStatementSetter[r, ka, Pure, a] = 
+    pub def point(x: a): PreparedStatementSetter[r, ka, ef, a] = 
         PreparedStatementSetter(Graded/MutStateError.point(x))
 
     pub def map(f: a -> b \ ef1, 

@@ -27,7 +27,7 @@ namespace BasicDb {
     }
 
     instance GradedApplicative[RowEvaluator[r, ka]] { 
-        pub def point(x: a): RowEvaluator[r, ka, Pure, a] = 
+        pub def point(x: a): RowEvaluator[r, ka, ef, a] = 
             BasicDb/RowEvaluator.point(x)
 
         pub def ap(f: RowEvaluator[r, ka, ef1, a -> b \ ef2], 
@@ -79,13 +79,16 @@ namespace BasicDb/RowEvaluator {
         let RowEvaluator(x1) = x;
         x1
 
+    /// TODO `RowEvaluator` should probably not have a Region type param and `EnvError` is probably 
+    /// not quite the right monad (should be an env-like monad where the region is "mutable read-only").
+    /// This wopuld remove the need for the effect cast.
     pub def runRowEvaluator(_: Region[r], 
                             ma: RowEvaluator[r, a, ef, a], 
                             e: ResultSet[r]): Result[String, a] \ {r, ef} =
-        Graded/EnvError.runEnvError(getRowEvaluator(ma), e)
+        Graded/EnvError.runEnvError(Graded.extendEff(upcast(identity), getRowEvaluator(ma)), e)
 
 
-    pub def point(x: a): RowEvaluator[r, ka, Pure, a] = 
+    pub def point(x: a): RowEvaluator[r, ka, ef, a] = 
         RowEvaluator(Graded/EnvError.point(x))
 
     pub def map(f: a -> b \ ef1, 

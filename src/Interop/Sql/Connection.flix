@@ -52,8 +52,8 @@ namespace Interop/Sql/Connection {
 
 
     /// Just modifies session connection hence not IO
-    pub def setAutoCommit!(autoCommit: Bool, conn: Connection[r]): Result[String, Unit] \ Write(r)  = 
-        import java.sql.Connection.setAutoCommit(Bool): Unit \ r;
+    pub def setAutoCommit!(autoCommit: Bool, conn: Connection[r]): Result[String, Unit] \ {Write(r), IO}  = 
+        import java.sql.Connection.setAutoCommit(Bool): Unit \ {r, IO};
         try {
             let Connection(conn1) = conn;
             setAutoCommit(conn1, autoCommit);
@@ -78,8 +78,8 @@ namespace Interop/Sql/Connection {
         }
 
 
-    pub def createStatement!(conn: Connection[r]): Result[String, Statement[r]] \ Write(r) = 
-        import java.sql.Connection.createStatement(): ##java.sql.Statement \ r;
+    pub def createStatement!(_: Region[r1], conn: Connection[r]): Result[String, Statement[r1]] \ {Read(r), Write(r1)} = 
+        import java.sql.Connection.createStatement(): ##java.sql.Statement \ {r, r1};
         try {
             let Connection(conn1) = conn;
             createStatement(conn1) |> Statement |> Ok

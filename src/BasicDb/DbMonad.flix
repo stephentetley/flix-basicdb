@@ -30,7 +30,7 @@ namespace BasicDb {
     }
 
     instance GradedApplicative[DbMonad[r, ka]] { 
-        pub def point(x: a): DbMonad[r, ka, Pure, a] = 
+        pub def point(x: a): DbMonad[r, ka, ef, a] = 
             BasicDb/DbMonad.point(x)
 
         pub def ap(f: DbMonad[r, ka, ef1, a -> b \ ef2], 
@@ -92,7 +92,7 @@ namespace BasicDb/DbMonad {
         let DbMonad(x1) = x;
         x1
 
-    pub def point(x: a): DbMonad[r, ka, Pure, a] = 
+    pub def point(x: a): DbMonad[r, ka, ef, a] = 
         DbMonad(Graded/MutStateError.point(x))
 
     pub def map(f: a -> b \ ef1, 
@@ -135,10 +135,10 @@ namespace BasicDb/DbMonad {
     ///
     /// Returns the result of applying `ma` to the initial state `s`.
     ///
-    def runDbMonadHelper(r: Region[r], 
+    def runDbMonadHelper(_: Region[r], 
                         ma: DbMonad[r, a, ef, a], 
                         s: Connection[r]): Result[String, a] \ {r, ef} = 
-        Graded/MutStateError.runMutStateError(getDbMonad(ma), s)
+        Graded/MutStateError.runMutStateError(Graded.extendEff(upcast(identity), getDbMonad(ma)), s)
 
         
     pub def runDbMonad(rc: Region[r], ma: DbMonad[r, a, ef, a], url: String): Result[String, a] \ { ef, r, IO } = 
@@ -169,12 +169,12 @@ namespace BasicDb/DbMonad {
 
     // DB operations
 
-    pub def executeSql!(sql: String): DbMonad[r, ka, r and Impure, Bool] = 
-        let* stmt   = liftSetterResult!(Interop/Sql/Connection.createStatement!);
+    pub def executeSql!(sql: String): DbMonad[r, ka, r and Impure, Bool] = region rc {
+        let* stmt   = liftSetterResult!(Interop/Sql/Connection.createStatement!(rc));
         let* ans    = liftActionResult(_ -> Interop/Sql/Statement.execute!(sql, stmt));
         let* _      = liftActionResult(_ -> Interop/Sql/Statement.close!(stmt));
         point(ans)
-
+    }
 
 
     pub def setAutoCommit!(autoCommit: Bool): DbMonad[r, ka, r and Impure, Unit] =
@@ -183,9 +183,9 @@ namespace BasicDb/DbMonad {
     pub def commit!(): DbMonad[r, ka, r and Impure, Unit] =
         liftSetterResult!(Interop/Sql/Connection.commit!)
 
-
-    pub def createStatement!(): DbMonad[r, ka, r and Impure, Statement[r]] =
-        liftSetterResult!(Interop/Sql/Connection.createStatement!)
+    /// Not in IO (probably) - will not change state of the world
+    pub def createStatement!(rc: Region[r1]): DbMonad[r, ka, r and r1, Statement[r1]] =
+        liftSetterResult!(Interop/Sql/Connection.createStatement!(rc))
 
 
     pub def execute!(sql: String, stmt: Statement[r]): DbMonad[r, ka, r and Impure, Bool] =
@@ -203,20 +203,17 @@ namespace BasicDb/DbMonad {
         liftSetterResult!(Interop/Sql/Connection.prepareStatement!(sql))
         
 
-    // supply `rc`?
-    pub def psExecuteQuery!(stmt: PreparedStatement[r], setter: PreparedStatementSetter[r, a, ef, a]): DbMonad[r, ka, ef and r, ResultSet[r]] =
-        let r   = ???; // Scoped.regionOf(stmt);
+    
+    pub def psExecuteQuery!(stmt: PreparedStatement[r], setter: PreparedStatementSetter[r, a, ef, a]): DbMonad[r, ka, ef and r and Impure, ResultSet[r]] =
         let* _  = liftActionResult(_ -> Interop/Sql/PreparedStatement.clearParameters!(stmt));
-        let* _  = liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(r, setter, stmt));
-        let* rs = liftActionResult(_ -> Interop/Sql/PreparedStatement.executeQuery!(stmt));
-        point(rs)
+        let* _  = liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(setter, stmt));
+        liftActionResult(_ -> Interop/Sql/PreparedStatement.executeQuery!(stmt))
 
 
     /// +IO
-    pub def psExecuteUpdate!(stmt: PreparedStatement[r], setter: PreparedStatementSetter[r, a, ef, a]): DbMonad[r, ka, ef and r, Int32] =
-        let r   = ???; // Scoped.regionOf(stmt);
+    pub def psExecuteUpdate!(stmt: PreparedStatement[r], setter: PreparedStatementSetter[r, a, ef, a]): DbMonad[r, ka, ef and r and Impure, Int32] =
         let* _  = liftActionResult(_ -> Interop/Sql/PreparedStatement.clearParameters!(stmt));
-        let* _  = liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(r, setter, stmt));
+        let* _  = liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(setter, stmt));
         liftActionResult(_ -> Interop/Sql/PreparedStatement.executeUpdate!(stmt))
 
 
@@ -252,7 +249,7 @@ namespace BasicDb/DbMonad {
             let* a = rsEval(eval, rs);
             allRowsHelper(eval, rs, acc >> (ks -> a :: ks))
         } else 
-            Applicative.point(acc(Nil))
+            GradedApplicative.point(acc(Nil))
 
 
     pub def foreachRow(eval: RowEvaluator[r, a, ef, a], rs: ResultSet[r]): DbMonad[r, ka, ef and r, Unit] = 
@@ -261,7 +258,7 @@ namespace BasicDb/DbMonad {
             let* _ = rsEval(eval, rs);
             foreachRow(eval, rs)
         } else 
-            Applicative.point()
+            GradedApplicative.point()
 
 
     /// Note - arg order is inconsistent with List.foldLeft etc. and probably should be changed.
@@ -271,7 +268,7 @@ namespace BasicDb/DbMonad {
             let* a = rsEval(eval, rs);
             foldAllRows(step, step(start, a), eval, rs)
         } else 
-            Applicative.point(start)
+            GradedApplicative.point(start)
 
 /*
     pub def localConnection(r: Region[r], url: String, ma: DbMonad[r, a]): DbMonad[r, a] \ { r, IO } =
