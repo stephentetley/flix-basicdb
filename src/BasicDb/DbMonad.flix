@@ -22,7 +22,7 @@ namespace BasicDb {
     /// outside of Impure / IO).
 
 
-    pub enum DbMonad[r: Region, ka: Type, ef: Bool, a: Type](Graded.MutStateError[ka, Interop/Sql.Connection[r], ef, a])
+    pub enum DbMonad[r: Region, ka: Type, ef: Bool, a: Type](Graded.MutStateError[r, ka, Interop/Sql.Connection, ef, a])
     
     instance GradedFunctor[DbMonad[r, ka]] { 
         pub def map(f: a -> b \ ef1, x: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef and ef1, b] = 
@@ -68,27 +68,24 @@ namespace BasicDb {
 
 namespace BasicDb/DbMonad {
 
-    use Basis/NIO/File.Path;
+    use Basis/NIO/File.Path
 
-    use BasicDb.DbMonad;
-    use BasicDb.DbMonad.{DbMonad};
+    use BasicDb.DbMonad
+    use BasicDb.DbMonad.{DbMonad}
 
-    use Interop/Sql.Connection;
-    use Interop/Sql.Connection.{Connection};
+    use Interop/Sql.Connection
+    use Interop/Sql.Connection.{Connection}
 
+    use BasicDb.PreparedStatement
+    use Interop/Sql.PreparedStatement.{PreparedStatement}
+    use BasicDb.PreparedStatementSetter
+    use BasicDb.PreparedStatementSetter.{PreparedStatementSetter}
+    use BasicDb.ResultSet
+    use BasicDb.RowEvaluator
+    use BasicDb.Statement
+    use Interop/Sql.Statement.{Statement}
 
-    use BasicDb.PreparedStatement;
-    use Interop/Sql.PreparedStatement.{PreparedStatement};
-
-    use BasicDb.PreparedStatementSetter;
-    use BasicDb.PreparedStatementSetter.{PreparedStatementSetter};
-
-    use BasicDb.ResultSet;
-    use BasicDb.RowEvaluator;
-    use BasicDb.Statement;
-    use Interop/Sql.Statement.{Statement};
-
-    def getDbMonad(x: DbMonad[r, ka, ef, a]): Graded.MutStateError[ka, Connection[r], ef, a] = 
+    def getDbMonad(x: DbMonad[r, ka, ef, a]): Graded.MutStateError[r, ka, Connection, ef, a] = 
         let DbMonad(x1) = x;
         x1
 
@@ -122,10 +119,10 @@ namespace BasicDb/DbMonad {
     // def liftSetter!(f: Connection[r] -> a \ ef): DbMonad[r, ka, Unit] \ ef =
     //     DbMonad(Graded/MutStateError.liftSetter!(f) |> Functor.ignore)
 
-    def liftSetterResult!(f: Connection[r] -> Result[err, a] \ ef): DbMonad[r, ka, ef, a] with ToString[err] =
+    def liftSetterResult!(f: Connection[r] -> Result[err, a] \ {ef, Write(r)}): DbMonad[r, ka, ef and r, a] with ToString[err] =
         DbMonad(Graded/MutStateError.liftSetterResult!(f))
 
-    pub def liftAction(f: Unit -> a \ ef): DbMonad[r, ka, ef, a]= 
+    pub def liftAction(f: Unit -> a \ ef): DbMonad[r, ka, ef, a] = 
         DbMonad(Graded/MutStateError.liftAction(f))
 
     pub def liftActionResult(f: Unit -> Result[err, a] \ ef): DbMonad[r, ka, ef, a] with ToString[err] = 

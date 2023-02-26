@@ -18,7 +18,7 @@
 namespace BasicDb {
 
 
-    pub enum PreparedStatementSetter[r: Region, ka: Type, ef: Bool, a: Type](Graded.MutStateError[ka, Interop/Sql.PreparedStatement[r], ef, a])
+    pub enum PreparedStatementSetter[r: Region, ka: Type, ef: Bool, a: Type](Graded.Builder[r, ka, Interop/Sql.PreparedStatement, ef, a])
 
     instance GradedFunctor[PreparedStatementSetter[r, ka]] { 
         pub def map(f: a -> b \ ef1, x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1, b] = 
@@ -64,52 +64,52 @@ namespace BasicDb/PreparedStatementSetter {
     use Interop/Sql.PreparedStatement;
     use Interop/Sql.PreparedStatement.{PreparedStatement};
 
-    pub def getPreparedStatementSetter(x: PreparedStatementSetter[r, ka, ef, a]): Graded.MutStateError[ka, PreparedStatement[r], ef, a] = 
+    pub def getPreparedStatementSetter(x: PreparedStatementSetter[r, ka, ef, a]): Graded.Builder[r, ka, PreparedStatement, ef, a] = 
         let PreparedStatementSetter(x1) = x;
         x1
 
     /// The state param `st` is expected to be mutated...
     pub def runPreparedStatementSetter!(ma: PreparedStatementSetter[r, a, ef, a], 
-                                        st: PreparedStatement[r]): Result[String, a] \ {ef, r} =
-        Graded/MutStateError.runMutStateError(Graded.extendEff(upcast(identity), getPreparedStatementSetter(ma)), st)
+                                        st: PreparedStatement[r]): Result[String, a] \ ef =
+        Graded/Builder.runBuilder(getPreparedStatementSetter(ma), st)
 
     pub def point(x: a): PreparedStatementSetter[r, ka, ef, a] = 
-        PreparedStatementSetter(Graded/MutStateError.point(x))
+        PreparedStatementSetter(Graded/Builder.point(x))
 
     pub def map(f: a -> b \ ef1, 
                 x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1, b] =
-        PreparedStatementSetter(Graded/MutStateError.map(f, getPreparedStatementSetter(x)))
+        PreparedStatementSetter(Graded/Builder.map(f, getPreparedStatementSetter(x)))
 
     pub def ap(mf: PreparedStatementSetter[r, ka, ef1, a -> b \ ef2], 
                 ma: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1 and ef2, b] =
-        PreparedStatementSetter(Graded/MutStateError.ap(getPreparedStatementSetter(mf), getPreparedStatementSetter(ma)))
+        PreparedStatementSetter(Graded/Builder.ap(getPreparedStatementSetter(mf), getPreparedStatementSetter(ma)))
 
     pub def flatMap(k: a -> PreparedStatementSetter[r, ka, ef1, b] \ ef2, 
                     x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1 and ef2, b] = 
-        PreparedStatementSetter(Graded/MutStateError.flatMap(k >> getPreparedStatementSetter, getPreparedStatementSetter(x)))
+        PreparedStatementSetter(Graded/Builder.flatMap(k >> getPreparedStatementSetter, getPreparedStatementSetter(x)))
 
 
     pub def throwError(msg: String): PreparedStatementSetter[r, ka, ef, a] = 
-        PreparedStatementSetter(Graded/MutStateError.throwError(msg))
+        PreparedStatementSetter(Graded/Builder.throwError(msg))
 
     pub def mapError(f: String -> String \ ef1, 
                         ma: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1, a] =
-        PreparedStatementSetter(Graded/MutStateError.mapError(f, getPreparedStatementSetter(ma)))
+        PreparedStatementSetter(Graded/Builder.mapError(f, getPreparedStatementSetter(ma)))
 
     pub def catchError(ma: PreparedStatementSetter[r, ka, ef, a], 
                         f: String -> PreparedStatementSetter[r, ka, ef1, a] \ ef2): PreparedStatementSetter[r, ka, ef and ef1 and ef2, a] =
-        PreparedStatementSetter(Graded/MutStateError.catchError(getPreparedStatementSetter(ma), f >> getPreparedStatementSetter))
+        PreparedStatementSetter(Graded/Builder.catchError(getPreparedStatementSetter(ma), f >> getPreparedStatementSetter))
 
 
     def liftSetterResult!(f: PreparedStatement[r] -> Result[err, a] \ ef): PreparedStatementSetter[r, ka, ef, a] with ToString[err] =
-        PreparedStatementSetter(Graded/MutStateError.liftSetterResult!(f))
+        PreparedStatementSetter(Graded/Builder.liftSetterResult!(f))
     
     pub def liftAction(f: Unit -> a \ ef): PreparedStatementSetter[r, ka, ef, a] =
-        PreparedStatementSetter(Graded/MutStateError.liftAction(f))
+        PreparedStatementSetter(Graded/Builder.liftAction(f))
     
         
     pub def liftActionResult(f: Unit -> Result[err, a] \ ef): PreparedStatementSetter[r, ka, ef, a] with ToString[err] =
-        PreparedStatementSetter(Graded/MutStateError.liftActionResult(f))
+        PreparedStatementSetter(Graded/Builder.liftActionResult(f))
 
 
 /*
