@@ -169,6 +169,8 @@ namespace BasicDb/DbMonad {
 
     // DB operations
 
+    /// TODO - need to properly calculate which regions are used 
+    
     pub def executeSql!(sql: String): DbMonad[r, ka, r and Impure, Bool] = region rc {
         let* stmt   = liftSetterResult!(Interop/Sql/Connection.createStatement!(rc));
         let* ans    = liftActionResult(_ -> Interop/Sql/Statement.execute!(sql, stmt));
@@ -217,7 +219,6 @@ namespace BasicDb/DbMonad {
         liftActionResult(_ -> Interop/Sql/PreparedStatement.executeUpdate!(stmt))
 
 
-    /// TODO - need to properly calculate which regions are used 
 
     /// ResultSet
 
@@ -228,7 +229,7 @@ namespace BasicDb/DbMonad {
         liftActionResult(_ -> Interop/Sql/ResultSet.next!(rs))
 
 
-    pub def rsEval(eval: RowEvaluator[r1, a, ef, a], rs: ResultSet[r1]): DbMonad[r, ka, ef and r1, a] = 
+    pub def rsEval(eval: RowEvaluator[r1, a, ef, a], rs: ResultSet[r1]): DbMonad[r, ka, ef, a] = 
         liftActionResult(_ -> BasicDb/RowEvaluator.runRowEvaluator(eval, rs))
 
         

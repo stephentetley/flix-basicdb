@@ -18,7 +18,7 @@ namespace BasicDb {
 
 
 
-    pub enum RowEvaluator[r: Region, ka: Type, ef: Bool, a: Type](Graded.EnvError[ka, Interop/Sql.ResultSet[r], ef, a])
+    pub enum RowEvaluator[r: Region, ka: Type, ef: Bool, a: Type](Graded.Evaluator[r, ka, Interop/Sql.ResultSet, ef, a])
 
 
     instance GradedFunctor[RowEvaluator[r, ka]] { 
@@ -75,32 +75,30 @@ namespace BasicDb/RowEvaluator {
     use Interop/Sql.ResultSet
     use Interop/Sql.ResultSet.{ResultSet}
 
-    pub def getRowEvaluator(x: RowEvaluator[r, ka, ef, a]): Graded.EnvError[ka, ResultSet[r], ef, a] = 
+    pub def getRowEvaluator(x: RowEvaluator[r, ka, ef, a]): Graded.Evaluator[r, ka, ResultSet, ef, a] = 
         let RowEvaluator(x1) = x;
         x1
 
-    /// TODO `RowEvaluator` should probably not have a Region type param and `EnvError` is probably 
-    /// not quite the right monad (should be an env-like monad where the region is "mutable read-only").
-    /// This wopuld remove the need for the effect cast.
+
     pub def runRowEvaluator(ma: RowEvaluator[r, a, ef, a], 
-                            e: ResultSet[r]): Result[String, a] \ {r, ef} =
-        Graded/EnvError.runEnvError(Graded.extendEff(upcast(identity), getRowEvaluator(ma)), e)
+                            e: ResultSet[r]): Result[String, a] \ ef =
+        Graded/Evaluator.runEvaluator(getRowEvaluator(ma), e)
 
 
     pub def point(x: a): RowEvaluator[r, ka, ef, a] = 
-        RowEvaluator(Graded/EnvError.point(x))
+        RowEvaluator(Graded/Evaluator.point(x))
 
     pub def map(f: a -> b \ ef1, 
                 x: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1, b]=
-        RowEvaluator(Graded/EnvError.map(f, getRowEvaluator(x)))
+        RowEvaluator(Graded/Evaluator.map(f, getRowEvaluator(x)))
 
     pub def ap(mf: RowEvaluator[r, ka, ef1, a -> b \ ef2], 
                 ma: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1 and ef2, b] =
-        RowEvaluator(Graded/EnvError.ap(getRowEvaluator(mf), getRowEvaluator(ma)))
+        RowEvaluator(Graded/Evaluator.ap(getRowEvaluator(mf), getRowEvaluator(ma)))
 
     pub def flatMap(k: a -> RowEvaluator[r, ka, ef1, b] \ ef2, 
                     x: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1 and ef2, b] =
-        RowEvaluator(Graded/EnvError.flatMap(k >> getRowEvaluator, getRowEvaluator(x)))
+        RowEvaluator(Graded/Evaluator.flatMap(k >> getRowEvaluator, getRowEvaluator(x)))
 
 
     // MatchEvaluator can be MonadOr because it does not "step".
@@ -110,32 +108,32 @@ namespace BasicDb/RowEvaluator {
 
     pub def orelse(ma: RowEvaluator[r, ka, ef1, a], 
                     mb: RowEvaluator[r, ka, ef2, a]): RowEvaluator[r, ka, ef1 and ef2, a] =
-        RowEvaluator(Graded/EnvError.orelse(getRowEvaluator(ma), getRowEvaluator(mb)))
+        RowEvaluator(Graded/Evaluator.orelse(getRowEvaluator(ma), getRowEvaluator(mb)))
 
 
     pub def throwError(msg: String): RowEvaluator[r, ka, ef, a] = 
-        RowEvaluator(Graded/EnvError.throwError(msg))
+        RowEvaluator(Graded/Evaluator.throwError(msg))
 
     pub def mapError(f: String -> String \ ef1, 
                     ma: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1, a] =
-        RowEvaluator(Graded/EnvError.mapError(f, getRowEvaluator(ma)))
+        RowEvaluator(Graded/Evaluator.mapError(f, getRowEvaluator(ma)))
 
     pub def catchError(ma: RowEvaluator[r, ka, ef, a], 
                         f: String -> RowEvaluator[r, ka, ef1, a] \ ef2): RowEvaluator[r, ka, ef and ef1 and ef2, a] =
-        RowEvaluator(Graded/EnvError.catchError(getRowEvaluator(ma), f >> getRowEvaluator))
+        RowEvaluator(Graded/Evaluator.catchError(getRowEvaluator(ma), f >> getRowEvaluator))
 
     // def liftGetter(f: ResultSet[r] -> a \ ef): RowEvaluator[r, ka, a] \ ef =
-    //     RowEvaluator(Graded/EnvError.liftGetter(f))
+    //     RowEvaluator(Graded/Evaluator.liftGetter(f))
 
-    def liftGetterResult(f: ResultSet[r] -> Result[err, a] \ ef): RowEvaluator[r, ka, ef, a] with ToString[err] =
-        RowEvaluator(Graded/EnvError.liftGetterResult(f))
+    def liftGetterResult(f: ResultSet[r] -> Result[err, a] \ {ef, Read(r)}): RowEvaluator[r, ka, ef and r, a] with ToString[err] =
+        RowEvaluator(Graded/Evaluator.liftGetterResult(f))
     
     pub def liftAction(f: Unit -> a \ ef): RowEvaluator[r, ka, ef, a]  =
-        RowEvaluator(Graded/EnvError.liftAction(f))
+        RowEvaluator(Graded/Evaluator.liftAction(f))
     
         
     pub def liftActionResult(f: Unit -> Result[err, a] \ ef): RowEvaluator[r, ka, ef, a] with ToString[err] =
-        RowEvaluator(Graded/EnvError.liftActionResult(f))
+        RowEvaluator(Graded/Evaluator.liftActionResult(f))
 
 
 
