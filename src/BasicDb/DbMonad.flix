@@ -198,19 +198,21 @@ namespace BasicDb/DbMonad {
         liftActionResult(_ -> Interop/Sql/Statement.executeUpdate!(sql, stmt))
 
     /// TODO supply allocating region...
-    pub def prepareStatement!(sql: String): DbMonad[r, ka, r, PreparedStatement[r]] =
-        liftSetterResult!(Interop/Sql/Connection.prepareStatement!(sql))
+    pub def prepareStatement!(rc: Region[r1], sql: String): DbMonad[r, ka, r and r1, PreparedStatement[r1]] =
+        liftSetterResult!(Interop/Sql/Connection.prepareStatement!(rc, sql))
         
 
     
-    pub def psExecuteQuery!(stmt: PreparedStatement[r], setter: PreparedStatementSetter[r, a, ef, a]): DbMonad[r, ka, ef and r and Impure, ResultSet[r]] =
+    pub def psExecuteQuery!(stmt: PreparedStatement[r1], 
+                            setter: PreparedStatementSetter[r1, a, ef, a]): DbMonad[r, ka, ef and r1 and Impure, ResultSet[r1]] =
         let* _  = liftActionResult(_ -> Interop/Sql/PreparedStatement.clearParameters!(stmt));
         let* _  = liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(setter, stmt));
         liftActionResult(_ -> Interop/Sql/PreparedStatement.executeQuery!(stmt))
 
 
     /// +IO
-    pub def psExecuteUpdate!(stmt: PreparedStatement[r], setter: PreparedStatementSetter[r, a, ef, a]): DbMonad[r, ka, ef and r and Impure, Int32] =
+    pub def psExecuteUpdate!(stmt: PreparedStatement[r1], 
+                                setter: PreparedStatementSetter[r1, a, ef, a]): DbMonad[r, ka, ef and r1 and Impure, Int32] =
         let* _  = liftActionResult(_ -> Interop/Sql/PreparedStatement.clearParameters!(stmt));
         let* _  = liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(setter, stmt));
         liftActionResult(_ -> Interop/Sql/PreparedStatement.executeUpdate!(stmt))
