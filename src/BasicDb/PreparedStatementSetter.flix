@@ -18,7 +18,7 @@
 namespace BasicDb {
 
 
-    pub enum PreparedStatementSetter[r: Region, ka: Type, ef: Bool, a: Type](Graded.Builder[r, ka, Interop/Sql.PreparedStatement, ef, a])
+    pub enum PreparedStatementSetter[r: Region, ka: Type, ef: Bool, a: Type](Graded.Builder[ka, Interop/Sql.PreparedStatement[r], ef, a])
 
     instance GradedFunctor[PreparedStatementSetter[r, ka]] { 
         pub def map(f: a -> b \ ef1, x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1, b] = 
@@ -64,7 +64,7 @@ namespace BasicDb/PreparedStatementSetter {
     use Interop/Sql.PreparedStatement;
     use Interop/Sql.PreparedStatement.{PreparedStatement};
 
-    pub def getPreparedStatementSetter(x: PreparedStatementSetter[r, ka, ef, a]): Graded.Builder[r, ka, PreparedStatement, ef, a] = 
+    pub def getPreparedStatementSetter(x: PreparedStatementSetter[r, ka, ef, a]): Graded.Builder[ka, PreparedStatement[r], ef, a] = 
         let PreparedStatementSetter(x1) = x;
         x1
 

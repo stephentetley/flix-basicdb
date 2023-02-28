@@ -18,7 +18,7 @@ namespace BasicDb {
 
 
 
-    pub enum RowEvaluator[r: Region, ka: Type, ef: Bool, a: Type](Graded.Evaluator[r, ka, Interop/Sql.ResultSet, ef, a])
+    pub enum RowEvaluator[r: Region, ka: Type, ef: Bool, a: Type](Graded.Evaluator[ka, Interop/Sql.ResultSet[r], ef, a])
 
 
     instance GradedFunctor[RowEvaluator[r, ka]] { 
@@ -75,7 +75,7 @@ namespace BasicDb/RowEvaluator {
     use Interop/Sql.ResultSet
     use Interop/Sql.ResultSet.{ResultSet}
 
-    pub def getRowEvaluator(x: RowEvaluator[r, ka, ef, a]): Graded.Evaluator[r, ka, ResultSet, ef, a] = 
+    pub def getRowEvaluator(x: RowEvaluator[r, ka, ef, a]): Graded.Evaluator[ka, ResultSet[r], ef, a] = 
         let RowEvaluator(x1) = x;
         x1
 

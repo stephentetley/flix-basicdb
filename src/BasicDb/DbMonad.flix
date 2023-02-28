@@ -22,7 +22,7 @@ namespace BasicDb {
     /// outside of Impure / IO).
 
 
-    pub enum DbMonad[r: Region, ka: Type, ef: Bool, a: Type](Graded.MutStateError[r, ka, Interop/Sql.Connection, ef, a])
+    pub enum DbMonad[r: Region, ka: Type, ef: Bool, a: Type](Graded.MutStateError[ka, Interop/Sql.Connection[r], ef, a])
     
     instance GradedFunctor[DbMonad[r, ka]] { 
         pub def map(f: a -> b \ ef1, x: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef and ef1, b] = 
@@ -85,7 +85,7 @@ namespace BasicDb/DbMonad {
     use BasicDb.Statement
     use Interop/Sql.Statement.{Statement}
 
-    def getDbMonad(x: DbMonad[r, ka, ef, a]): Graded.MutStateError[r, ka, Connection, ef, a] = 
+    def getDbMonad(x: DbMonad[r, ka, ef, a]): Graded.MutStateError[ka, Connection[r], ef, a] = 
         let DbMonad(x1) = x;
         x1
 
