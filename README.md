@@ -4,14 +4,7 @@ A basic monadic database interface for Flix using JDBC.
 
 Note:
 
-To run the tests or programs depending on this library you are likely to 
-have to use the classpath option to tell java where to find to the JDBC driver.
-
-In the command below `sqlite-jdbc-3.36.n.n.jar` is in the folder `lib`:
-
-> java -cp "./lib/*;../bin/flix.jar" ca.uwaterloo.flix.Main test
-
-
-
-
-
+For development and testing SQLite JDBC jar is included as a 
+dependency. Other JDBC connections should work (for instance 
+DuckDB) but expect to supply Java's classpath with a path to 
+the respective jar when invoking Flix to run your program.

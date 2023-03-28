@@ -15,4 +15,3 @@ authors     = ["Stephen Tetley <stephen.tetley@gmail.com>"]
 
 [mvn-dependencies]
 "org.xerial:sqlite-jdbc" = "3.41.2.1"
-"org.duckdb:duckdb_jdbc" = "0.7.1"
