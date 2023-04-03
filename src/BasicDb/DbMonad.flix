@@ -168,12 +168,12 @@ namespace BasicDb/DbMonad {
 
     /// TODO - need to properly calculate which regions are used 
     
-    pub def executeSql!(sql: String): DbMonad[r, ka, r and Impure, Bool] = region rc {
-        let* stmt   = liftSetterResult!(Interop/Sql/Connection.createStatement!(rc));
-        let* ans    = liftActionResult(_ -> Interop/Sql/Statement.execute!(sql, stmt));
-        let* _      = liftActionResult(_ -> Interop/Sql/Statement.close!(stmt));
+    pub def executeSql!(rc: Region[r1], sql: String): DbMonad[r, ka, r and r1 and Impure, Bool] = 
+        use GradedMonad.{>>=};
+        liftSetterResult!(Interop/Sql/Connection.createStatement!(rc))   >>= stmt   ->
+        liftActionResult(_ -> Interop/Sql/Statement.execute!(sql, stmt)) >>= ans    ->
+        liftActionResult(_ -> Interop/Sql/Statement.close!(stmt))        >>= _      -> 
         point(ans)
-    }
 
 
     pub def setAutoCommit!(autoCommit: Bool): DbMonad[r, ka, r and Impure, Unit] =
@@ -205,17 +205,19 @@ namespace BasicDb/DbMonad {
     
     pub def psExecuteQuery!(stmt: PreparedStatement[r1], 
                             setter: PreparedStatementSetter[r1, a, ef, a]): DbMonad[r, ka, ef and r1 and Impure, ResultSet[r1]] =
-        let* _  = liftActionResult(_ -> Interop/Sql/PreparedStatement.clearParameters!(stmt));
-        let* _  = liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(setter, stmt));
-        liftActionResult(_ -> Interop/Sql/PreparedStatement.executeQuery!(stmt))
+        use GradedApplicative.{*>};
+        liftActionResult(_ -> Interop/Sql/PreparedStatement.clearParameters!(stmt))
+            *> liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(setter, stmt))
+            *> liftActionResult(_ -> Interop/Sql/PreparedStatement.executeQuery!(stmt))
 
 
     /// +IO
     pub def psExecuteUpdate!(stmt: PreparedStatement[r1], 
                                 setter: PreparedStatementSetter[r1, a, ef, a]): DbMonad[r, ka, ef and r1 and Impure, Int32] =
-        let* _  = liftActionResult(_ -> Interop/Sql/PreparedStatement.clearParameters!(stmt));
-        let* _  = liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(setter, stmt));
-        liftActionResult(_ -> Interop/Sql/PreparedStatement.executeUpdate!(stmt))
+        use GradedApplicative.{*>};
+        liftActionResult(_ -> Interop/Sql/PreparedStatement.clearParameters!(stmt))
+            *> liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(setter, stmt))
+            *> liftActionResult(_ -> Interop/Sql/PreparedStatement.executeUpdate!(stmt))
 
 
 
@@ -235,7 +237,8 @@ namespace BasicDb/DbMonad {
 
 
     pub def firstRow(eval: RowEvaluator[r, a, ef, a], rs: ResultSet[r]): DbMonad[r, ka, ef and r, a] = 
-        let* more   = rsNext(rs);
+        use GradedMonad.{>>=};
+        rsNext(rs) >>= more -> 
         if (more) rsEval(eval, rs) else throwError("firstRow - resultset is empty")
 
     pub def allRows(eval: RowEvaluator[r1, a, ef, a], rs: ResultSet[r1]): DbMonad[r, ka, ef and r and r1, List[a]] = 
@@ -246,28 +249,30 @@ namespace BasicDb/DbMonad {
     def allRowsHelper(eval: RowEvaluator[r1, a, ef, a],
                         rs: ResultSet[r1],  
                         acc: List[a] -> List[a]): DbMonad[r, ka, ef and r and r1, List[a]] = 
-        let* more   = rsNext(rs);
+        use GradedMonad.{>>=};
+        rsNext(rs) >>= more -> 
         if (more) {
-            let* a = rsEval(eval, rs);
+            rsEval(eval, rs) >>= a -> 
             allRowsHelper(eval, rs, acc >> (ks -> a :: ks))
         } else 
             GradedApplicative.point(acc(Nil))
 
 
     pub def foreachRow(eval: RowEvaluator[r1, a, ef, a], rs: ResultSet[r1]): DbMonad[r, ka, ef and r1, Unit] = 
-        let* more  = rsNext(rs);
+        use GradedMonad.{>>=};
+        rsNext(rs) >>= more ->
         if (more) {
-            let* _ = rsEval(eval, rs);
-            foreachRow(eval, rs)
+            rsEval(eval, rs) >>= _ -> foreachRow(eval, rs)
         } else 
             GradedApplicative.point()
 
 
     /// Note - arg order is inconsistent with List.foldLeft etc. and probably should be changed.
     pub def foldAllRows(step: (b, a) -> b \ ef1, start: b, eval: RowEvaluator[r1, a, ef, a], rs: ResultSet[r1]): DbMonad[r, ka, ef and ef1 and r1, b] = 
-        let* more  = rsNext(rs);
+        use GradedMonad.{>>=};
+        rsNext(rs) >>= more -> 
         if (more) {
-            let* a = rsEval(eval, rs);
+            rsEval(eval, rs) >>= a ->
             foldAllRows(step, step(start, a), eval, rs)
         } else 
             GradedApplicative.point(start)

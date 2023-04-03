@@ -16,9 +16,13 @@
 
 namespace BasicDb/Writer {
     
+    use GradedApplicative.{point}
     use GradedMonad.{>>=}
+    
     use BasicDb.DbMonad
     use BasicDb.PreparedStatementSetter
+    
+
     
     pub type alias RowSetter[r: Region, row: Type, ef: Bool, a: Type] = row -> PreparedStatementSetter[r, a, ef, a]
 
@@ -28,13 +32,12 @@ namespace BasicDb/Writer {
                     sqlstrings: {prepStmt = String, tableActions = List[String]}, 
                     setter: RowSetter[r1, row, ef, a], 
                     rows: t[row]): DbMonad[r, ka, r and r1 and ef and Impure, Int32] with GradedFoldable[t] =
-        use BasicDb/DbMonad.{flatMap, point};
-        let* _          = BasicDb/DbMonad.setAutoCommit!(false);
-        let* _          = GradedFoldable.forEachM(BasicDb/DbMonad.executeSql!, sqlstrings.tableActions);
-        let* stmt       = BasicDb/DbMonad.prepareStatement!(rc, sqlstrings.prepStmt);
-        let* nrows      = GradedFoldable.foldLeftM((ac, x) -> 
-                                {let* n = BasicDb/DbMonad.psExecuteUpdate!(stmt, setter(x)); point(ac+n)}, 0, rows);
-        let* _          = BasicDb/DbMonad.commit!();
+        BasicDb/DbMonad.setAutoCommit!(false)                                                   >>= _       -> 
+        GradedFoldable.forEachM(BasicDb/DbMonad.executeSql!(rc), sqlstrings.tableActions)       >>= _       -> 
+        BasicDb/DbMonad.prepareStatement!(rc, sqlstrings.prepStmt)                              >>= stmt    ->
+        GradedFoldable.foldLeftM((ac, x) -> 
+            {BasicDb/DbMonad.psExecuteUpdate!(stmt, setter(x)) >>= n -> point(ac+n)}, 0, rows)  >>= nrows   -> 
+        BasicDb/DbMonad.commit!()                                                               >>= _       -> 
         point(nrows)
 
 
@@ -42,13 +45,12 @@ namespace BasicDb/Writer {
                         sqlstrings: {prepStmt = String, tableActions = List[String]}, 
                         setter: RowSetter[r1, row, ef, a], 
                         rows: List[row]): DbMonad[r, ka, r and r1 and ef and Impure, Int32] =
-        use BasicDb/DbMonad.{flatMap, point};
-        let* _          = BasicDb/DbMonad.setAutoCommit!(false);
-        let* _          = GradedFoldable.forEachM(BasicDb/DbMonad.executeSql!, sqlstrings.tableActions);
-        let* stmt       = BasicDb/DbMonad.prepareStatement!(rc, sqlstrings.prepStmt);
-        let* nrows      = GradedFoldable.foldLeftM((ac, x) -> 
-                                {let* n = BasicDb/DbMonad.psExecuteUpdate!(stmt, setter(x)); point(ac+n)}, 0, rows);
-        let* _          = BasicDb/DbMonad.commit!();
+        BasicDb/DbMonad.setAutoCommit!(false)                                                   >>= _       -> 
+        GradedFoldable.forEachM(BasicDb/DbMonad.executeSql!(rc), sqlstrings.tableActions)       >>= _       -> 
+        BasicDb/DbMonad.prepareStatement!(rc, sqlstrings.prepStmt)                              >>= stmt    -> 
+        GradedFoldable.foldLeftM((ac, x) -> 
+            {BasicDb/DbMonad.psExecuteUpdate!(stmt, setter(x)) >>= n -> point(ac+n)}, 0, rows)  >>= nrows   ->
+        BasicDb/DbMonad.commit!()                                                               >>= _       ->
         point(nrows)
 
     pub def storeArray(rc: Region[r1], 

@@ -31,7 +31,7 @@ namespace TestBig {
             0
         }
 
-    def storeNumbers(n: Int32, tableName: String): DbMonad[r, ka, Int32] \ { Write(r), IO }= 
+    def storeNumbers(n: Int32, tableName: String): DbMonad[r, ka, ef, Int32] \ { Write(r), IO }= 
         use Applicative.{*>, point};
         use BasicDb/DbMonad.{flatMap};
         let* _      = BasicDb/DbMonad.executeSql!("DROP TABLE IF EXISTS ${tableName};");
@@ -43,7 +43,7 @@ namespace TestBig {
         let* _      = BasicDb/DbMonad.commit!();
         point(ans)
 
-    def setPStmt!(ival: Int32, acc: Int32): PreparedStatementSetter[r, ka, Unit] \ Write(r) = 
+    def setPStmt!(ival: Int32, acc: Int32): PreparedStatementSetter[r, ka, r, Unit] = 
         use BasicDb/PreparedStatementSetter.{flatMap, point, putInt32At!};
         let* _ = putInt32At!(0, ival);
         let* _ = putInt32At!(1, acc);
