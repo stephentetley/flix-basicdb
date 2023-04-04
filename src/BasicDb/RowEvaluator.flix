@@ -247,40 +247,40 @@ namespace BasicDb/RowEvaluator {
     /// Cell has type String...
     pub def getLocalDateStringAt(ix: Int32): RowEvaluator[r, ka, r, Time.LocalDate] =
         getStringAt(ix)                                             >>= s   ->
-        point(Time/Format/DateTimeFormatter.iso_local_date())       >>= fmt ->
+        Time/Format/DateTimeFormatter.iso_local_date()              |>  fmt ->
         GradedError.liftResult(Time/LocalDate.parse(fmt, s))
     
 
     /// Cell has type String...
     pub def getLocalDateStringNamed(label: String): RowEvaluator[r, ka, r, Time.LocalDate] =
         getStringNamed(label)                                       >>= s   ->
-        point(Time/Format/DateTimeFormatter.iso_local_date())       >>= fmt ->
+        Time/Format/DateTimeFormatter.iso_local_date()              |>  fmt ->
         GradedError.liftResult(Time/LocalDate.parse(fmt, s))
 
     /// Cell has type String...
     pub def getLocalDateTimeStringAt(ix: Int32): RowEvaluator[r, ka, r, Time.LocalDateTime] =
         getStringAt(ix)                                             >>= s   ->
-        point(Time/Format/DateTimeFormatter.iso_local_date_time())  >>= fmt -> 
+        Time/Format/DateTimeFormatter.iso_local_date_time()         |>  fmt -> 
         GradedError.liftResult(Time/LocalDateTime.parse(fmt, s))
     
 
     /// Cell has type String...
     pub def getLocalDateTimeStringNamed(label: String): RowEvaluator[r, ka, r, Time.LocalDateTime] =
         getStringNamed(label)                                       >>= s   ->
-        point(Time/Format/DateTimeFormatter.iso_local_date_time())  >>= fmt ->
+        Time/Format/DateTimeFormatter.iso_local_date_time()         |>  fmt ->
         GradedError.liftResult(Time/LocalDateTime.parse(fmt, s))
 
     /// Cell has type String...
     pub def getLocalTimeStringAt(ix: Int32): RowEvaluator[r, ka, r, Time.LocalTime] =
         getStringAt(ix)                                             >>= s   ->
-        point(Time/Format/DateTimeFormatter.iso_local_time())       >>= fmt ->
+        Time/Format/DateTimeFormatter.iso_local_time()              |>  fmt ->
         GradedError.liftResult(Time/LocalTime.parse(fmt, s))
     
 
     /// Cell has type String...
     pub def getLocalTimeStringNamed(label: String): RowEvaluator[r, ka, r, Time.LocalTime] =
         getStringNamed(label)                                       >>= s   ->
-        point(Time/Format/DateTimeFormatter.iso_local_time())       >>= fmt ->
+        Time/Format/DateTimeFormatter.iso_local_time()              |>  fmt ->
         GradedError.liftResult(Time/LocalTime.parse(fmt, s))
 
 }

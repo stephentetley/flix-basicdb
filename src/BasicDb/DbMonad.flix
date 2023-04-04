@@ -135,7 +135,7 @@ namespace BasicDb/DbMonad {
     def runDbMonadHelper(_: Region[r], 
                         ma: DbMonad[r, a, ef, a], 
                         s: Connection[r]): Result[String, a] \ {r, ef} = 
-        Graded/MutStateError.runMutStateError(Graded.extendEff(identity, getDbMonad(ma)), s)
+        Graded/MutStateError.runMutStateError(checked_ecast(getDbMonad(ma)), s)
 
         
     pub def runDbMonad(rc: Region[r], ma: DbMonad[r, a, ef, a], url: String): Result[String, a] \ { ef, r, IO } = 
