@@ -15,118 +15,118 @@
  */
 
 
-namespace BasicDb {
+mod BasicDb {
 
     /// ##java.sql.Connection is considered an "imperative resource" rather than directly 
     /// analogous to Haskell's IO so we pu it in a region (even though we can't create on 
     /// outside of Impure / IO).
 
 
-    pub enum DbMonad[r: Region, ka: Type, ef: Bool, a: Type](Graded.MutStateError[ka, Interop/Sql.Connection[r], ef, a])
+    pub enum DbMonad[r: Region, ka: Type, ef: Bool, a: Type](Graded.MutStateError[ka, Interop.Sql.Connection[r], ef, a])
     
     instance GradedFunctor[DbMonad[r, ka]] { 
         pub def map(f: a -> b \ ef1, x: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef and ef1, b] = 
-            BasicDb/DbMonad.map(f, x)
+            BasicDb.DbMonad.map(f, x)
     }
 
     instance GradedApplicative[DbMonad[r, ka]] { 
         pub def point(x: a): DbMonad[r, ka, ef, a] = 
-            BasicDb/DbMonad.point(x)
+            BasicDb.DbMonad.point(x)
 
         pub def ap(f: DbMonad[r, ka, ef1, a -> b \ ef2], 
                     x: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef and ef1 and ef2, b] = 
-            BasicDb/DbMonad.ap(f, x)
+            BasicDb.DbMonad.ap(f, x)
     }
 
     instance GradedMonad[DbMonad[r, ka]] { 
         pub def flatMap(k: a -> DbMonad[r, ka, ef1, b] \ ef2, 
                         x: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef and ef1 and ef2, b] = 
-            BasicDb/DbMonad.flatMap(k, x)
+            BasicDb.DbMonad.flatMap(k, x)
     }
 
     instance GradedError[DbMonad[r, ka]] {
         pub def throwError(msg: String): DbMonad[r, ka, ef, a] = 
-            BasicDb/DbMonad.throwError(msg)
+            BasicDb.DbMonad.throwError(msg)
 
         pub def mapError(f: String -> String \ ef1, 
                             ma: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef and ef1, a] =
-            BasicDb/DbMonad.mapError(f, ma)
+            BasicDb.DbMonad.mapError(f, ma)
 
         pub def catchError(ma: DbMonad[r, ka, ef, a], 
                             f: String -> DbMonad[r, ka, ef1, a] \ ef2): DbMonad[r, ka, ef and ef1 and ef2, a] =
-            BasicDb/DbMonad.catchError(ma, f)
+            BasicDb.DbMonad.catchError(ma, f)
     }
 
 
-    pub type alias PreparedStatement[r: Region] = Interop/Sql.PreparedStatement[r]
+    pub type alias PreparedStatement[r: Region] = Interop.Sql.PreparedStatement[r]
 
-    pub type alias Statement[r: Region] = Interop/Sql.Statement[r]
+    pub type alias Statement[r: Region] = Interop.Sql.Statement[r]
 
-    pub type alias ResultSet[r: Region] = Interop/Sql.ResultSet[r]
+    pub type alias ResultSet[r: Region] = Interop.Sql.ResultSet[r]
 
 }
 
-namespace BasicDb/DbMonad {
+mod BasicDb.DbMonad {
 
-    use Basis/NIO/File.Path
+    use Basis.NIO.File.Path
 
     use BasicDb.DbMonad
     use BasicDb.DbMonad.{DbMonad}
 
-    use Interop/Sql.Connection
-    use Interop/Sql.Connection.{Connection}
+    use Interop.Sql.Connection
+    use Interop.Sql.Connection.{Connection}
 
     use BasicDb.PreparedStatement
-    use Interop/Sql.PreparedStatement.{PreparedStatement}
+    use Interop.Sql.PreparedStatement.{PreparedStatement}
     use BasicDb.PreparedStatementSetter
     use BasicDb.PreparedStatementSetter.{PreparedStatementSetter}
     use BasicDb.ResultSet
     use BasicDb.RowEvaluator
     use BasicDb.Statement
-    use Interop/Sql.Statement.{Statement}
+    use Interop.Sql.Statement.{Statement}
 
     def getDbMonad(x: DbMonad[r, ka, ef, a]): Graded.MutStateError[ka, Connection[r], ef, a] = 
         let DbMonad(x1) = x;
         x1
 
     pub def point(x: a): DbMonad[r, ka, ef, a] = 
-        DbMonad(Graded/MutStateError.point(x))
+        DbMonad(Graded.MutStateError.point(x))
 
     pub def map(f: a -> b \ ef1, 
                 ma: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef and ef1, b] = 
-        DbMonad(Graded/MutStateError.map(f, getDbMonad(ma)))
+        DbMonad(Graded.MutStateError.map(f, getDbMonad(ma)))
 
     pub def ap(mf: DbMonad[r, ka, ef1, a -> b \ ef2], 
                 ma: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef and ef1 and ef2, b] = 
-        DbMonad(Graded/MutStateError.ap(getDbMonad(mf), getDbMonad(ma)))
+        DbMonad(Graded.MutStateError.ap(getDbMonad(mf), getDbMonad(ma)))
 
     pub def flatMap(f: a -> DbMonad[r, ka, ef1, b] \ ef2, 
                     ma: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef and ef1 and ef2, b] =
-        DbMonad(Graded/MutStateError.flatMap(f >> getDbMonad, getDbMonad(ma)))
+        DbMonad(Graded.MutStateError.flatMap(f >> getDbMonad, getDbMonad(ma)))
 
     pub def throwError(msg: String): DbMonad[r, ka, ef, a] = 
-        DbMonad(Graded/MutStateError.throwError(msg))
+        DbMonad(Graded.MutStateError.throwError(msg))
     
     pub def mapError(f: String -> String \ ef1, 
                         ma: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef and ef1, a]= 
-        DbMonad(Graded/MutStateError.mapError(f, getDbMonad(ma)))
+        DbMonad(Graded.MutStateError.mapError(f, getDbMonad(ma)))
 
     pub def catchError(ma: DbMonad[r, ka, ef, a], 
                         f: String -> DbMonad[r, ka, ef1, a] \ ef2): DbMonad[r, ka, ef and ef1 and ef2, a] =
-        DbMonad(Graded/MutStateError.catchError(getDbMonad(ma), f >> getDbMonad))
+        DbMonad(Graded.MutStateError.catchError(getDbMonad(ma), f >> getDbMonad))
 
 
     // def liftSetter!(f: Connection[r] -> a \ ef): DbMonad[r, ka, Unit] \ ef =
-    //     DbMonad(Graded/MutStateError.liftSetter!(f) |> Functor.ignore)
+    //     DbMonad(Graded.MutStateError.liftSetter!(f) |> Functor.ignore)
 
     def liftSetterResult!(f: Connection[r] -> Result[err, a] \ {ef, Write(r)}): DbMonad[r, ka, ef and r, a] with ToString[err] =
-        DbMonad(Graded/MutStateError.liftSetterResult!(f))
+        DbMonad(Graded.MutStateError.liftSetterResult!(f))
 
     pub def liftAction(f: Unit -> a \ ef): DbMonad[r, ka, ef, a] = 
-        DbMonad(Graded/MutStateError.liftAction(f))
+        DbMonad(Graded.MutStateError.liftAction(f))
 
     pub def liftActionResult(f: Unit -> Result[err, a] \ ef): DbMonad[r, ka, ef, a] with ToString[err] = 
-        DbMonad(Graded/MutStateError.liftActionResult(f))
+        DbMonad(Graded.MutStateError.liftActionResult(f))
 
 
     ///
@@ -135,28 +135,28 @@ namespace BasicDb/DbMonad {
     def runDbMonadHelper(_: Region[r], 
                         ma: DbMonad[r, a, ef, a], 
                         s: Connection[r]): Result[String, a] \ {r, ef} = 
-        Graded/MutStateError.runMutStateError(checked_ecast(getDbMonad(ma)), s)
+        Graded.MutStateError.runMutStateError(checked_ecast(getDbMonad(ma)), s)
 
         
     pub def runDbMonad(rc: Region[r], ma: DbMonad[r, a, ef, a], url: String): Result[String, a] \ { ef, r, IO } = 
-        match Interop/Sql/DriverManager.getConnection(rc, url) {
+        match Interop.Sql.DriverManager.getConnection(rc, url) {
             case Err(e)   => Err(e)
             case Ok(conn) => {
                 let ans = runDbMonadHelper(rc, ma, conn);
                 /// ensure conn is closed whether or not ans is `Ok`
-                discard Interop/Sql/Connection.closeConnection!(conn);
+                discard Interop.Sql.Connection.closeConnection!(conn);
                 ans
             }
         }
         
 
     pub def runSQLite(rc: Region[r], ma: DbMonad[r, a, ef, a], path: Path): Result[String, a] \ { ef, r, IO } = 
-        use Basis/NIO/File/Path.{normalize};
+        use Basis.NIO.File.Path.{normalize};
         let url = "jdbc:sqlite:${normalize(path)}";
         runDbMonad(rc, ma, url)
 
     pub def runDuckDB(rc: Region[r], ma: DbMonad[r, a, ef, a], path: Path): Result[String, a] \ { ef, r, IO } = 
-        use Basis/NIO/File/Path.{normalize};
+        use Basis.NIO.File.Path.{normalize};
         let url = "jdbc:duckdb:${normalize(path)}";
         runDbMonad(rc, ma, url)
 
@@ -170,68 +170,68 @@ namespace BasicDb/DbMonad {
     
     pub def executeSql!(rc: Region[r1], sql: String): DbMonad[r, ka, r and r1 and Impure, Bool] = 
         use GradedMonad.{>>=};
-        liftSetterResult!(Interop/Sql/Connection.createStatement!(rc))   >>= stmt   ->
-        liftActionResult(_ -> Interop/Sql/Statement.execute!(sql, stmt)) >>= ans    ->
-        liftActionResult(_ -> Interop/Sql/Statement.close!(stmt))        >>= _      -> 
+        liftSetterResult!(Interop.Sql.Connection.createStatement!(rc))   >>= stmt   ->
+        liftActionResult(_ -> Interop.Sql.Statement.execute!(sql, stmt)) >>= ans    ->
+        liftActionResult(_ -> Interop.Sql.Statement.close!(stmt))        >>= _      -> 
         point(ans)
 
 
     pub def setAutoCommit!(autoCommit: Bool): DbMonad[r, ka, r and Impure, Unit] =
-        liftSetterResult!(Interop/Sql/Connection.setAutoCommit!(autoCommit))
+        liftSetterResult!(Interop.Sql.Connection.setAutoCommit!(autoCommit))
 
     pub def commit!(): DbMonad[r, ka, r and Impure, Unit] =
-        liftSetterResult!(Interop/Sql/Connection.commit!)
+        liftSetterResult!(Interop.Sql.Connection.commit!)
 
     /// Not in IO (probably) - will not change state of the world
     pub def createStatement!(rc: Region[r1]): DbMonad[r, ka, r and r1, Statement[r1]] =
-        liftSetterResult!(Interop/Sql/Connection.createStatement!(rc))
+        liftSetterResult!(Interop.Sql.Connection.createStatement!(rc))
 
 
     pub def execute!(sql: String, stmt: Statement[r1]): DbMonad[r, ka, r1 and Impure, Bool] =
-        liftActionResult(_ -> Interop/Sql/Statement.execute!(sql, stmt))
+        liftActionResult(_ -> Interop.Sql.Statement.execute!(sql, stmt))
 
     pub def executeQuery!(rc: Region[r2], sql: String, stmt: Statement[r1]): DbMonad[r, ka, r1 and r2 and Impure, ResultSet[r2]] =
-        liftActionResult(_ -> Interop/Sql/Statement.executeQuery!(rc, sql, stmt))
+        liftActionResult(_ -> Interop.Sql.Statement.executeQuery!(rc, sql, stmt))
         
 
     pub def executeUpdate!(sql: String, stmt: Statement[r1]): DbMonad[r, ka, r1 and Impure, Int32] =
-        liftActionResult(_ -> Interop/Sql/Statement.executeUpdate!(sql, stmt))
+        liftActionResult(_ -> Interop.Sql.Statement.executeUpdate!(sql, stmt))
 
     /// TODO supply allocating region...
     pub def prepareStatement!(rc: Region[r1], sql: String): DbMonad[r, ka, r and r1, PreparedStatement[r1]] =
-        liftSetterResult!(Interop/Sql/Connection.prepareStatement!(rc, sql))
+        liftSetterResult!(Interop.Sql.Connection.prepareStatement!(rc, sql))
         
 
     
     pub def psExecuteQuery!(stmt: PreparedStatement[r1], 
                             setter: PreparedStatementSetter[r1, a, ef, a]): DbMonad[r, ka, ef and r1 and Impure, ResultSet[r1]] =
         use GradedApplicative.{*>};
-        liftActionResult(_ -> Interop/Sql/PreparedStatement.clearParameters!(stmt))
-            *> liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(setter, stmt))
-            *> liftActionResult(_ -> Interop/Sql/PreparedStatement.executeQuery!(stmt))
+        liftActionResult(_ -> Interop.Sql.PreparedStatement.clearParameters!(stmt))
+            *> liftActionResult(_ -> BasicDb.PreparedStatementSetter.runPreparedStatementSetter!(setter, stmt))
+            *> liftActionResult(_ -> Interop.Sql.PreparedStatement.executeQuery!(stmt))
 
 
     /// +IO
     pub def psExecuteUpdate!(stmt: PreparedStatement[r1], 
                                 setter: PreparedStatementSetter[r1, a, ef, a]): DbMonad[r, ka, ef and r1 and Impure, Int32] =
         use GradedApplicative.{*>};
-        liftActionResult(_ -> Interop/Sql/PreparedStatement.clearParameters!(stmt))
-            *> liftActionResult(_ -> BasicDb/PreparedStatementSetter.runPreparedStatementSetter!(setter, stmt))
-            *> liftActionResult(_ -> Interop/Sql/PreparedStatement.executeUpdate!(stmt))
+        liftActionResult(_ -> Interop.Sql.PreparedStatement.clearParameters!(stmt))
+            *> liftActionResult(_ -> BasicDb.PreparedStatementSetter.runPreparedStatementSetter!(setter, stmt))
+            *> liftActionResult(_ -> Interop.Sql.PreparedStatement.executeUpdate!(stmt))
 
 
 
     /// ResultSet
 
     pub def rsClose!(rs: ResultSet[r1]): DbMonad[r, ka, r1, Unit] =
-        liftActionResult(_ -> Interop/Sql/ResultSet.close!(rs))
+        liftActionResult(_ -> Interop.Sql.ResultSet.close!(rs))
 
     pub def rsNext(rs: ResultSet[r1]): DbMonad[r, ka, r1, Bool]  =
-        liftActionResult(_ -> Interop/Sql/ResultSet.next!(rs))
+        liftActionResult(_ -> Interop.Sql.ResultSet.next!(rs))
 
 
     pub def rsEval(eval: RowEvaluator[r1, a, ef, a], rs: ResultSet[r1]): DbMonad[r, ka, ef, a] = 
-        liftActionResult(_ -> BasicDb/RowEvaluator.runRowEvaluator(eval, rs))
+        liftActionResult(_ -> BasicDb.RowEvaluator.runRowEvaluator(eval, rs))
 
         
 
@@ -279,7 +279,7 @@ namespace BasicDb/DbMonad {
 
 /*
     pub def localConnection(r: Region[r], url: String, ma: DbMonad[r, a]): DbMonad[r, a] \ { r, IO } =
-        use BasicDb/Internal/Prim.{dmGetConnection, closeConnection};
+        use BasicDb.Internal.Prim.{dmGetConnection, closeConnection};
         DbMonad(_ -> 
             match (dmGetConnection(r, url) as \ r) {
                 case Err(e)   => Err(e)
@@ -293,12 +293,12 @@ namespace BasicDb/DbMonad {
         ) as \ IO
 
     pub def localSQLiteConnection(r: Region[r], path: FilePath, ma: DbMonad[r, a]): DbMonad[r, a] \ { r, IO } = 
-        use Basis/System/FilePath.{normalize};
+        use Basis.System.FilePath.{normalize};
         let url = "jdbc:sqlite:${normalize(path)}";
         localConnection(r, url, ma)
 
     pub def localDuckDBConnection(r: Region[r], path: FilePath, ma: DbMonad[r, a]): DbMonad[r, a] \ { r, IO } =
-        use Basis/System/FilePath.{normalize};
+        use Basis.System.FilePath.{normalize};
         let url = "jdbc:duckdb:${normalize(path)}";
         localConnection(r, url, ma)
 */

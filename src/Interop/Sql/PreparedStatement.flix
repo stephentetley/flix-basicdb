@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace Interop/Sql {
+mod Interop.Sql {
 
     /// Mutable
 
@@ -23,12 +23,12 @@ namespace Interop/Sql {
 
 }
 
-namespace Interop/Sql/PreparedStatement {
+mod Interop.Sql.PreparedStatement {
 
-    use Interop/Sql.PreparedStatement;
-    use Interop/Sql.PreparedStatement.{PreparedStatement};
-    use Interop/Sql.ResultSet;
-    use Interop/Sql.ResultSet.{ResultSet};
+    use Interop.Sql.PreparedStatement;
+    use Interop.Sql.PreparedStatement.{PreparedStatement};
+    use Interop.Sql.ResultSet;
+    use Interop.Sql.ResultSet.{ResultSet};
 
 
     pub def getHH(stmt: PreparedStatement[r]): ##java.sql.PreparedStatement =
@@ -36,149 +36,91 @@ namespace Interop/Sql/PreparedStatement {
         stmt1
 
     pub def clearParameters!(stmt: PreparedStatement[r]): Result[String, Unit] \ Write(r) =
-        try {
+        Result.tryCatch(_ -> {
             import java.sql.PreparedStatement.clearParameters(): Unit \ r;
             let PreparedStatement(stmt1) = stmt;
-            clearParameters(stmt1);
-            Ok()
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;
-                Err(getMessage(ex))
-        }
+            clearParameters(stmt1)
+        })
 
 
     pub def executeQuery!(stmt: PreparedStatement[r]): Result[String, ResultSet[r]] \ { Write(r), IO } =
-        try {
+        Result.tryCatch(_ -> {
             import java.sql.PreparedStatement.executeQuery(): ##java.sql.ResultSet \ {r, IO};
             let PreparedStatement(stmt1) = stmt;
-            executeQuery(stmt1) |> ResultSet |> Ok
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;
-                Err(getMessage(ex))
-        }
+            executeQuery(stmt1) |> ResultSet
+        })
 
     pub def executeUpdate!(stmt: PreparedStatement[r]): Result[String, Int32] \ { Write(r), IO } =
-        try {
+        Result.tryCatch(_ -> {
             import java.sql.PreparedStatement.executeUpdate(): Int32 \ {r, IO};
             let PreparedStatement(stmt1) = stmt;
-            executeUpdate(stmt1) |> Ok
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;
-                Err(getMessage(ex))
-        }
+            executeUpdate(stmt1)
+        })
 
 
 
     pub def setNull!(ix: Int32, sqlType: Int32, stmt: PreparedStatement[r]): Result[String, Unit] \ Write(r) =
-        try {
+        Result.tryCatch(_ -> {
             import java.sql.PreparedStatement.setNull(Int32, Int32): Unit \ r;
             let PreparedStatement(stmt1) = stmt;
-            setNull(stmt1, ix, sqlType);
-            Ok()
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;
-                Err(getMessage(ex))
-        }
+            setNull(stmt1, ix, sqlType)
+        })
 
     pub def setString!(ix: Int32, str: String, stmt: PreparedStatement[r]): Result[String, Unit] \ Write(r) =
-        try {
+        Result.tryCatch(_ -> {
             import java.sql.PreparedStatement.setString(Int32, String): Unit \ r;
             let PreparedStatement(stmt1) = stmt;
-            setString(stmt1, ix, str);
-            Ok()
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;
-                Err(getMessage(ex))
-        }
+            setString(stmt1, ix, str)
+        })
 
     pub def setBool!(ix: Int32, b: Bool, stmt: PreparedStatement[r]): Result[String, Unit] \ Write(r) =
-        try {
+        Result.tryCatch(_ -> {
             import java.sql.PreparedStatement.setBoolean(Int32, Bool): Unit \ r;
             let PreparedStatement(stmt1) = stmt;
-            setBoolean(stmt1, ix, b);
-            Ok()
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;
-                Err(getMessage(ex))
-        }
+            setBoolean(stmt1, ix, b)
+        })
 
     pub def setInt8!(ix: Int32, n: Int8, stmt: PreparedStatement[r]): Result[String, Unit] \ Write(r) =
-        try {
+        Result.tryCatch(_ -> {
             import java.sql.PreparedStatement.setByte(Int32, Int8): Unit \ r;
             let PreparedStatement(stmt1) = stmt;
-            setByte(stmt1, ix, n);
-            Ok()
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;
-                Err(getMessage(ex))
-        }
+            setByte(stmt1, ix, n)
+        })
 
     pub def setInt16!(ix: Int32, n: Int16, stmt: PreparedStatement[r]): Result[String, Unit] \ Write(r) =
-        try {
+        Result.tryCatch(_ -> {
             import java.sql.PreparedStatement.setShort(Int32, Int16): Unit \ r;
             let PreparedStatement(stmt1) = stmt;
-            setShort(stmt1, ix, n);
-            Ok()
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;
-                Err(getMessage(ex))
-        }
+            setShort(stmt1, ix, n)
+        })
 
     pub def setInt32!(ix: Int32, n: Int32, stmt: PreparedStatement[r]): Result[String, Unit] \ Write(r) =
-        try {
+        Result.tryCatch(_ -> {
             import java.sql.PreparedStatement.setInt(Int32, Int32): Unit \ r;        
             let PreparedStatement(stmt1) = stmt;
-            setInt(stmt1, ix, n);
-            Ok()
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;
-                Err(getMessage(ex))
-        }
+            setInt(stmt1, ix, n)
+        })
 
     pub def setInt64!(ix: Int32, n: Int64, stmt: PreparedStatement[r]): Result[String, Unit] \ Write(r) =
-        try {
+        Result.tryCatch(_ -> {
             import java.sql.PreparedStatement.setLong(Int32, Int64): Unit \ r;
             let PreparedStatement(stmt1) = stmt;
-            setLong(stmt1, ix, n);
-            Ok()
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;
-                Err(getMessage(ex))
-        }
+            setLong(stmt1, ix, n)
+        })
 
     pub def setFloat32!(ix: Int32, d: Float32, stmt: PreparedStatement[r]): Result[String, Unit] \ Write(r) =
-        try {
+        Result.tryCatch(_ -> {
             import java.sql.PreparedStatement.setFloat(Int32, Float32): Unit \ r;
             let PreparedStatement(stmt1) = stmt;
-            setFloat(stmt1, ix, d);
-            Ok()
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;
-                Err(getMessage(ex))
-        }
+            setFloat(stmt1, ix, d)
+        })
 
     pub def setFloat64!(ix: Int32, d: Float64, stmt: PreparedStatement[r]): Result[String, Unit] \ Write(r) =
-        try {
+        Result.tryCatch(_ -> {
             import java.sql.PreparedStatement.setDouble(Int32, Float64): Unit \ r;
             let PreparedStatement(stmt1) = stmt;
-            setDouble(stmt1, ix, d);
-            Ok()
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;
-                Err(getMessage(ex))
-        }
+            setDouble(stmt1, ix, d)
+        })
 
 }
 

@@ -15,20 +15,16 @@
  */
 
 
-namespace Interop/Sql/DriverManager {
+mod Interop.Sql.DriverManager {
 
-    use Interop/Sql.Connection;
-    use Interop/Sql.Connection.{Connection};
+    use Interop.Sql.Connection;
+    use Interop.Sql.Connection.{Connection};
 
 
     pub def getConnection(_: Region[r], url: String): Result[String, Connection[r]] \ { Write(r), IO } = 
         import static java.sql.DriverManager.getConnection(String): ##java.sql.Connection \ {r, IO};
-        try {
-            getConnection(url) |> Connection |> Ok
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;
-                Err(getMessage(ex))
-        }
+        Result.tryCatch(_ -> {
+            getConnection(url) |> Connection
+        })
 
 }    

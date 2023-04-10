@@ -15,7 +15,7 @@
  */
 
 
-namespace Interop/Sql {
+mod Interop.Sql {
 
     /// Mutable
 
@@ -23,15 +23,14 @@ namespace Interop/Sql {
 
 }
 
-namespace Interop/Sql/Connection {
+mod Interop.Sql.Connection {
 
-    use Interop/Sql.Connection;
-    use Interop/Sql.Connection.{Connection};
-
-    use Interop/Sql.PreparedStatement;
-    use Interop/Sql.PreparedStatement.{PreparedStatement};
-    use Interop/Sql.Statement;
-    use Interop/Sql.Statement.{Statement};
+    use Interop.Sql.Connection
+    use Interop.Sql.Connection.{Connection}
+    use Interop.Sql.PreparedStatement
+    use Interop.Sql.PreparedStatement.{PreparedStatement}
+    use Interop.Sql.Statement
+    use Interop.Sql.Statement.{Statement}
 
     pub def getHH(conn: Connection[r]): ##java.sql.Connection = 
         let Connection(conn1) = conn;
@@ -40,67 +39,44 @@ namespace Interop/Sql/Connection {
     
     pub def closeConnection!(conn: Connection[r]): Result[String, Unit] \ Write(r) = 
         import java.sql.Connection.close(): Unit \ r;
-        try {
+        Result.tryCatch(_ -> {
             let Connection(conn1) = conn;
-            close(conn1);
-            Ok()
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;                
-                Err(getMessage(ex))
-        }
+            close(conn1)
+        })
 
 
     /// This modifies the session connection - we've decided that is in IO
     pub def setAutoCommit!(autoCommit: Bool, conn: Connection[r]): Result[String, Unit] \ {Write(r), IO}  = 
         import java.sql.Connection.setAutoCommit(Bool): Unit \ {r, IO};
-        try {
+        Result.tryCatch(_ -> {
             let Connection(conn1) = conn;
-            setAutoCommit(conn1, autoCommit);
-            Ok()
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;                
-                Err(getMessage(ex))
-        }
+            setAutoCommit(conn1, autoCommit)
+        })
 
     /// Modifies DB hence IO
     pub def commit!(conn: Connection[r]): Result[String, Unit] \ {IO, Write(r)} = 
         import java.sql.Connection.commit(): Unit \ {IO, r};
-        try {
+        Result.tryCatch(_ -> {
             let Connection(conn1) = conn;
-            commit(conn1);
-            Ok()
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;                
-                Err(getMessage(ex))
-        }
+            commit(conn1)
+        })
 
 
     pub def createStatement!(_: Region[r1], conn: Connection[r]): Result[String, Statement[r1]] \ {Read(r), Write(r1)} = 
         import java.sql.Connection.createStatement(): ##java.sql.Statement \ {r, r1};
-        try {
+        Result.tryCatch(_ -> {
             let Connection(conn1) = conn;
-            createStatement(conn1) |> Statement |> Ok
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;                
-                Err(getMessage(ex))
-        }
+            createStatement(conn1) |> Statement
+        })
 
     /// Creates a PreparedStatement
     pub def prepareStatement!(_: Region[r1], 
                                 sql: String, 
                                 conn: Connection[r]): Result[String, PreparedStatement[r1]] \ { Read(r), Write(r1) } = 
-        try {
+        Result.tryCatch(_ -> {
             import java.sql.Connection.prepareStatement(String): ##java.sql.PreparedStatement \ {r, r1};
             let Connection(conn1) = conn;
-            prepareStatement(conn1, sql) |> PreparedStatement |> Ok
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;                
-                Err(getMessage(ex))
-        }
+            prepareStatement(conn1, sql) |> PreparedStatement
+        })
 
 }    

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace BasicDb/Writer {
+mod BasicDb.Writer {
     
     use GradedApplicative.{point}
     use GradedMonad.{>>=}
@@ -32,12 +32,12 @@ namespace BasicDb/Writer {
                     sqlstrings: {prepStmt = String, tableActions = List[String]}, 
                     setter: RowSetter[r1, row, ef, a], 
                     rows: t[row]): DbMonad[r, ka, r and r1 and ef and Impure, Int32] with GradedFoldable[t] =
-        BasicDb/DbMonad.setAutoCommit!(false)                                                   >>= _       -> 
-        GradedFoldable.forEachM(BasicDb/DbMonad.executeSql!(rc), sqlstrings.tableActions)       >>= _       -> 
-        BasicDb/DbMonad.prepareStatement!(rc, sqlstrings.prepStmt)                              >>= stmt    ->
+        BasicDb.DbMonad.setAutoCommit!(false)                                                   >>= _       -> 
+        GradedFoldable.forEachM(BasicDb.DbMonad.executeSql!(rc), sqlstrings.tableActions)       >>= _       -> 
+        BasicDb.DbMonad.prepareStatement!(rc, sqlstrings.prepStmt)                              >>= stmt    ->
         GradedFoldable.foldLeftM((ac, x) -> 
-            {BasicDb/DbMonad.psExecuteUpdate!(stmt, setter(x)) >>= n -> point(ac+n)}, 0, rows)  >>= nrows   -> 
-        BasicDb/DbMonad.commit!()                                                               >>= _       -> 
+            {BasicDb.DbMonad.psExecuteUpdate!(stmt, setter(x)) >>= n -> point(ac+n)}, 0, rows)  >>= nrows   -> 
+        BasicDb.DbMonad.commit!()                                                               >>= _       -> 
         point(nrows)
 
 
@@ -45,19 +45,19 @@ namespace BasicDb/Writer {
                         sqlstrings: {prepStmt = String, tableActions = List[String]}, 
                         setter: RowSetter[r1, row, ef, a], 
                         rows: List[row]): DbMonad[r, ka, r and r1 and ef and Impure, Int32] =
-        BasicDb/DbMonad.setAutoCommit!(false)                                                   >>= _       -> 
-        GradedFoldable.forEachM(BasicDb/DbMonad.executeSql!(rc), sqlstrings.tableActions)       >>= _       -> 
-        BasicDb/DbMonad.prepareStatement!(rc, sqlstrings.prepStmt)                              >>= stmt    -> 
+        BasicDb.DbMonad.setAutoCommit!(false)                                                   >>= _       -> 
+        GradedFoldable.forEachM(BasicDb.DbMonad.executeSql!(rc), sqlstrings.tableActions)       >>= _       -> 
+        BasicDb.DbMonad.prepareStatement!(rc, sqlstrings.prepStmt)                              >>= stmt    -> 
         GradedFoldable.foldLeftM((ac, x) -> 
-            {BasicDb/DbMonad.psExecuteUpdate!(stmt, setter(x)) >>= n -> point(ac+n)}, 0, rows)  >>= nrows   ->
-        BasicDb/DbMonad.commit!()                                                               >>= _       ->
+            {BasicDb.DbMonad.psExecuteUpdate!(stmt, setter(x)) >>= n -> point(ac+n)}, 0, rows)  >>= nrows   ->
+        BasicDb.DbMonad.commit!()                                                               >>= _       ->
         point(nrows)
 
     pub def storeArray(rc: Region[r1], 
                         sqlstrings: {prepStmt = String, tableActions = List[String]}, 
                         setter: RowSetter[r1, row, ef, a], 
                         rows: Array[row, r2]): DbMonad[r, ka, r and r1 and r2 and ef and Impure, Int32] =
-        BasicDb/DbMonad.liftAction(_ -> Array.toList(rows)) >>= store(rc, sqlstrings, setter)
+        BasicDb.DbMonad.liftAction(_ -> Array.toList(rows)) >>= store(rc, sqlstrings, setter)
 
 
         

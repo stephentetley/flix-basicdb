@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace BasicDb/Reader {
+mod BasicDb.Reader {
 
 
     use BasicDb.DbMonad;
@@ -25,10 +25,10 @@ namespace BasicDb/Reader {
     use GradedMonad.{>>=}
 
     pub def allRows(rc: Region[r1], sql: String, eval: RowEvaluator[r1, a, ef, a]): DbMonad[r, a, r and r1 and ef and Impure, List[a]] =        
-        BasicDb/DbMonad.createStatement!(rc)            >>= stmt    ->
-        BasicDb/DbMonad.executeQuery!(rc, sql, stmt)    >>= rs      -> 
-        BasicDb/DbMonad.allRows(eval, rs)               >>= rows    ->
-        BasicDb/DbMonad.rsClose!(rs)                    >>= _       -> 
+        BasicDb.DbMonad.createStatement!(rc)            >>= stmt    ->
+        BasicDb.DbMonad.executeQuery!(rc, sql, stmt)    >>= rs      -> 
+        BasicDb.DbMonad.allRows(eval, rs)               >>= rows    ->
+        BasicDb.DbMonad.rsClose!(rs)                    >>= _       -> 
         point(rows)
 
     /// `combine` should allow effects
@@ -37,10 +37,10 @@ namespace BasicDb/Reader {
                         ac: b, 
                         sql: String, 
                         eval: RowEvaluator[r1, a, ef, a]): DbMonad[r, a, r and r1 and ef and ef1 and Impure, b] =
-        BasicDb/DbMonad.createStatement!(rc)                >>= stmt    ->
-        BasicDb/DbMonad.executeQuery!(rc, sql, stmt)        >>= rs      -> 
-        BasicDb/DbMonad.foldAllRows(combine, ac, eval, rs)  >>= b       -> 
-        BasicDb/DbMonad.rsClose!(rs)                        >>= _       -> 
+        BasicDb.DbMonad.createStatement!(rc)                >>= stmt    ->
+        BasicDb.DbMonad.executeQuery!(rc, sql, stmt)        >>= rs      -> 
+        BasicDb.DbMonad.foldAllRows(combine, ac, eval, rs)  >>= b       -> 
+        BasicDb.DbMonad.rsClose!(rs)                        >>= _       -> 
         point(b)
 
 

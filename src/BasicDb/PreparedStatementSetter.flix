@@ -15,54 +15,54 @@
  */
 
 
-namespace BasicDb {
+mod BasicDb {
 
 
-    pub enum PreparedStatementSetter[r: Region, ka: Type, ef: Bool, a: Type](Graded.Builder[ka, Interop/Sql.PreparedStatement[r], ef, a])
+    pub enum PreparedStatementSetter[r: Region, ka: Type, ef: Bool, a: Type](Graded.Builder[ka, Interop.Sql.PreparedStatement[r], ef, a])
 
     instance GradedFunctor[PreparedStatementSetter[r, ka]] { 
         pub def map(f: a -> b \ ef1, x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1, b] = 
-            BasicDb/PreparedStatementSetter.map(f, x)
+            BasicDb.PreparedStatementSetter.map(f, x)
     }
 
     instance GradedApplicative[PreparedStatementSetter[r, ka]] { 
         pub def point(x: a): PreparedStatementSetter[r, ka, ef, a] = 
-            BasicDb/PreparedStatementSetter.point(x)
+            BasicDb.PreparedStatementSetter.point(x)
 
         pub def ap(f: PreparedStatementSetter[r, ka, ef1, a -> b \ ef2], 
                     x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1 and ef2, b] = 
-            BasicDb/PreparedStatementSetter.ap(f, x)
+            BasicDb.PreparedStatementSetter.ap(f, x)
     }
 
     instance GradedMonad[PreparedStatementSetter[r, ka]] { 
         pub def flatMap(k: a -> PreparedStatementSetter[r, ka, ef1, b] \ef2, 
                         x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1 and ef2, b] = 
-            BasicDb/PreparedStatementSetter.flatMap(k, x)
+            BasicDb.PreparedStatementSetter.flatMap(k, x)
     }
 
     instance GradedError[PreparedStatementSetter[r, ka]] {
         pub def throwError(msg: String): PreparedStatementSetter[r, ka, ef, a] = 
-            BasicDb/PreparedStatementSetter.throwError(msg)
+            BasicDb.PreparedStatementSetter.throwError(msg)
 
         pub def mapError(f: String -> String \ ef1, 
                             ma: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1, a] =
-            BasicDb/PreparedStatementSetter.mapError(f, ma)
+            BasicDb.PreparedStatementSetter.mapError(f, ma)
 
         pub def catchError(ma: PreparedStatementSetter[r, ka, ef, a], 
                             f: String -> PreparedStatementSetter[r, ka, ef1, a] \ ef2): PreparedStatementSetter[r, ka, ef and ef1 and ef2, a] =
-            BasicDb/PreparedStatementSetter.catchError(ma, f)
+            BasicDb.PreparedStatementSetter.catchError(ma, f)
     }
 
 }
 
-namespace BasicDb/PreparedStatementSetter {
+mod BasicDb.PreparedStatementSetter {
 
 
     use BasicDb.PreparedStatementSetter;
     use BasicDb.PreparedStatementSetter.{PreparedStatementSetter};
     
-    use Interop/Sql.PreparedStatement;
-    use Interop/Sql.PreparedStatement.{PreparedStatement};
+    use Interop.Sql.PreparedStatement;
+    use Interop.Sql.PreparedStatement.{PreparedStatement};
 
     pub def getPreparedStatementSetter(x: PreparedStatementSetter[r, ka, ef, a]): Graded.Builder[ka, PreparedStatement[r], ef, a] = 
         let PreparedStatementSetter(x1) = x;
@@ -71,45 +71,45 @@ namespace BasicDb/PreparedStatementSetter {
     /// The state param `st` is expected to be mutated...
     pub def runPreparedStatementSetter!(ma: PreparedStatementSetter[r, a, ef, a], 
                                         st: PreparedStatement[r]): Result[String, a] \ ef =
-        Graded/Builder.runBuilder(getPreparedStatementSetter(ma), st)
+        Graded.Builder.runBuilder(getPreparedStatementSetter(ma), st)
 
     pub def point(x: a): PreparedStatementSetter[r, ka, ef, a] = 
-        PreparedStatementSetter(Graded/Builder.point(x))
+        PreparedStatementSetter(Graded.Builder.point(x))
 
     pub def map(f: a -> b \ ef1, 
                 x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1, b] =
-        PreparedStatementSetter(Graded/Builder.map(f, getPreparedStatementSetter(x)))
+        PreparedStatementSetter(Graded.Builder.map(f, getPreparedStatementSetter(x)))
 
     pub def ap(mf: PreparedStatementSetter[r, ka, ef1, a -> b \ ef2], 
                 ma: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1 and ef2, b] =
-        PreparedStatementSetter(Graded/Builder.ap(getPreparedStatementSetter(mf), getPreparedStatementSetter(ma)))
+        PreparedStatementSetter(Graded.Builder.ap(getPreparedStatementSetter(mf), getPreparedStatementSetter(ma)))
 
     pub def flatMap(k: a -> PreparedStatementSetter[r, ka, ef1, b] \ ef2, 
                     x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1 and ef2, b] = 
-        PreparedStatementSetter(Graded/Builder.flatMap(k >> getPreparedStatementSetter, getPreparedStatementSetter(x)))
+        PreparedStatementSetter(Graded.Builder.flatMap(k >> getPreparedStatementSetter, getPreparedStatementSetter(x)))
 
 
     pub def throwError(msg: String): PreparedStatementSetter[r, ka, ef, a] = 
-        PreparedStatementSetter(Graded/Builder.throwError(msg))
+        PreparedStatementSetter(Graded.Builder.throwError(msg))
 
     pub def mapError(f: String -> String \ ef1, 
                         ma: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1, a] =
-        PreparedStatementSetter(Graded/Builder.mapError(f, getPreparedStatementSetter(ma)))
+        PreparedStatementSetter(Graded.Builder.mapError(f, getPreparedStatementSetter(ma)))
 
     pub def catchError(ma: PreparedStatementSetter[r, ka, ef, a], 
                         f: String -> PreparedStatementSetter[r, ka, ef1, a] \ ef2): PreparedStatementSetter[r, ka, ef and ef1 and ef2, a] =
-        PreparedStatementSetter(Graded/Builder.catchError(getPreparedStatementSetter(ma), f >> getPreparedStatementSetter))
+        PreparedStatementSetter(Graded.Builder.catchError(getPreparedStatementSetter(ma), f >> getPreparedStatementSetter))
 
 
     def liftSetterResult!(f: PreparedStatement[r] -> Result[err, a] \ ef): PreparedStatementSetter[r, ka, ef, a] with ToString[err] =
-        PreparedStatementSetter(Graded/Builder.liftSetterResult!(f))
+        PreparedStatementSetter(Graded.Builder.liftSetterResult!(f))
     
     pub def liftAction(f: Unit -> a \ ef): PreparedStatementSetter[r, ka, ef, a] =
-        PreparedStatementSetter(Graded/Builder.liftAction(f))
+        PreparedStatementSetter(Graded.Builder.liftAction(f))
     
         
     pub def liftActionResult(f: Unit -> Result[err, a] \ ef): PreparedStatementSetter[r, ka, ef, a] with ToString[err] =
-        PreparedStatementSetter(Graded/Builder.liftActionResult(f))
+        PreparedStatementSetter(Graded.Builder.liftActionResult(f))
 
 
 /*
@@ -149,46 +149,46 @@ namespace BasicDb/PreparedStatementSetter {
 */
 
     pub def putNullAt!(ix: Int32): PreparedStatementSetter[r, ka, r, Unit] =
-        liftSetterResult!(Interop/Sql/PreparedStatement.setNull!(ix + 1, BasicDb/Internal/Types.sql_type_null()))
+        liftSetterResult!(Interop.Sql.PreparedStatement.setNull!(ix + 1, BasicDb.Internal.Types.sql_type_null()))
 
     pub def putStringAt!(ix: Int32, str: String): PreparedStatementSetter[r, ka, r, Unit] =
-        liftSetterResult!(Interop/Sql/PreparedStatement.setString!(ix + 1, str))
+        liftSetterResult!(Interop.Sql.PreparedStatement.setString!(ix + 1, str))
 
     pub def putBoolAt!(ix: Int32, b: Bool): PreparedStatementSetter[r, ka, r, Unit] =
-        liftSetterResult!(Interop/Sql/PreparedStatement.setBool!(ix + 1, b))
+        liftSetterResult!(Interop.Sql.PreparedStatement.setBool!(ix + 1, b))
 
     pub def putInt8At!(ix: Int32, n: Int8): PreparedStatementSetter[r, ka, r, Unit] =
-        liftSetterResult!(Interop/Sql/PreparedStatement.setInt8!(ix + 1, n))
+        liftSetterResult!(Interop.Sql.PreparedStatement.setInt8!(ix + 1, n))
 
     pub def putInt16At!(ix: Int32, n: Int16): PreparedStatementSetter[r, ka, r, Unit] =
-        liftSetterResult!(Interop/Sql/PreparedStatement.setInt16!(ix + 1, n))
+        liftSetterResult!(Interop.Sql.PreparedStatement.setInt16!(ix + 1, n))
 
     pub def putInt32At!(ix: Int32, n: Int32): PreparedStatementSetter[r, ka, r, Unit] =
-        liftSetterResult!(Interop/Sql/PreparedStatement.setInt32!(ix + 1, n))
+        liftSetterResult!(Interop.Sql.PreparedStatement.setInt32!(ix + 1, n))
 
     pub def putInt64At!(ix: Int32, n: Int64): PreparedStatementSetter[r, ka, r, Unit] =
-        liftSetterResult!(Interop/Sql/PreparedStatement.setInt64!(ix + 1, n))
+        liftSetterResult!(Interop.Sql.PreparedStatement.setInt64!(ix + 1, n))
 
     pub def putFloat32At!(ix: Int32, n: Float32): PreparedStatementSetter[r, ka, r, Unit] =
-        liftSetterResult!(Interop/Sql/PreparedStatement.setFloat32!(ix + 1, n))
+        liftSetterResult!(Interop.Sql.PreparedStatement.setFloat32!(ix + 1, n))
 
     pub def putFloat64At!(ix: Int32, n: Float64): PreparedStatementSetter[r, ka, r, Unit] =
-        liftSetterResult!(Interop/Sql/PreparedStatement.setFloat64!(ix + 1, n))
+        liftSetterResult!(Interop.Sql.PreparedStatement.setFloat64!(ix + 1, n))
 
 
     pub def putIsoLocalDateStringAt!(ix: Int32, d: Time.LocalDate): PreparedStatementSetter[r, ka, r, Unit] =
-        let fmt = Time/Format/DateTimeFormatter.iso_local_date();
-        let str = Time/LocalDate.format(fmt, d);
+        let fmt = Time.Format.DateTimeFormatter.iso_local_date();
+        let str = Time.LocalDate.format(fmt, d);
         putStringAt!(ix, str)
 
     pub def putIsoLocalDateTimeStringAt!(ix: Int32, dt: Time.LocalDateTime): PreparedStatementSetter[r, ka, r, Unit] =
-        let fmt = Time/Format/DateTimeFormatter.iso_local_date_time();
-        let str = Time/LocalDateTime.format(fmt, dt);
+        let fmt = Time.Format.DateTimeFormatter.iso_local_date_time();
+        let str = Time.LocalDateTime.format(fmt, dt);
         putStringAt!(ix, str)
 
     pub def putIsoLocalTimeStringAt!(ix: Int32, dt: Time.LocalTime): PreparedStatementSetter[r, ka, r, Unit] =
-        let fmt = Time/Format/DateTimeFormatter.iso_local_time();
-        let str = Time/LocalTime.format(fmt, dt);
+        let fmt = Time.Format.DateTimeFormatter.iso_local_time();
+        let str = Time.LocalTime.format(fmt, dt);
         putStringAt!(ix, str)
 
     pub def putOptionStringAt!(ix: Int32, x: Option[String]): PreparedStatementSetter[r, ka, r, Unit] = 

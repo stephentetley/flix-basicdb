@@ -15,7 +15,7 @@
  */
 
 
-namespace Interop/Sql {
+mod Interop.Sql {
 
     /// Mutable
 
@@ -24,15 +24,15 @@ namespace Interop/Sql {
 
 }
 
-namespace Interop/Sql/Statement {
+mod Interop.Sql.Statement {
 
-    use Interop/Sql.Statement;
-    use Interop/Sql.Statement.{Statement};
+    use Interop.Sql.Statement;
+    use Interop.Sql.Statement.{Statement};
 
-    use Interop/Sql.PreparedStatement;
-    use Interop/Sql.PreparedStatement.{PreparedStatement};
-    use Interop/Sql.ResultSet;
-    use Interop/Sql.ResultSet.{ResultSet};
+    use Interop.Sql.PreparedStatement;
+    use Interop.Sql.PreparedStatement.{PreparedStatement};
+    use Interop.Sql.ResultSet;
+    use Interop.Sql.ResultSet.{ResultSet};
 
 
     pub def getHH(stmt: Statement[r]): ##java.sql.Statement = 
@@ -42,50 +42,31 @@ namespace Interop/Sql/Statement {
 
 
     pub def close!(stmt: Statement[r]): Result[String, Unit] \ Write(r) = 
-        try {
+        Result.tryCatch(_ -> {
             import java.sql.Statement.close(): Unit \ r;
             let Statement(stmt1) = stmt;
-            close(stmt1);
-            Ok()
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;                
-                Err(getMessage(ex))
-        }
+            close(stmt1)
+        })
 
     pub def execute!(sql: String, stmt: Statement[r]): Result[String, Bool] \ {IO, Write(r)} =
-        try {
+        Result.tryCatch(_ -> {
             import java.sql.Statement.execute(String): Bool \ {IO, r};
             let Statement(stmt1) = stmt;
-            let ans = execute(stmt1, sql);
-            Ok(ans)
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;                
-                Err(getMessage(ex))
-        }
+            execute(stmt1, sql)
+        })
 
     pub def executeQuery!(_: Region[r1], sql: String, stmt: Statement[r]): Result[String, ResultSet[r1]] \ {IO, Write(r)} = 
-        try {
+        Result.tryCatch(_ -> {
             import java.sql.Statement.executeQuery(String): ##java.sql.ResultSet \ {IO, r, r1};
             let Statement(stmt1) = stmt;
-            executeQuery(stmt1, sql) |> ResultSet |> Ok
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;                
-                Err(getMessage(ex))
-        }
+            executeQuery(stmt1, sql) |> ResultSet
+        })
 
     pub def executeUpdate!(sql: String, stmt: Statement[r]): Result[String, Int32] \ {IO, Write(r)} = 
-        try {
+        Result.tryCatch(_ -> {
             import java.sql.Statement.executeUpdate(String): Int32 \ {IO, r};
             let Statement(stmt1) = stmt;
-            let ans = executeUpdate(stmt1, sql);
-            Ok(ans)
-        } catch {
-            case ex: ##java.lang.Exception => 
-                import java.lang.Throwable.getMessage(): String \ r;                
-                Err(getMessage(ex))
-        }
+            executeUpdate(stmt1, sql)
+        })
 
 }    
