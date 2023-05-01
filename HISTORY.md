@@ -1,3 +1,6 @@
+### v0.3.1
+   Updated dependencies.
+
 ### v0.3.0
    Updated to use `mod` rather than `namespace`.
 
