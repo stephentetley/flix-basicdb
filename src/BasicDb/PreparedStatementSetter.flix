@@ -51,6 +51,9 @@ mod BasicDb {
         pub def catchError(ma: PreparedStatementSetter[r, ka, ef, a], 
                             f: String -> PreparedStatementSetter[r, ka, ef1, a] \ ef2): PreparedStatementSetter[r, ka, ef and ef1 and ef2, a] =
             BasicDb.PreparedStatementSetter.catchError(ma, f)
+
+        pub def reifyError(ma: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef, Result[String, a]] =
+            BasicDb.PreparedStatementSetter.reifyError(ma)
     }
 
 }
@@ -99,6 +102,9 @@ mod BasicDb.PreparedStatementSetter {
     pub def catchError(ma: PreparedStatementSetter[r, ka, ef, a], 
                         f: String -> PreparedStatementSetter[r, ka, ef1, a] \ ef2): PreparedStatementSetter[r, ka, ef and ef1 and ef2, a] =
         PreparedStatementSetter(Graded.Builder.catchError(getPreparedStatementSetter(ma), f >> getPreparedStatementSetter))
+
+    pub def reifyError(ma: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef, Result[String, a]] =
+        PreparedStatementSetter(Graded.Builder.reifyError(getPreparedStatementSetter(ma)))
 
 
     def liftSetterResult!(f: PreparedStatement[r] -> Result[err, a] \ ef): PreparedStatementSetter[r, ka, ef, a] with ToString[err] =

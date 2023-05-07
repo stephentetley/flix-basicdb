@@ -55,6 +55,9 @@ mod BasicDb {
         pub def catchError(ma: DbMonad[r, ka, ef, a], 
                             f: String -> DbMonad[r, ka, ef1, a] \ ef2): DbMonad[r, ka, ef and ef1 and ef2, a] =
             BasicDb.DbMonad.catchError(ma, f)
+
+        pub def reifyError(ma: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef, Result[String, a]] =
+            BasicDb.DbMonad.reifyError(ma)
     }
 
 
@@ -115,6 +118,8 @@ mod BasicDb.DbMonad {
                         f: String -> DbMonad[r, ka, ef1, a] \ ef2): DbMonad[r, ka, ef and ef1 and ef2, a] =
         DbMonad(Graded.MutStateError.catchError(getDbMonad(ma), f >> getDbMonad))
 
+    pub def reifyError(ma: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef, Result[String, a]] =
+        DbMonad(Graded.MutStateError.reifyError(getDbMonad(ma)))
 
     // def liftSetter!(f: Connection[r] -> a \ ef): DbMonad[r, ka, Unit] \ ef =
     //     DbMonad(Graded.MutStateError.liftSetter!(f) |> Functor.ignore)

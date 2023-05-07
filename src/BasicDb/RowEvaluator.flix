@@ -63,6 +63,9 @@ mod BasicDb {
         pub def catchError(ma: RowEvaluator[r, ka, ef, a], 
                             f: String -> RowEvaluator[r, ka, ef1, a] \ ef2): RowEvaluator[r, ka, ef and ef1 and ef2, a] =
             BasicDb.RowEvaluator.catchError(ma, f)
+
+        pub def reifyError(ma: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef, Result[String, a]] =
+            BasicDb.RowEvaluator.reifyError(ma)
     }
 
 }
@@ -124,6 +127,9 @@ mod BasicDb.RowEvaluator {
     pub def catchError(ma: RowEvaluator[r, ka, ef, a], 
                         f: String -> RowEvaluator[r, ka, ef1, a] \ ef2): RowEvaluator[r, ka, ef and ef1 and ef2, a] =
         RowEvaluator(Graded.Evaluator.catchError(getRowEvaluator(ma), f >> getRowEvaluator))
+
+    pub def reifyError(ma: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef, Result[String, a]] =
+        RowEvaluator(Graded.Evaluator.reifyError(getRowEvaluator(ma)))
 
     // def liftGetter(f: ResultSet[r] -> a \ ef): RowEvaluator[r, ka, a] \ ef =
     //     RowEvaluator(Graded.Evaluator.liftGetter(f))

@@ -1,3 +1,7 @@
+### v0.3.2
+   Updated dependencies.
+   Added `reifyError` to `GradedError` instances.
+
 ### v0.3.1
    Updated dependencies.
 
