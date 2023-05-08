@@ -5,6 +5,8 @@
 
 mod TestBig {
 
+    use GradedApplicative.{point, *>}
+    use GradedMonad.{>>=}
 
     use BasicDb.DbMonad
     use BasicDb.RowEvaluator
@@ -33,21 +35,17 @@ mod TestBig {
         }
 
     def storeNumbers(n: Int32, tableName: String): DbMonad[r, ka, ef, Int32] \ { Write(r), IO }= 
-        use Applicative.{*>, point};
-        use BasicDb.DbMonad.{flatMap};
-        let* _      = BasicDb.DbMonad.executeSql!("DROP TABLE IF EXISTS ${tableName};");
-        let* _      = BasicDb.DbMonad.executeSql!("CREATE TABLE IF NOT EXISTS ${tableName} (integer_value int PRIMARY KEY NOT NULL, accum int);");
-        let* pstmt  = BasicDb.DbMonad.prepareStatement!("INSERT INTO ${tableName}(integer_value, accum) VALUES(?, ?)");
-        let* _      = BasicDb.DbMonad.setAutoCommit!(false);
-        let nums    = List.range(0, n);
-        let* ans    = Foldable.foldLeftM((acc, i) -> BasicDb.DbMonad.psExecuteUpdate!(pstmt, setPStmt!(i, acc)) *> point(acc+1), 0 , nums);
-        let* _      = BasicDb.DbMonad.commit!();
+        BasicDb.DbMonad.executeSql!("DROP TABLE IF EXISTS ${tableName};")                                                           >>= _ ->
+        BasicDb.DbMonad.executeSql!("CREATE TABLE IF NOT EXISTS ${tableName} (integer_value int PRIMARY KEY NOT NULL, accum int);") >>= _ ->
+        BasicDb.DbMonad.prepareStatement!("INSERT INTO ${tableName}(integer_value, accum) VALUES(?, ?)")                            >>= pstmt ->
+        BasicDb.DbMonad.setAutoCommit!(false)                                                                                       >>= _ ->
+        List.range(0, n)                                                                                                            >>= nums ->
+        Foldable.foldLeftM((acc, i) -> BasicDb.DbMonad.psExecuteUpdate!(pstmt, setPStmt!(i, acc)) *> point(acc+1), 0 , nums)        >>= _ -> ans ->
+        BasicDb.DbMonad.commit!()                                                                                                   >>= _ ->
         point(ans)
 
     def setPStmt!(ival: Int32, acc: Int32): PreparedStatementSetter[r, ka, r, Unit] = 
-        use BasicDb.PreparedStatementSetter.{flatMap, point, putInt32At!};
-        let* _ = putInt32At!(0, ival);
-        let* _ = putInt32At!(1, acc);
-        point()
+        use BasicDb.PreparedStatementSetter.{putInt32At!};
+        putInt32At!(0, ival) *> putInt32At!(1, acc) *> point()
 
 }
