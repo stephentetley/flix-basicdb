@@ -19,13 +19,13 @@ mod BasicDb {
 
     /// ##java.sql.Connection is considered an "imperative resource" rather than directly 
     /// analogous to Haskell's IO so we pu it in a region (even though we can't create on 
-    /// outside of Impure / IO).
+    /// outside of IO).
 
 
-    pub enum DbMonad[r: Region, ka: Type, ef: Bool, a: Type](Graded.MutStateError[ka, Interop.Sql.Connection[r], ef, a])
+    pub enum DbMonad[r: Region, ka: Type, ef: Eff, a: Type](Graded.MutStateError[ka, Interop.Sql.Connection[r], ef, a])
     
     instance GradedFunctor[DbMonad[r, ka]] { 
-        pub def map(f: a -> b \ ef1, x: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef and ef1, b] = 
+        pub def map(f: a -> b \ ef1, x: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef + ef1, b] = 
             BasicDb.DbMonad.map(f, x)
     }
 
@@ -34,13 +34,13 @@ mod BasicDb {
             BasicDb.DbMonad.point(x)
 
         pub def ap(f: DbMonad[r, ka, ef1, a -> b \ ef2], 
-                    x: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef and ef1 and ef2, b] = 
+                    x: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef + ef1 + ef2, b] = 
             BasicDb.DbMonad.ap(f, x)
     }
 
     instance GradedMonad[DbMonad[r, ka]] { 
         pub def flatMap(k: a -> DbMonad[r, ka, ef1, b] \ ef2, 
-                        x: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef and ef1 and ef2, b] = 
+                        x: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef + ef1 + ef2, b] = 
             BasicDb.DbMonad.flatMap(k, x)
     }
 
@@ -49,11 +49,11 @@ mod BasicDb {
             BasicDb.DbMonad.throwError(msg)
 
         pub def mapError(f: String -> String \ ef1, 
-                            ma: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef and ef1, a] =
+                            ma: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef + ef1, a] =
             BasicDb.DbMonad.mapError(f, ma)
 
         pub def catchError(ma: DbMonad[r, ka, ef, a], 
-                            f: String -> DbMonad[r, ka, ef1, a] \ ef2): DbMonad[r, ka, ef and ef1 and ef2, a] =
+                            f: String -> DbMonad[r, ka, ef1, a] \ ef2): DbMonad[r, ka, ef + ef1 + ef2, a] =
             BasicDb.DbMonad.catchError(ma, f)
 
         pub def reifyError(ma: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef, Result[String, a]] =
@@ -96,26 +96,26 @@ mod BasicDb.DbMonad {
         DbMonad(Graded.MutStateError.point(x))
 
     pub def map(f: a -> b \ ef1, 
-                ma: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef and ef1, b] = 
+                ma: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef + ef1, b] = 
         DbMonad(Graded.MutStateError.map(f, getDbMonad(ma)))
 
     pub def ap(mf: DbMonad[r, ka, ef1, a -> b \ ef2], 
-                ma: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef and ef1 and ef2, b] = 
+                ma: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef + ef1 + ef2, b] = 
         DbMonad(Graded.MutStateError.ap(getDbMonad(mf), getDbMonad(ma)))
 
     pub def flatMap(f: a -> DbMonad[r, ka, ef1, b] \ ef2, 
-                    ma: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef and ef1 and ef2, b] =
+                    ma: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef + ef1 + ef2, b] =
         DbMonad(Graded.MutStateError.flatMap(f >> getDbMonad, getDbMonad(ma)))
 
     pub def throwError(msg: String): DbMonad[r, ka, ef, a] = 
         DbMonad(Graded.MutStateError.throwError(msg))
     
     pub def mapError(f: String -> String \ ef1, 
-                        ma: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef and ef1, a]= 
+                        ma: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef + ef1, a]= 
         DbMonad(Graded.MutStateError.mapError(f, getDbMonad(ma)))
 
     pub def catchError(ma: DbMonad[r, ka, ef, a], 
-                        f: String -> DbMonad[r, ka, ef1, a] \ ef2): DbMonad[r, ka, ef and ef1 and ef2, a] =
+                        f: String -> DbMonad[r, ka, ef1, a] \ ef2): DbMonad[r, ka, ef + ef1 + ef2, a] =
         DbMonad(Graded.MutStateError.catchError(getDbMonad(ma), f >> getDbMonad))
 
     pub def reifyError(ma: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef, Result[String, a]] =
@@ -124,7 +124,7 @@ mod BasicDb.DbMonad {
     // def liftSetter!(f: Connection[r] -> a \ ef): DbMonad[r, ka, Unit] \ ef =
     //     DbMonad(Graded.MutStateError.liftSetter!(f) |> Functor.ignore)
 
-    def liftSetterResult!(f: Connection[r] -> Result[err, a] \ {ef, Write(r)}): DbMonad[r, ka, ef and r, a] with ToString[err] =
+    def liftSetterResult!(f: Connection[r] -> Result[err, a] \ {ef, r}): DbMonad[r, ka, ef + r, a] with ToString[err] =
         DbMonad(Graded.MutStateError.liftSetterResult!(f))
 
     pub def liftAction(f: Unit -> a \ ef): DbMonad[r, ka, ef, a] = 
@@ -173,7 +173,7 @@ mod BasicDb.DbMonad {
 
     /// TODO - need to properly calculate which regions are used 
     
-    pub def executeSql!(rc: Region[r1], sql: String): DbMonad[r, ka, r and r1 and Impure, Bool] = 
+    pub def executeSql!(rc: Region[r1], sql: String): DbMonad[r, ka, r + r1 + IO, Bool] = 
         use GradedMonad.{>>=};
         liftSetterResult!(Interop.Sql.Connection.createStatement!(rc))   >>= stmt   ->
         liftActionResult(_ -> Interop.Sql.Statement.execute!(sql, stmt)) >>= ans    ->
@@ -181,35 +181,35 @@ mod BasicDb.DbMonad {
         point(ans)
 
 
-    pub def setAutoCommit!(autoCommit: Bool): DbMonad[r, ka, r and Impure, Unit] =
+    pub def setAutoCommit!(autoCommit: Bool): DbMonad[r, ka, r + IO, Unit] =
         liftSetterResult!(Interop.Sql.Connection.setAutoCommit!(autoCommit))
 
-    pub def commit!(): DbMonad[r, ka, r and Impure, Unit] =
+    pub def commit!(): DbMonad[r, ka, r + IO, Unit] =
         liftSetterResult!(Interop.Sql.Connection.commit!)
 
     /// Not in IO (probably) - will not change state of the world
-    pub def createStatement!(rc: Region[r1]): DbMonad[r, ka, r and r1, Statement[r1]] =
+    pub def createStatement!(rc: Region[r1]): DbMonad[r, ka, r + r1, Statement[r1]] =
         liftSetterResult!(Interop.Sql.Connection.createStatement!(rc))
 
 
-    pub def execute!(sql: String, stmt: Statement[r1]): DbMonad[r, ka, r1 and Impure, Bool] =
+    pub def execute!(sql: String, stmt: Statement[r1]): DbMonad[r, ka, r1 + IO, Bool] =
         liftActionResult(_ -> Interop.Sql.Statement.execute!(sql, stmt))
 
-    pub def executeQuery!(rc: Region[r2], sql: String, stmt: Statement[r1]): DbMonad[r, ka, r1 and r2 and Impure, ResultSet[r2]] =
+    pub def executeQuery!(rc: Region[r2], sql: String, stmt: Statement[r1]): DbMonad[r, ka, r1 + r2 + IO, ResultSet[r2]] =
         liftActionResult(_ -> Interop.Sql.Statement.executeQuery!(rc, sql, stmt))
         
 
-    pub def executeUpdate!(sql: String, stmt: Statement[r1]): DbMonad[r, ka, r1 and Impure, Int32] =
+    pub def executeUpdate!(sql: String, stmt: Statement[r1]): DbMonad[r, ka, r1 + IO, Int32] =
         liftActionResult(_ -> Interop.Sql.Statement.executeUpdate!(sql, stmt))
 
     /// TODO supply allocating region...
-    pub def prepareStatement!(rc: Region[r1], sql: String): DbMonad[r, ka, r and r1, PreparedStatement[r1]] =
+    pub def prepareStatement!(rc: Region[r1], sql: String): DbMonad[r, ka, r + r1, PreparedStatement[r1]] =
         liftSetterResult!(Interop.Sql.Connection.prepareStatement!(rc, sql))
         
 
     
     pub def psExecuteQuery!(stmt: PreparedStatement[r1], 
-                            setter: PreparedStatementSetter[r1, a, ef, a]): DbMonad[r, ka, ef and r1 and Impure, ResultSet[r1]] =
+                            setter: PreparedStatementSetter[r1, a, ef, a]): DbMonad[r, ka, ef + r1 + IO, ResultSet[r1]] =
         use GradedApplicative.{*>};
         liftActionResult(_ -> Interop.Sql.PreparedStatement.clearParameters!(stmt))
             *> liftActionResult(_ -> BasicDb.PreparedStatementSetter.runPreparedStatementSetter!(setter, stmt))
@@ -218,7 +218,7 @@ mod BasicDb.DbMonad {
 
     /// +IO
     pub def psExecuteUpdate!(stmt: PreparedStatement[r1], 
-                                setter: PreparedStatementSetter[r1, a, ef, a]): DbMonad[r, ka, ef and r1 and Impure, Int32] =
+                                setter: PreparedStatementSetter[r1, a, ef, a]): DbMonad[r, ka, ef + r1 + IO, Int32] =
         use GradedApplicative.{*>};
         liftActionResult(_ -> Interop.Sql.PreparedStatement.clearParameters!(stmt))
             *> liftActionResult(_ -> BasicDb.PreparedStatementSetter.runPreparedStatementSetter!(setter, stmt))
@@ -241,19 +241,19 @@ mod BasicDb.DbMonad {
         
 
 
-    pub def firstRow(eval: RowEvaluator[r, a, ef, a], rs: ResultSet[r]): DbMonad[r, ka, ef and r, a] = 
+    pub def firstRow(eval: RowEvaluator[r, a, ef, a], rs: ResultSet[r]): DbMonad[r, ka, ef + r, a] = 
         use GradedMonad.{>>=};
         rsNext(rs) >>= more -> 
         if (more) rsEval(eval, rs) else throwError("firstRow - resultset is empty")
 
-    pub def allRows(eval: RowEvaluator[r1, a, ef, a], rs: ResultSet[r1]): DbMonad[r, ka, ef and r and r1, List[a]] = 
+    pub def allRows(eval: RowEvaluator[r1, a, ef, a], rs: ResultSet[r1]): DbMonad[r, ka, ef + r + r1, List[a]] = 
         allRowsHelper(eval, rs, ks -> ks)
 
     /// Start with `next`
     /// This is optimized to avoid repeated unwrapping.
     def allRowsHelper(eval: RowEvaluator[r1, a, ef, a],
                         rs: ResultSet[r1],  
-                        acc: List[a] -> List[a]): DbMonad[r, ka, ef and r and r1, List[a]] = 
+                        acc: List[a] -> List[a]): DbMonad[r, ka, ef + r + r1, List[a]] = 
         use GradedMonad.{>>=};
         rsNext(rs) >>= more -> 
         if (more) {
@@ -263,7 +263,7 @@ mod BasicDb.DbMonad {
             GradedApplicative.point(acc(Nil))
 
 
-    pub def foreachRow(eval: RowEvaluator[r1, a, ef, a], rs: ResultSet[r1]): DbMonad[r, ka, ef and r1, Unit] = 
+    pub def foreachRow(eval: RowEvaluator[r1, a, ef, a], rs: ResultSet[r1]): DbMonad[r, ka, ef + r1, Unit] = 
         use GradedMonad.{>>=};
         rsNext(rs) >>= more ->
         if (more) {
@@ -273,7 +273,7 @@ mod BasicDb.DbMonad {
 
 
     /// Note - arg order is inconsistent with List.foldLeft etc. and probably should be changed.
-    pub def foldAllRows(step: (b, a) -> b \ ef1, start: b, eval: RowEvaluator[r1, a, ef, a], rs: ResultSet[r1]): DbMonad[r, ka, ef and ef1 and r1, b] = 
+    pub def foldAllRows(step: (b, a) -> b \ ef1, start: b, eval: RowEvaluator[r1, a, ef, a], rs: ResultSet[r1]): DbMonad[r, ka, ef + ef1 + r1, b] = 
         use GradedMonad.{>>=};
         rsNext(rs) >>= more -> 
         if (more) {

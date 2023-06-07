@@ -1,16 +1,16 @@
 [package]
 name        = "flix-basicdb"
 description = "A basic monadic database interface for Flix using JDBC."
-version     = "0.3.2"
+version     = "0.4.0"
 flix        = "0.36.0"
 license     = "Apache-2.0"
 authors     = ["Stephen Tetley <stephen.tetley@gmail.com>"]
 
 [dependencies]
-"github:stephentetley/basis-base"                = "0.2.2"
-"github:stephentetley/flix-time"                 = "0.2.2"
-"github:stephentetley/graded-lib"                = "0.4.0"
-"github:stephentetley/interop-base"              = "0.3.1"
+"github:stephentetley/basis-base"                = "0.4.1"
+"github:stephentetley/flix-time"                 = "0.3.1"
+"github:stephentetley/graded-lib"                = "0.6.1"
+"github:stephentetley/interop-base"              = "0.6.0"
 
 
 [mvn-dependencies]

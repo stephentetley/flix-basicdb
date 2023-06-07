@@ -37,7 +37,7 @@ mod Interop.Sql.Connection {
         conn1
 
     
-    pub def closeConnection!(conn: Connection[r]): Result[String, Unit] \ Write(r) = 
+    pub def closeConnection!(conn: Connection[r]): Result[String, Unit] \ r = 
         import java.sql.Connection.close(): Unit \ r;
         Result.tryCatch(_ -> {
             let Connection(conn1) = conn;
@@ -46,7 +46,7 @@ mod Interop.Sql.Connection {
 
 
     /// This modifies the session connection - we've decided that is in IO
-    pub def setAutoCommit!(autoCommit: Bool, conn: Connection[r]): Result[String, Unit] \ {Write(r), IO}  = 
+    pub def setAutoCommit!(autoCommit: Bool, conn: Connection[r]): Result[String, Unit] \ {IO, r}  = 
         import java.sql.Connection.setAutoCommit(Bool): Unit \ {r, IO};
         Result.tryCatch(_ -> {
             let Connection(conn1) = conn;
@@ -54,7 +54,7 @@ mod Interop.Sql.Connection {
         })
 
     /// Modifies DB hence IO
-    pub def commit!(conn: Connection[r]): Result[String, Unit] \ {IO, Write(r)} = 
+    pub def commit!(conn: Connection[r]): Result[String, Unit] \ {IO, r} = 
         import java.sql.Connection.commit(): Unit \ {IO, r};
         Result.tryCatch(_ -> {
             let Connection(conn1) = conn;
@@ -62,7 +62,7 @@ mod Interop.Sql.Connection {
         })
 
 
-    pub def createStatement!(_: Region[r1], conn: Connection[r]): Result[String, Statement[r1]] \ {Read(r), Write(r1)} = 
+    pub def createStatement!(_: Region[r1], conn: Connection[r]): Result[String, Statement[r1]] \ {r, r1} = 
         import java.sql.Connection.createStatement(): ##java.sql.Statement \ {r, r1};
         Result.tryCatch(_ -> {
             let Connection(conn1) = conn;
@@ -72,7 +72,7 @@ mod Interop.Sql.Connection {
     /// Creates a PreparedStatement
     pub def prepareStatement!(_: Region[r1], 
                                 sql: String, 
-                                conn: Connection[r]): Result[String, PreparedStatement[r1]] \ { Read(r), Write(r1) } = 
+                                conn: Connection[r]): Result[String, PreparedStatement[r1]] \ {r, r1} = 
         Result.tryCatch(_ -> {
             import java.sql.Connection.prepareStatement(String): ##java.sql.PreparedStatement \ {r, r1};
             let Connection(conn1) = conn;

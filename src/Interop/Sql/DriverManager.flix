@@ -21,8 +21,8 @@ mod Interop.Sql.DriverManager {
     use Interop.Sql.Connection.{Connection};
 
 
-    pub def getConnection(_: Region[r], url: String): Result[String, Connection[r]] \ { Write(r), IO } = 
-        import static java.sql.DriverManager.getConnection(String): ##java.sql.Connection \ {r, IO};
+    pub def getConnection(_: Region[r], url: String): Result[String, Connection[r]] \ {IO, r} = 
+        import static java.sql.DriverManager.getConnection(String): ##java.sql.Connection \ {IO, r};
         Result.tryCatch(_ -> {
             getConnection(url) |> Connection
         })

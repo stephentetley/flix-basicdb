@@ -24,7 +24,7 @@ mod Test01 {
         }
     }
 
-    def action1(rc: Region[r1]): DbMonad[r, ka, r and r1 and Impure, Bool] = 
+    def action1(rc: Region[r1]): DbMonad[r, ka, r + r1 + IO, Bool] = 
         BasicDb.DbMonad.executeSql!(rc, "DROP TABLE IF EXISTS dbms;")                                                   >>= _       ->
         BasicDb.DbMonad.executeSql!(rc, "CREATE TABLE IF NOT EXISTS dbms (name text PRIMARY KEY NOT NULL, year int);")  >>= _       ->
         BasicDb.DbMonad.prepareStatement!(rc, "INSERT INTO dbms(name, year) VALUES(?,?)")                           >>= pstmt   ->
@@ -46,7 +46,7 @@ mod Test01 {
         putInt32At!( 1,  year)  >>= _ -> 
         point()
 
-    def rsEvalRow(): RowEvaluator[r, ka, r and Impure, Unit] = 
+    def rsEvalRow(): RowEvaluator[r, ka, r + IO, Unit] = 
         use BasicDb.RowEvaluator.{getStringAt, getInt32At, liftAction};
         getStringAt(0)                                                  >>= name    -> 
         getInt32At(1)                                                   >>= year    ->

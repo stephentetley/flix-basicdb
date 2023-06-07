@@ -18,11 +18,11 @@ mod BasicDb {
 
 
 
-    pub enum RowEvaluator[r: Region, ka: Type, ef: Bool, a: Type](Graded.Evaluator[ka, Interop.Sql.ResultSet[r], ef, a])
+    pub enum RowEvaluator[r: Region, ka: Type, ef: Eff, a: Type](Graded.Evaluator[ka, Interop.Sql.ResultSet[r], ef, a])
 
 
     instance GradedFunctor[RowEvaluator[r, ka]] { 
-        pub def map(f: a -> b \ ef1, x: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1, b] = 
+        pub def map(f: a -> b \ ef1, x: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef + ef1, b] = 
             BasicDb.RowEvaluator.map(f, x)
     }
 
@@ -31,13 +31,13 @@ mod BasicDb {
             BasicDb.RowEvaluator.point(x)
 
         pub def ap(f: RowEvaluator[r, ka, ef1, a -> b \ ef2], 
-                    x: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1 and ef2, b] = 
+                    x: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef + ef1 + ef2, b] = 
             BasicDb.RowEvaluator.ap(f, x)
     }
 
     instance GradedMonad[RowEvaluator[r, ka]] { 
         pub def flatMap(k: a -> RowEvaluator[r, ka, ef1, b] \ ef2, 
-                        x: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1 and ef2, b] = 
+                        x: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef + ef1 + ef2, b] = 
             BasicDb.RowEvaluator.flatMap(k, x)
     }
 
@@ -48,7 +48,7 @@ mod BasicDb {
 
     instance GradedOr[RowEvaluator[r, ka]] {
         pub def orelse(a: RowEvaluator[r, ka, ef1, a], 
-                        b: RowEvaluator[r, ka, ef2, a]): RowEvaluator[r, ka, ef1 and ef2, a] =
+                        b: RowEvaluator[r, ka, ef2, a]): RowEvaluator[r, ka, ef1 + ef2, a] =
             BasicDb.RowEvaluator.orelse(a, b)
     }
 
@@ -57,11 +57,11 @@ mod BasicDb {
             BasicDb.RowEvaluator.throwError(msg)
 
         pub def mapError(f: String -> String \ ef1, 
-                        ma: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1, a] =
+                        ma: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef + ef1, a] =
             BasicDb.RowEvaluator.mapError(f, ma)
 
         pub def catchError(ma: RowEvaluator[r, ka, ef, a], 
-                            f: String -> RowEvaluator[r, ka, ef1, a] \ ef2): RowEvaluator[r, ka, ef and ef1 and ef2, a] =
+                            f: String -> RowEvaluator[r, ka, ef1, a] \ ef2): RowEvaluator[r, ka, ef + ef1 + ef2, a] =
             BasicDb.RowEvaluator.catchError(ma, f)
 
         pub def reifyError(ma: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef, Result[String, a]] =
@@ -95,15 +95,15 @@ mod BasicDb.RowEvaluator {
         RowEvaluator(Graded.Evaluator.point(x))
 
     pub def map(f: a -> b \ ef1, 
-                x: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1, b]=
+                x: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef + ef1, b]=
         RowEvaluator(Graded.Evaluator.map(f, getRowEvaluator(x)))
 
     pub def ap(mf: RowEvaluator[r, ka, ef1, a -> b \ ef2], 
-                ma: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1 and ef2, b] =
+                ma: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef + ef1 + ef2, b] =
         RowEvaluator(Graded.Evaluator.ap(getRowEvaluator(mf), getRowEvaluator(ma)))
 
     pub def flatMap(k: a -> RowEvaluator[r, ka, ef1, b] \ ef2, 
-                    x: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1 and ef2, b] =
+                    x: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef + ef1 + ef2, b] =
         RowEvaluator(Graded.Evaluator.flatMap(k >> getRowEvaluator, getRowEvaluator(x)))
 
 
@@ -113,7 +113,7 @@ mod BasicDb.RowEvaluator {
     pub def empty(): RowEvaluator[r, ka, ef, a] = throwError("empty")
 
     pub def orelse(ma: RowEvaluator[r, ka, ef1, a], 
-                    mb: RowEvaluator[r, ka, ef2, a]): RowEvaluator[r, ka, ef1 and ef2, a] =
+                    mb: RowEvaluator[r, ka, ef2, a]): RowEvaluator[r, ka, ef1 + ef2, a] =
         RowEvaluator(Graded.Evaluator.orelse(getRowEvaluator(ma), getRowEvaluator(mb)))
 
 
@@ -121,11 +121,11 @@ mod BasicDb.RowEvaluator {
         RowEvaluator(Graded.Evaluator.throwError(msg))
 
     pub def mapError(f: String -> String \ ef1, 
-                    ma: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef and ef1, a] =
+                    ma: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef + ef1, a] =
         RowEvaluator(Graded.Evaluator.mapError(f, getRowEvaluator(ma)))
 
     pub def catchError(ma: RowEvaluator[r, ka, ef, a], 
-                        f: String -> RowEvaluator[r, ka, ef1, a] \ ef2): RowEvaluator[r, ka, ef and ef1 and ef2, a] =
+                        f: String -> RowEvaluator[r, ka, ef1, a] \ ef2): RowEvaluator[r, ka, ef + ef1 + ef2, a] =
         RowEvaluator(Graded.Evaluator.catchError(getRowEvaluator(ma), f >> getRowEvaluator))
 
     pub def reifyError(ma: RowEvaluator[r, ka, ef, a]): RowEvaluator[r, ka, ef, Result[String, a]] =
@@ -134,7 +134,7 @@ mod BasicDb.RowEvaluator {
     // def liftGetter(f: ResultSet[r] -> a \ ef): RowEvaluator[r, ka, a] \ ef =
     //     RowEvaluator(Graded.Evaluator.liftGetter(f))
 
-    def liftGetterResult(f: ResultSet[r] -> Result[err, a] \ {ef, Read(r)}): RowEvaluator[r, ka, ef and r, a] with ToString[err] =
+    def liftGetterResult(f: ResultSet[r] -> Result[err, a] \ {ef, r}): RowEvaluator[r, ka, ef + r, a] with ToString[err] =
         RowEvaluator(Graded.Evaluator.liftGetterResult(f))
     
     pub def liftAction(f: Unit -> a \ ef): RowEvaluator[r, ka, ef, a]  =

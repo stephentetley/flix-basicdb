@@ -24,14 +24,14 @@ mod BasicDb.Writer {
     
 
     
-    pub type alias RowSetter[r: Region, row: Type, ef: Bool, a: Type] = row -> PreparedStatementSetter[r, a, ef, a]
+    pub type alias RowSetter[r: Region, row: Type, ef: Eff, a: Type] = row -> PreparedStatementSetter[r, a, ef, a]
 
 
 
     pub def store(rc: Region[r1], 
                     sqlstrings: {prepStmt = String, tableActions = List[String]}, 
                     setter: RowSetter[r1, row, ef, a], 
-                    rows: t[row]): DbMonad[r, ka, r and r1 and ef and Impure, Int32] with GradedFoldable[t] =
+                    rows: t[row]): DbMonad[r, ka, r + r1 + ef + Impure, Int32] with GradedFoldable[t] =
         BasicDb.DbMonad.setAutoCommit!(false)                                                   >>= _       -> 
         GradedFoldable.forEachM(BasicDb.DbMonad.executeSql!(rc), sqlstrings.tableActions)       >>= _       -> 
         BasicDb.DbMonad.prepareStatement!(rc, sqlstrings.prepStmt)                              >>= stmt    ->
@@ -44,7 +44,7 @@ mod BasicDb.Writer {
     pub def storeList(rc: Region[r1], 
                         sqlstrings: {prepStmt = String, tableActions = List[String]}, 
                         setter: RowSetter[r1, row, ef, a], 
-                        rows: List[row]): DbMonad[r, ka, r and r1 and ef and Impure, Int32] =
+                        rows: List[row]): DbMonad[r, ka, r + r1 + ef + IO, Int32] =
         BasicDb.DbMonad.setAutoCommit!(false)                                                   >>= _       -> 
         GradedFoldable.forEachM(BasicDb.DbMonad.executeSql!(rc), sqlstrings.tableActions)       >>= _       -> 
         BasicDb.DbMonad.prepareStatement!(rc, sqlstrings.prepStmt)                              >>= stmt    -> 
@@ -56,7 +56,7 @@ mod BasicDb.Writer {
     pub def storeArray(rc: Region[r1], 
                         sqlstrings: {prepStmt = String, tableActions = List[String]}, 
                         setter: RowSetter[r1, row, ef, a], 
-                        rows: Array[row, r2]): DbMonad[r, ka, r and r1 and r2 and ef and Impure, Int32] =
+                        rows: Array[row, r2]): DbMonad[r, ka, r + r1 + r2 + ef + IO, Int32] =
         BasicDb.DbMonad.liftAction(_ -> Array.toList(rows)) >>= store(rc, sqlstrings, setter)
 
 

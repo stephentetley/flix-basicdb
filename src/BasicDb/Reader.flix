@@ -24,7 +24,7 @@ mod BasicDb.Reader {
     use GradedApplicative.{point}
     use GradedMonad.{>>=}
 
-    pub def allRows(rc: Region[r1], sql: String, eval: RowEvaluator[r1, a, ef, a]): DbMonad[r, a, r and r1 and ef and Impure, List[a]] =        
+    pub def allRows(rc: Region[r1], sql: String, eval: RowEvaluator[r1, a, ef, a]): DbMonad[r, a, r + r1 + ef + IO, List[a]] =        
         BasicDb.DbMonad.createStatement!(rc)            >>= stmt    ->
         BasicDb.DbMonad.executeQuery!(rc, sql, stmt)    >>= rs      -> 
         BasicDb.DbMonad.allRows(eval, rs)               >>= rows    ->
@@ -36,7 +36,7 @@ mod BasicDb.Reader {
                         combine: (b, a) -> b \ ef1, 
                         ac: b, 
                         sql: String, 
-                        eval: RowEvaluator[r1, a, ef, a]): DbMonad[r, a, r and r1 and ef and ef1 and Impure, b] =
+                        eval: RowEvaluator[r1, a, ef, a]): DbMonad[r, a, r + r1 + ef + ef1 + IO, b] =
         BasicDb.DbMonad.createStatement!(rc)                >>= stmt    ->
         BasicDb.DbMonad.executeQuery!(rc, sql, stmt)        >>= rs      -> 
         BasicDb.DbMonad.foldAllRows(combine, ac, eval, rs)  >>= b       -> 
@@ -44,7 +44,7 @@ mod BasicDb.Reader {
         point(b)
 
 
-    pub def allRelations(rc: Region[r1], sql: String, eval: RowEvaluator[r1, #{| reln}, ef, #{| reln}]): DbMonad[r, #{| reln}, r and r1 and ef and Impure, #{| reln}] =
+    pub def allRelations(rc: Region[r1], sql: String, eval: RowEvaluator[r1, #{| reln}, ef, #{| reln}]): DbMonad[r, #{| reln}, r + r1 + ef + IO, #{| reln}] =
         foldAllRows(rc, (ac, x) -> ac <+> x, #{}, sql, eval)
 
 

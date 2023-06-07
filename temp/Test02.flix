@@ -25,7 +25,7 @@ mod Test02 {
             }
         }
 
-    def query1(): DbMonad[r, ka, Bool] \ {Write(r), IO}= 
+    def query1(): DbMonad[r, ka, Bool] \ {IO, r}= 
         BasicDb.DbMonad.createStatement!()                                                  >>= stmt ->
         BasicDb.DbMonad.executeQuery!("SELECT name, year FROM langs ORDER BY year", stmt)   >>= rs   ->
         BasicDb.DbMonad.foreachRow(rsEvalRow(), rs)                                         >>= _    -> 
@@ -33,7 +33,7 @@ mod Test02 {
         point(true)
 
 
-    def rsEvalRow(): RowEvaluator[r, ka, Unit] \ { Read(r), IO} = 
+    def rsEvalRow(): RowEvaluator[r, ka, Unit] \ {IO, r} = 
         use BasicDb.RowEvaluator.{getStringAt, getInt32At, liftAction};
         getStringAt(0)                                                  >>= name ->
         getInt32At(1)                                                   >>= year -> 

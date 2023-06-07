@@ -18,10 +18,10 @@
 mod BasicDb {
 
 
-    pub enum PreparedStatementSetter[r: Region, ka: Type, ef: Bool, a: Type](Graded.Builder[ka, Interop.Sql.PreparedStatement[r], ef, a])
+    pub enum PreparedStatementSetter[r: Region, ka: Type, ef: Eff, a: Type](Graded.Builder[ka, Interop.Sql.PreparedStatement[r], ef, a])
 
     instance GradedFunctor[PreparedStatementSetter[r, ka]] { 
-        pub def map(f: a -> b \ ef1, x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1, b] = 
+        pub def map(f: a -> b \ ef1, x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef + ef1, b] = 
             BasicDb.PreparedStatementSetter.map(f, x)
     }
 
@@ -30,13 +30,13 @@ mod BasicDb {
             BasicDb.PreparedStatementSetter.point(x)
 
         pub def ap(f: PreparedStatementSetter[r, ka, ef1, a -> b \ ef2], 
-                    x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1 and ef2, b] = 
+                    x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef + ef1 + ef2, b] = 
             BasicDb.PreparedStatementSetter.ap(f, x)
     }
 
     instance GradedMonad[PreparedStatementSetter[r, ka]] { 
         pub def flatMap(k: a -> PreparedStatementSetter[r, ka, ef1, b] \ef2, 
-                        x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1 and ef2, b] = 
+                        x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef + ef1 + ef2, b] = 
             BasicDb.PreparedStatementSetter.flatMap(k, x)
     }
 
@@ -45,11 +45,11 @@ mod BasicDb {
             BasicDb.PreparedStatementSetter.throwError(msg)
 
         pub def mapError(f: String -> String \ ef1, 
-                            ma: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1, a] =
+                            ma: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef + ef1, a] =
             BasicDb.PreparedStatementSetter.mapError(f, ma)
 
         pub def catchError(ma: PreparedStatementSetter[r, ka, ef, a], 
-                            f: String -> PreparedStatementSetter[r, ka, ef1, a] \ ef2): PreparedStatementSetter[r, ka, ef and ef1 and ef2, a] =
+                            f: String -> PreparedStatementSetter[r, ka, ef1, a] \ ef2): PreparedStatementSetter[r, ka, ef + ef1 + ef2, a] =
             BasicDb.PreparedStatementSetter.catchError(ma, f)
 
         pub def reifyError(ma: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef, Result[String, a]] =
@@ -80,15 +80,15 @@ mod BasicDb.PreparedStatementSetter {
         PreparedStatementSetter(Graded.Builder.point(x))
 
     pub def map(f: a -> b \ ef1, 
-                x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1, b] =
+                x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef + ef1, b] =
         PreparedStatementSetter(Graded.Builder.map(f, getPreparedStatementSetter(x)))
 
     pub def ap(mf: PreparedStatementSetter[r, ka, ef1, a -> b \ ef2], 
-                ma: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1 and ef2, b] =
+                ma: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef + ef1 + ef2, b] =
         PreparedStatementSetter(Graded.Builder.ap(getPreparedStatementSetter(mf), getPreparedStatementSetter(ma)))
 
     pub def flatMap(k: a -> PreparedStatementSetter[r, ka, ef1, b] \ ef2, 
-                    x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1 and ef2, b] = 
+                    x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef + ef1 + ef2, b] = 
         PreparedStatementSetter(Graded.Builder.flatMap(k >> getPreparedStatementSetter, getPreparedStatementSetter(x)))
 
 
@@ -96,11 +96,11 @@ mod BasicDb.PreparedStatementSetter {
         PreparedStatementSetter(Graded.Builder.throwError(msg))
 
     pub def mapError(f: String -> String \ ef1, 
-                        ma: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef and ef1, a] =
+                        ma: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef + ef1, a] =
         PreparedStatementSetter(Graded.Builder.mapError(f, getPreparedStatementSetter(ma)))
 
     pub def catchError(ma: PreparedStatementSetter[r, ka, ef, a], 
-                        f: String -> PreparedStatementSetter[r, ka, ef1, a] \ ef2): PreparedStatementSetter[r, ka, ef and ef1 and ef2, a] =
+                        f: String -> PreparedStatementSetter[r, ka, ef1, a] \ ef2): PreparedStatementSetter[r, ka, ef + ef1 + ef2, a] =
         PreparedStatementSetter(Graded.Builder.catchError(getPreparedStatementSetter(ma), f >> getPreparedStatementSetter))
 
     pub def reifyError(ma: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef, Result[String, a]] =

@@ -34,7 +34,7 @@ mod TestBig {
             0
         }
 
-    def storeNumbers(n: Int32, tableName: String): DbMonad[r, ka, ef, Int32] \ { Write(r), IO }= 
+    def storeNumbers(n: Int32, tableName: String): DbMonad[r, ka, ef, Int32] \ {IO, r} = 
         BasicDb.DbMonad.executeSql!("DROP TABLE IF EXISTS ${tableName};")                                                           >>= _ ->
         BasicDb.DbMonad.executeSql!("CREATE TABLE IF NOT EXISTS ${tableName} (integer_value int PRIMARY KEY NOT NULL, accum int);") >>= _ ->
         BasicDb.DbMonad.prepareStatement!("INSERT INTO ${tableName}(integer_value, accum) VALUES(?, ?)")                            >>= pstmt ->
