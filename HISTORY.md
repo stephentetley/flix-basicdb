@@ -1,3 +1,6 @@
+###
+   Updated `flix-time` dependency.
+
 ### v0.4.0
    Updated dependencies.
    Removed `Read` and `Write` region annotations.
