@@ -35,11 +35,6 @@ mod BasicDb.Internal.Sql.Statement {
     use BasicDb.Internal.Sql.ResultSet.{ResultSet}
 
 
-    pub def getHH(stmt: Statement[r]): ##java.sql.Statement = 
-        let Statement(stmt1) = stmt;
-        stmt1
-
-
 
     pub def close!(stmt: Statement[r]): Result[String, Unit] \ r = 
         Result.tryCatch(_ -> {

@@ -31,9 +31,6 @@ mod BasicDb.Internal.Sql.PreparedStatement {
     use BasicDb.Internal.Sql.ResultSet.{ResultSet}
 
 
-    pub def getHH(stmt: PreparedStatement[r]): ##java.sql.PreparedStatement =
-        let PreparedStatement(stmt1) = stmt;
-        stmt1
 
     pub def clearParameters!(stmt: PreparedStatement[r]): Result[String, Unit] \ r =
         Result.tryCatch(_ -> {

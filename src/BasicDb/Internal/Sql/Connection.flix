@@ -32,11 +32,7 @@ mod BasicDb.Internal.Sql.Connection {
     use BasicDb.Internal.Sql.Statement
     use BasicDb.Internal.Sql.Statement.{Statement}
 
-    pub def getHH(conn: Connection[r]): ##java.sql.Connection = 
-        let Connection(conn1) = conn;
-        conn1
 
-    
     pub def closeConnection!(conn: Connection[r]): Result[String, Unit] \ r = 
         import java.sql.Connection.close(): Unit \ r;
         Result.tryCatch(_ -> {

@@ -29,9 +29,6 @@ mod BasicDb.Internal.Sql.ResultSet {
     use BasicDb.Internal.Sql.ResultSet.{ResultSet}
 
 
-    pub def getHH(rs: ResultSet[r]): ##java.sql.ResultSet =
-        let ResultSet(rs1) = rs;
-        rs1
 
     pub def close!(rs: ResultSet[r]): Result[String, Unit] \ r =
         Result.tryCatch(_ -> {
