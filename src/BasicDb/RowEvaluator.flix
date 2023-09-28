@@ -18,7 +18,7 @@ mod BasicDb {
 
 
 
-    pub enum RowEvaluator[r: Region, ka: Type, ef: Eff, a: Type](Graded.Evaluator[ka, Interop.Sql.ResultSet[r], ef, a])
+    pub enum RowEvaluator[r: Region, ka: Type, ef: Eff, a: Type](Graded.Evaluator[ka, BasicDb.Internal.Sql.ResultSet[r], ef, a])
 
 
     instance GradedFunctor[RowEvaluator[r, ka]] { 
@@ -78,8 +78,8 @@ mod BasicDb.RowEvaluator {
     use BasicDb.RowEvaluator
     use BasicDb.RowEvaluator.{RowEvaluator}
 
-    use Interop.Sql.ResultSet
-    use Interop.Sql.ResultSet.{ResultSet}
+    use BasicDb.Internal.Sql.ResultSet
+    use BasicDb.Internal.Sql.ResultSet.{ResultSet}
 
     pub def getRowEvaluator(x: RowEvaluator[r, ka, ef, a]): Graded.Evaluator[ka, ResultSet[r], ef, a] = 
         let RowEvaluator(x1) = x;
@@ -198,56 +198,56 @@ mod BasicDb.RowEvaluator {
 
     /// This is "null safe" - if the internal result is null it is converted to the empty String.
     pub def getStringAt(ix: Int32): RowEvaluator[r, ka, r, String] =
-        liftGetterResult(rs -> Interop.Sql.ResultSet.getStringAt(ix + 1, rs) |> Result.map(x1 -> if (Object.isNull(x1)) "" else x1))
+        liftGetterResult(rs -> BasicDb.Internal.Sql.ResultSet.getStringAt(ix + 1, rs) |> Result.map(x1 -> if (Object.isNull(x1)) "" else x1))
 
     /// This is "null safe" - if the internal result is null it is converted to the empty String.
     pub def getStringNamed(label: String): RowEvaluator[r, ka, r, String] =
-        liftGetterResult(rs -> Interop.Sql.ResultSet.getStringNamed(label, rs) |> Result.map(x1 -> if (Object.isNull(x1)) "" else x1))
+        liftGetterResult(rs -> BasicDb.Internal.Sql.ResultSet.getStringNamed(label, rs) |> Result.map(x1 -> if (Object.isNull(x1)) "" else x1))
 
 
     // See Javadocs for how a bool value is interpreted...
     pub def getBoolAt(ix: Int32): RowEvaluator[r, ka, r, Bool] =
-        liftGetterResult(Interop.Sql.ResultSet.getBoolAt(ix + 1))
+        liftGetterResult(BasicDb.Internal.Sql.ResultSet.getBoolAt(ix + 1))
 
     // See Javadocs for how a bool value is interpreted...
     pub def getBoolNamed(label: String): RowEvaluator[r, ka, r, Bool] =
-        liftGetterResult(Interop.Sql.ResultSet.getBoolNamed(label))
+        liftGetterResult(BasicDb.Internal.Sql.ResultSet.getBoolNamed(label))
 
     pub def getInt8At(ix: Int32): RowEvaluator[r, ka, r, Int8] =
-        liftGetterResult(Interop.Sql.ResultSet.getInt8At(ix + 1))
+        liftGetterResult(BasicDb.Internal.Sql.ResultSet.getInt8At(ix + 1))
 
     pub def getInt8Named(label: String): RowEvaluator[r, ka, r, Int8] =
-        liftGetterResult(Interop.Sql.ResultSet.getInt8Named(label))
+        liftGetterResult(BasicDb.Internal.Sql.ResultSet.getInt8Named(label))
 
     pub def getInt16At(ix: Int32): RowEvaluator[r, ka, r, Int16] =
-        liftGetterResult(Interop.Sql.ResultSet.getInt16At(ix + 1))
+        liftGetterResult(BasicDb.Internal.Sql.ResultSet.getInt16At(ix + 1))
 
     pub def getInt16Named(label: String): RowEvaluator[r, ka, r, Int16] =
-        liftGetterResult(Interop.Sql.ResultSet.getInt16Named(label))
+        liftGetterResult(BasicDb.Internal.Sql.ResultSet.getInt16Named(label))
 
     pub def getInt32At(ix: Int32): RowEvaluator[r, ka, r, Int32] =
-        liftGetterResult(Interop.Sql.ResultSet.getInt32At(ix + 1))
+        liftGetterResult(BasicDb.Internal.Sql.ResultSet.getInt32At(ix + 1))
 
     pub def getInt32Named(label: String): RowEvaluator[r, ka, r, Int32] =
-        liftGetterResult(Interop.Sql.ResultSet.getInt32Named(label))
+        liftGetterResult(BasicDb.Internal.Sql.ResultSet.getInt32Named(label))
 
     pub def getInt64At(ix: Int32): RowEvaluator[r, ka, r, Int64] =
-        liftGetterResult(Interop.Sql.ResultSet.getInt64At(ix + 1))
+        liftGetterResult(BasicDb.Internal.Sql.ResultSet.getInt64At(ix + 1))
 
     pub def getInt64Named(label: String): RowEvaluator[r, ka, r, Int64] =
-        liftGetterResult(Interop.Sql.ResultSet.getInt64Named(label))
+        liftGetterResult(BasicDb.Internal.Sql.ResultSet.getInt64Named(label))
 
     pub def getFloat32At(ix: Int32): RowEvaluator[r, ka, r, Float32] =
-        liftGetterResult(Interop.Sql.ResultSet.getFloat32At(ix + 1))
+        liftGetterResult(BasicDb.Internal.Sql.ResultSet.getFloat32At(ix + 1))
     
     pub def getFloat32Named(label: String): RowEvaluator[r, ka, r, Float32] =
-        liftGetterResult(Interop.Sql.ResultSet.getFloat32Named(label))
+        liftGetterResult(BasicDb.Internal.Sql.ResultSet.getFloat32Named(label))
 
     pub def getFloat64At(ix: Int32): RowEvaluator[r, ka, r, Float64] =
-        liftGetterResult(Interop.Sql.ResultSet.getFloat64At(ix + 1))
+        liftGetterResult(BasicDb.Internal.Sql.ResultSet.getFloat64At(ix + 1))
 
     pub def getFloat64Named(label: String): RowEvaluator[r, ka, r, Float64] =
-        liftGetterResult(Interop.Sql.ResultSet.getFloat64Named(label))
+        liftGetterResult(BasicDb.Internal.Sql.ResultSet.getFloat64Named(label))
 
 
     /// Cell has type String...

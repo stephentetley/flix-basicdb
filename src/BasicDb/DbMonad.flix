@@ -22,7 +22,7 @@ mod BasicDb {
     /// outside of IO).
 
 
-    pub enum DbMonad[r: Region, ka: Type, ef: Eff, a: Type](Graded.MutStateError[ka, Interop.Sql.Connection[r], ef, a])
+    pub enum DbMonad[r: Region, ka: Type, ef: Eff, a: Type](Graded.MutStateError[ka, BasicDb.Internal.Sql.Connection[r], ef, a])
     
     instance GradedFunctor[DbMonad[r, ka]] { 
         pub def map(f: a -> b \ ef1, x: DbMonad[r, ka, ef, a]): DbMonad[r, ka, ef + ef1, b] = 
@@ -61,11 +61,11 @@ mod BasicDb {
     }
 
 
-    pub type alias PreparedStatement[r: Region] = Interop.Sql.PreparedStatement[r]
+    pub type alias PreparedStatement[r: Region] = BasicDb.Internal.Sql.PreparedStatement[r]
 
-    pub type alias Statement[r: Region] = Interop.Sql.Statement[r]
+    pub type alias Statement[r: Region] = BasicDb.Internal.Sql.Statement[r]
 
-    pub type alias ResultSet[r: Region] = Interop.Sql.ResultSet[r]
+    pub type alias ResultSet[r: Region] = BasicDb.Internal.Sql.ResultSet[r]
 
 }
 
@@ -76,17 +76,17 @@ mod BasicDb.DbMonad {
     use BasicDb.DbMonad
     use BasicDb.DbMonad.{DbMonad}
 
-    use Interop.Sql.Connection
-    use Interop.Sql.Connection.{Connection}
+    use BasicDb.Internal.Sql.Connection
+    use BasicDb.Internal.Sql.Connection.{Connection}
 
     use BasicDb.PreparedStatement
-    use Interop.Sql.PreparedStatement.{PreparedStatement}
     use BasicDb.PreparedStatementSetter
     use BasicDb.PreparedStatementSetter.{PreparedStatementSetter}
     use BasicDb.ResultSet
     use BasicDb.RowEvaluator
     use BasicDb.Statement
-    use Interop.Sql.Statement.{Statement}
+    use BasicDb.Internal.Sql.PreparedStatement.{PreparedStatement}
+    use BasicDb.Internal.Sql.Statement.{Statement}
 
     def getDbMonad(x: DbMonad[r, ka, ef, a]): Graded.MutStateError[ka, Connection[r], ef, a] = 
         let DbMonad(x1) = x;
@@ -144,12 +144,12 @@ mod BasicDb.DbMonad {
 
         
     pub def runDbMonad(rc: Region[r], ma: DbMonad[r, a, ef, a], url: String): Result[String, a] \ { ef, r, IO } = 
-        match Interop.Sql.DriverManager.getConnection(rc, url) {
+        match BasicDb.Internal.Sql.DriverManager.getConnection(rc, url) {
             case Err(e)   => Err(e)
             case Ok(conn) => {
                 let ans = runDbMonadHelper(rc, ma, conn);
                 /// ensure conn is closed whether or not ans is `Ok`
-                discard Interop.Sql.Connection.closeConnection!(conn);
+                discard BasicDb.Internal.Sql.Connection.closeConnection!(conn);
                 ans
             }
         }
@@ -175,64 +175,64 @@ mod BasicDb.DbMonad {
     
     pub def executeSql!(rc: Region[r1], sql: String): DbMonad[r, ka, r + r1 + IO, Bool] = 
         use GradedMonad.{>>=};
-        liftSetterResult!(Interop.Sql.Connection.createStatement!(rc))   >>= stmt   ->
-        liftActionResult(_ -> Interop.Sql.Statement.execute!(sql, stmt)) >>= ans    ->
-        liftActionResult(_ -> Interop.Sql.Statement.close!(stmt))        >>= _      -> 
+        liftSetterResult!(BasicDb.Internal.Sql.Connection.createStatement!(rc))   >>= stmt   ->
+        liftActionResult(_ -> BasicDb.Internal.Sql.Statement.execute!(sql, stmt)) >>= ans    ->
+        liftActionResult(_ -> BasicDb.Internal.Sql.Statement.close!(stmt))        >>= _      -> 
         point(ans)
 
 
     pub def setAutoCommit!(autoCommit: Bool): DbMonad[r, ka, r + IO, Unit] =
-        liftSetterResult!(Interop.Sql.Connection.setAutoCommit!(autoCommit))
+        liftSetterResult!(BasicDb.Internal.Sql.Connection.setAutoCommit!(autoCommit))
 
     pub def commit!(): DbMonad[r, ka, r + IO, Unit] =
-        liftSetterResult!(Interop.Sql.Connection.commit!)
+        liftSetterResult!(BasicDb.Internal.Sql.Connection.commit!)
 
     /// Not in IO (probably) - will not change state of the world
     pub def createStatement!(rc: Region[r1]): DbMonad[r, ka, r + r1, Statement[r1]] =
-        liftSetterResult!(Interop.Sql.Connection.createStatement!(rc))
+        liftSetterResult!(BasicDb.Internal.Sql.Connection.createStatement!(rc))
 
 
     pub def execute!(sql: String, stmt: Statement[r1]): DbMonad[r, ka, r1 + IO, Bool] =
-        liftActionResult(_ -> Interop.Sql.Statement.execute!(sql, stmt))
+        liftActionResult(_ -> BasicDb.Internal.Sql.Statement.execute!(sql, stmt))
 
     pub def executeQuery!(rc: Region[r2], sql: String, stmt: Statement[r1]): DbMonad[r, ka, r1 + r2 + IO, ResultSet[r2]] =
-        liftActionResult(_ -> Interop.Sql.Statement.executeQuery!(rc, sql, stmt))
+        liftActionResult(_ -> BasicDb.Internal.Sql.Statement.executeQuery!(rc, sql, stmt))
         
 
     pub def executeUpdate!(sql: String, stmt: Statement[r1]): DbMonad[r, ka, r1 + IO, Int32] =
-        liftActionResult(_ -> Interop.Sql.Statement.executeUpdate!(sql, stmt))
+        liftActionResult(_ -> BasicDb.Internal.Sql.Statement.executeUpdate!(sql, stmt))
 
     /// TODO supply allocating region...
     pub def prepareStatement!(rc: Region[r1], sql: String): DbMonad[r, ka, r + r1, PreparedStatement[r1]] =
-        liftSetterResult!(Interop.Sql.Connection.prepareStatement!(rc, sql))
+        liftSetterResult!(BasicDb.Internal.Sql.Connection.prepareStatement!(rc, sql))
         
 
     
     pub def psExecuteQuery!(stmt: PreparedStatement[r1], 
                             setter: PreparedStatementSetter[r1, a, ef, a]): DbMonad[r, ka, ef + r1 + IO, ResultSet[r1]] =
         use GradedApplicative.{*>};
-        liftActionResult(_ -> Interop.Sql.PreparedStatement.clearParameters!(stmt))
+        liftActionResult(_ -> BasicDb.Internal.Sql.PreparedStatement.clearParameters!(stmt))
             *> liftActionResult(_ -> BasicDb.PreparedStatementSetter.runPreparedStatementSetter!(setter, stmt))
-            *> liftActionResult(_ -> Interop.Sql.PreparedStatement.executeQuery!(stmt))
+            *> liftActionResult(_ -> BasicDb.Internal.Sql.PreparedStatement.executeQuery!(stmt))
 
 
     /// +IO
     pub def psExecuteUpdate!(stmt: PreparedStatement[r1], 
                                 setter: PreparedStatementSetter[r1, a, ef, a]): DbMonad[r, ka, ef + r1 + IO, Int32] =
         use GradedApplicative.{*>};
-        liftActionResult(_ -> Interop.Sql.PreparedStatement.clearParameters!(stmt))
+        liftActionResult(_ -> BasicDb.Internal.Sql.PreparedStatement.clearParameters!(stmt))
             *> liftActionResult(_ -> BasicDb.PreparedStatementSetter.runPreparedStatementSetter!(setter, stmt))
-            *> liftActionResult(_ -> Interop.Sql.PreparedStatement.executeUpdate!(stmt))
+            *> liftActionResult(_ -> BasicDb.Internal.Sql.PreparedStatement.executeUpdate!(stmt))
 
 
 
     /// ResultSet
 
     pub def rsClose!(rs: ResultSet[r1]): DbMonad[r, ka, r1, Unit] =
-        liftActionResult(_ -> Interop.Sql.ResultSet.close!(rs))
+        liftActionResult(_ -> BasicDb.Internal.Sql.ResultSet.close!(rs))
 
     pub def rsNext(rs: ResultSet[r1]): DbMonad[r, ka, r1, Bool]  =
-        liftActionResult(_ -> Interop.Sql.ResultSet.next!(rs))
+        liftActionResult(_ -> BasicDb.Internal.Sql.ResultSet.next!(rs))
 
 
     pub def rsEval(eval: RowEvaluator[r1, a, ef, a], rs: ResultSet[r1]): DbMonad[r, ka, ef, a] = 

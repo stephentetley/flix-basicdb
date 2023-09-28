@@ -15,7 +15,7 @@
  */
 
 
-mod Interop.Sql {
+mod BasicDb.Internal.Sql {
 
     /// Mutable
 
@@ -23,14 +23,14 @@ mod Interop.Sql {
 
 }
 
-mod Interop.Sql.Connection {
+mod BasicDb.Internal.Sql.Connection {
 
-    use Interop.Sql.Connection
-    use Interop.Sql.Connection.{Connection}
-    use Interop.Sql.PreparedStatement
-    use Interop.Sql.PreparedStatement.{PreparedStatement}
-    use Interop.Sql.Statement
-    use Interop.Sql.Statement.{Statement}
+    use BasicDb.Internal.Sql.Connection
+    use BasicDb.Internal.Sql.Connection.{Connection}
+    use BasicDb.Internal.Sql.PreparedStatement
+    use BasicDb.Internal.Sql.PreparedStatement.{PreparedStatement}
+    use BasicDb.Internal.Sql.Statement
+    use BasicDb.Internal.Sql.Statement.{Statement}
 
     pub def getHH(conn: Connection[r]): ##java.sql.Connection = 
         let Connection(conn1) = conn;

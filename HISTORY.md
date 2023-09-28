@@ -1,3 +1,6 @@
+### v0.6.0
+   Renamed `Interop` namespace to `BasicDb.Internal`.
+
 ### v0.5.0
    Updated dependencies.
 

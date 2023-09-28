@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod BasicDb.Internal.Types {
+mod BasicDb.Internal.Sql.Types {
 
     pub def sql_type_null(): Int32 =
         import static get java.sql.Types.NULL: Int32 \ {} as get_NULL;

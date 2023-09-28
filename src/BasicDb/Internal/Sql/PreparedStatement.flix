@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod Interop.Sql {
+mod BasicDb.Internal.Sql {
 
     /// Mutable
 
@@ -23,12 +23,12 @@ mod Interop.Sql {
 
 }
 
-mod Interop.Sql.PreparedStatement {
+mod BasicDb.Internal.Sql.PreparedStatement {
 
-    use Interop.Sql.PreparedStatement;
-    use Interop.Sql.PreparedStatement.{PreparedStatement};
-    use Interop.Sql.ResultSet;
-    use Interop.Sql.ResultSet.{ResultSet};
+    use BasicDb.Internal.Sql.PreparedStatement
+    use BasicDb.Internal.Sql.PreparedStatement.{PreparedStatement}
+    use BasicDb.Internal.Sql.ResultSet
+    use BasicDb.Internal.Sql.ResultSet.{ResultSet}
 
 
     pub def getHH(stmt: PreparedStatement[r]): ##java.sql.PreparedStatement =

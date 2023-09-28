@@ -18,7 +18,7 @@
 mod BasicDb {
 
 
-    pub enum PreparedStatementSetter[r: Region, ka: Type, ef: Eff, a: Type](Graded.Builder[ka, Interop.Sql.PreparedStatement[r], ef, a])
+    pub enum PreparedStatementSetter[r: Region, ka: Type, ef: Eff, a: Type](Graded.Builder[ka, BasicDb.Internal.Sql.PreparedStatement[r], ef, a])
 
     instance GradedFunctor[PreparedStatementSetter[r, ka]] { 
         pub def map(f: a -> b \ ef1, x: PreparedStatementSetter[r, ka, ef, a]): PreparedStatementSetter[r, ka, ef + ef1, b] = 
@@ -64,8 +64,8 @@ mod BasicDb.PreparedStatementSetter {
     use BasicDb.PreparedStatementSetter;
     use BasicDb.PreparedStatementSetter.{PreparedStatementSetter};
     
-    use Interop.Sql.PreparedStatement;
-    use Interop.Sql.PreparedStatement.{PreparedStatement};
+    use BasicDb.Internal.Sql.PreparedStatement;
+    use BasicDb.Internal.Sql.PreparedStatement.{PreparedStatement};
 
     pub def getPreparedStatementSetter(x: PreparedStatementSetter[r, ka, ef, a]): Graded.Builder[ka, PreparedStatement[r], ef, a] = 
         let PreparedStatementSetter(x1) = x;
@@ -155,31 +155,31 @@ mod BasicDb.PreparedStatementSetter {
 */
 
     pub def putNullAt!(ix: Int32): PreparedStatementSetter[r, ka, r, Unit] =
-        liftSetterResult!(Interop.Sql.PreparedStatement.setNull!(ix + 1, BasicDb.Internal.Types.sql_type_null()))
+        liftSetterResult!(BasicDb.Internal.Sql.PreparedStatement.setNull!(ix + 1, BasicDb.Internal.Sql.Types.sql_type_null()))
 
     pub def putStringAt!(ix: Int32, str: String): PreparedStatementSetter[r, ka, r, Unit] =
-        liftSetterResult!(Interop.Sql.PreparedStatement.setString!(ix + 1, str))
+        liftSetterResult!(BasicDb.Internal.Sql.PreparedStatement.setString!(ix + 1, str))
 
     pub def putBoolAt!(ix: Int32, b: Bool): PreparedStatementSetter[r, ka, r, Unit] =
-        liftSetterResult!(Interop.Sql.PreparedStatement.setBool!(ix + 1, b))
+        liftSetterResult!(BasicDb.Internal.Sql.PreparedStatement.setBool!(ix + 1, b))
 
     pub def putInt8At!(ix: Int32, n: Int8): PreparedStatementSetter[r, ka, r, Unit] =
-        liftSetterResult!(Interop.Sql.PreparedStatement.setInt8!(ix + 1, n))
+        liftSetterResult!(BasicDb.Internal.Sql.PreparedStatement.setInt8!(ix + 1, n))
 
     pub def putInt16At!(ix: Int32, n: Int16): PreparedStatementSetter[r, ka, r, Unit] =
-        liftSetterResult!(Interop.Sql.PreparedStatement.setInt16!(ix + 1, n))
+        liftSetterResult!(BasicDb.Internal.Sql.PreparedStatement.setInt16!(ix + 1, n))
 
     pub def putInt32At!(ix: Int32, n: Int32): PreparedStatementSetter[r, ka, r, Unit] =
-        liftSetterResult!(Interop.Sql.PreparedStatement.setInt32!(ix + 1, n))
+        liftSetterResult!(BasicDb.Internal.Sql.PreparedStatement.setInt32!(ix + 1, n))
 
     pub def putInt64At!(ix: Int32, n: Int64): PreparedStatementSetter[r, ka, r, Unit] =
-        liftSetterResult!(Interop.Sql.PreparedStatement.setInt64!(ix + 1, n))
+        liftSetterResult!(BasicDb.Internal.Sql.PreparedStatement.setInt64!(ix + 1, n))
 
     pub def putFloat32At!(ix: Int32, n: Float32): PreparedStatementSetter[r, ka, r, Unit] =
-        liftSetterResult!(Interop.Sql.PreparedStatement.setFloat32!(ix + 1, n))
+        liftSetterResult!(BasicDb.Internal.Sql.PreparedStatement.setFloat32!(ix + 1, n))
 
     pub def putFloat64At!(ix: Int32, n: Float64): PreparedStatementSetter[r, ka, r, Unit] =
-        liftSetterResult!(Interop.Sql.PreparedStatement.setFloat64!(ix + 1, n))
+        liftSetterResult!(BasicDb.Internal.Sql.PreparedStatement.setFloat64!(ix + 1, n))
 
 
     pub def putIsoLocalDateStringAt!(ix: Int32, d: Time.LocalDate): PreparedStatementSetter[r, ka, r, Unit] =

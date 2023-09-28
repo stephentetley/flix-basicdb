@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod Interop.Sql {
+mod BasicDb.Internal.Sql {
 
     /// Mutable
 
@@ -23,10 +23,10 @@ mod Interop.Sql {
 
 }
 
-mod Interop.Sql.ResultSet {
+mod BasicDb.Internal.Sql.ResultSet {
 
-    use Interop.Sql.ResultSet;
-    use Interop.Sql.ResultSet.{ResultSet};
+    use BasicDb.Internal.Sql.ResultSet
+    use BasicDb.Internal.Sql.ResultSet.{ResultSet}
 
 
     pub def getHH(rs: ResultSet[r]): ##java.sql.ResultSet =

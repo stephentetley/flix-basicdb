@@ -15,10 +15,10 @@
  */
 
 
-mod Interop.Sql.DriverManager {
+mod BasicDb.Internal.Sql.DriverManager {
 
-    use Interop.Sql.Connection;
-    use Interop.Sql.Connection.{Connection};
+    use BasicDb.Internal.Sql.Connection;
+    use BasicDb.Internal.Sql.Connection.{Connection};
 
 
     pub def getConnection(_: Region[r], url: String): Result[String, Connection[r]] \ {IO, r} = 
