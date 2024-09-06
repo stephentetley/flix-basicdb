@@ -17,51 +17,44 @@
 
 mod BasicDb.Internal.Sql {
 
+    import java.sql.{Statement => JStatement}
+
     /// Mutable
 
-    pub enum Statement[_: Region](##java.sql.Statement)
-
+    pub struct Statement[rc: Region]{
+        statement: JStatement
+    }
 
 }
 
 mod BasicDb.Internal.Sql.Statement {
 
     use BasicDb.Internal.Sql.Statement
-    use BasicDb.Internal.Sql.Statement.{Statement}
-
-    use BasicDb.Internal.Sql.PreparedStatement
-    use BasicDb.Internal.Sql.PreparedStatement.{PreparedStatement}
     use BasicDb.Internal.Sql.ResultSet
-    use BasicDb.Internal.Sql.ResultSet.{ResultSet}
-
-
-
-    pub def close!(stmt: Statement[r]): Result[String, Unit] \ r = 
+    
+    pub def close(stmt: Statement[r]): Result[String, Unit] \ IO + r = 
         Result.tryCatch(_ -> {
-            import java.sql.Statement.close(): Unit \ r;
-            let Statement(stmt1) = stmt;
-            close(stmt1)
+            let statement1 = stmt->statement;
+            statement1.close()
         })
 
-    pub def execute!(sql: String, stmt: Statement[r]): Result[String, Bool] \ {IO, r} =
+    pub def execute(sql: String, stmt: Statement[r]): Result[String, Bool] \ {IO, r} =
         Result.tryCatch(_ -> {
-            import java.sql.Statement.execute(String): Bool \ {IO, r};
-            let Statement(stmt1) = stmt;
-            execute(stmt1, sql)
+            let statement1 = stmt->statement;
+            statement1.execute(sql)
         })
 
-    pub def executeQuery!(_: Region[r1], sql: String, stmt: Statement[r]): Result[String, ResultSet[r1]] \ {IO, r} = 
+    pub def executeQuery(rc: Region[r1], sql: String, stmt: Statement[r]): Result[String, ResultSet[r1]] \ {IO, r, r1} = 
         Result.tryCatch(_ -> {
-            import java.sql.Statement.executeQuery(String): ##java.sql.ResultSet \ {IO, r, r1};
-            let Statement(stmt1) = stmt;
-            executeQuery(stmt1, sql) |> ResultSet
+            let statement1 = stmt->statement;
+            let ans = statement1.executeQuery(sql);
+            new ResultSet @ rc { resultset = ans }
         })
 
-    pub def executeUpdate!(sql: String, stmt: Statement[r]): Result[String, Int32] \ {IO, r} = 
+    pub def executeUpdate(sql: String, stmt: Statement[r]): Result[String, Int32] \ {IO, r} = 
         Result.tryCatch(_ -> {
-            import java.sql.Statement.executeUpdate(String): Int32 \ {IO, r};
-            let Statement(stmt1) = stmt;
-            executeUpdate(stmt1, sql)
+            let statement1 = stmt->statement;
+            statement1.executeUpdate(sql)
         })
 
 }    
