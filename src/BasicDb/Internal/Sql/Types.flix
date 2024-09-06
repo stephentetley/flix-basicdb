@@ -17,7 +17,7 @@
 mod BasicDb.Internal.Sql.Types {
 
     pub def sql_type_null(): Int32 =
-        import static get java.sql.Types.NULL: Int32 \ {} as get_NULL;
+        import static java_get_field java.sql.Types.NULL: Int32 \ {} as get_NULL;
         get_NULL()
 
 
