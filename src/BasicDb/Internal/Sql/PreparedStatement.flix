@@ -16,9 +16,13 @@
 
 mod BasicDb.Internal.Sql {
 
+    import java.sql.{PreparedStatement => JPreparedStatement}
+
     /// Mutable
 
-    pub enum PreparedStatement[_: Region](##java.sql.PreparedStatement)
+    pub struct PreparedStatement[rc: Region]{
+        preparedStatement: JPreparedStatement
+    }
 
 
 }
@@ -26,97 +30,84 @@ mod BasicDb.Internal.Sql {
 mod BasicDb.Internal.Sql.PreparedStatement {
 
     use BasicDb.Internal.Sql.PreparedStatement
-    use BasicDb.Internal.Sql.PreparedStatement.{PreparedStatement}
     use BasicDb.Internal.Sql.ResultSet
-    use BasicDb.Internal.Sql.ResultSet.{ResultSet}
 
 
 
-    pub def clearParameters!(stmt: PreparedStatement[r]): Result[String, Unit] \ r =
+    pub def clearParameters(stmt: PreparedStatement[r]): Result[String, Unit] \ IO + r =
         Result.tryCatch(_ -> {
-            import java.sql.PreparedStatement.clearParameters(): Unit \ r;
-            let PreparedStatement(stmt1) = stmt;
-            clearParameters(stmt1)
+            let preparedStatement1 = stmt->preparedStatement;
+            preparedStatement1.clearParameters()
         })
 
 
-    pub def executeQuery!(stmt: PreparedStatement[r]): Result[String, ResultSet[r]] \ {IO, r} =
+    pub def executeQuery(rc: Region[r1], stmt: PreparedStatement[r]): Result[String, ResultSet[r1]] \ {IO, r, r1} =
         Result.tryCatch(_ -> {
-            import java.sql.PreparedStatement.executeQuery(): ##java.sql.ResultSet \ {IO, r};
-            let PreparedStatement(stmt1) = stmt;
-            executeQuery(stmt1) |> ResultSet
+            let preparedStatement1 = stmt->preparedStatement;
+            let ans = preparedStatement1.executeQuery();
+            new ResultSet @ rc {resultSet = ans}
         })
 
-    pub def executeUpdate!(stmt: PreparedStatement[r]): Result[String, Int32] \ {IO, r} =
+    pub def executeUpdate(stmt: PreparedStatement[r]): Result[String, Int32] \ {IO, r} =
         Result.tryCatch(_ -> {
-            import java.sql.PreparedStatement.executeUpdate(): Int32 \ {IO, r};
-            let PreparedStatement(stmt1) = stmt;
-            executeUpdate(stmt1)
+            let preparedStatement1 = stmt->preparedStatement;
+            preparedStatement1.executeUpdate()
         })
 
 
 
-    pub def setNull!(ix: Int32, sqlType: Int32, stmt: PreparedStatement[r]): Result[String, Unit] \ r =
+    pub def setNull(ix: Int32, sqlType: Int32, stmt: PreparedStatement[r]): Result[String, Unit] \ IO + r =
         Result.tryCatch(_ -> {
-            import java.sql.PreparedStatement.setNull(Int32, Int32): Unit \ r;
-            let PreparedStatement(stmt1) = stmt;
-            setNull(stmt1, ix, sqlType)
+            let preparedStatement1 = stmt->preparedStatement;
+            preparedStatement1.setNull(ix, sqlType)
         })
 
-    pub def setString!(ix: Int32, str: String, stmt: PreparedStatement[r]): Result[String, Unit] \ r =
+    pub def setString(ix: Int32, str: String, stmt: PreparedStatement[r]): Result[String, Unit] \ IO + r =
         Result.tryCatch(_ -> {
-            import java.sql.PreparedStatement.setString(Int32, String): Unit \ r;
-            let PreparedStatement(stmt1) = stmt;
-            setString(stmt1, ix, str)
+            let preparedStatement1 = stmt->preparedStatement;
+            preparedStatement1.setString(ix, str)
         })
 
-    pub def setBool!(ix: Int32, b: Bool, stmt: PreparedStatement[r]): Result[String, Unit] \ r =
+    pub def setBool(ix: Int32, b: Bool, stmt: PreparedStatement[r]): Result[String, Unit] \ IO + r =
         Result.tryCatch(_ -> {
-            import java.sql.PreparedStatement.setBoolean(Int32, Bool): Unit \ r;
-            let PreparedStatement(stmt1) = stmt;
-            setBoolean(stmt1, ix, b)
+            let preparedStatement1 = stmt->preparedStatement;
+            preparedStatement1.setBoolean(ix, b)
         })
 
-    pub def setInt8!(ix: Int32, n: Int8, stmt: PreparedStatement[r]): Result[String, Unit] \ r =
+    pub def setInt8(ix: Int32, n: Int8, stmt: PreparedStatement[r]): Result[String, Unit] \ IO + r =
         Result.tryCatch(_ -> {
-            import java.sql.PreparedStatement.setByte(Int32, Int8): Unit \ r;
-            let PreparedStatement(stmt1) = stmt;
-            setByte(stmt1, ix, n)
+            let preparedStatement1 = stmt->preparedStatement;
+            preparedStatement1.setByte(ix, n)
         })
 
-    pub def setInt16!(ix: Int32, n: Int16, stmt: PreparedStatement[r]): Result[String, Unit] \ r =
+    pub def setInt16(ix: Int32, n: Int16, stmt: PreparedStatement[r]): Result[String, Unit] \ IO + r =
         Result.tryCatch(_ -> {
-            import java.sql.PreparedStatement.setShort(Int32, Int16): Unit \ r;
-            let PreparedStatement(stmt1) = stmt;
-            setShort(stmt1, ix, n)
+            let preparedStatement1 = stmt->preparedStatement;
+            preparedStatement1.setShort(ix, n)
         })
 
-    pub def setInt32!(ix: Int32, n: Int32, stmt: PreparedStatement[r]): Result[String, Unit] \ r =
+    pub def setInt32(ix: Int32, n: Int32, stmt: PreparedStatement[r]): Result[String, Unit] \ IO + r =
         Result.tryCatch(_ -> {
-            import java.sql.PreparedStatement.setInt(Int32, Int32): Unit \ r;        
-            let PreparedStatement(stmt1) = stmt;
-            setInt(stmt1, ix, n)
+            let preparedStatement1 = stmt->preparedStatement;
+            preparedStatement1.setInt(ix, n)
         })
 
-    pub def setInt64!(ix: Int32, n: Int64, stmt: PreparedStatement[r]): Result[String, Unit] \ r =
+    pub def setInt64(ix: Int32, n: Int64, stmt: PreparedStatement[r]): Result[String, Unit] \ IO + r =
         Result.tryCatch(_ -> {
-            import java.sql.PreparedStatement.setLong(Int32, Int64): Unit \ r;
-            let PreparedStatement(stmt1) = stmt;
-            setLong(stmt1, ix, n)
+            let preparedStatement1 = stmt->preparedStatement;
+            preparedStatement1.setLong(ix, n)
         })
 
-    pub def setFloat32!(ix: Int32, d: Float32, stmt: PreparedStatement[r]): Result[String, Unit] \ r =
+    pub def setFloat32(ix: Int32, d: Float32, stmt: PreparedStatement[r]): Result[String, Unit] \ IO + r =
         Result.tryCatch(_ -> {
-            import java.sql.PreparedStatement.setFloat(Int32, Float32): Unit \ r;
-            let PreparedStatement(stmt1) = stmt;
-            setFloat(stmt1, ix, d)
+            let preparedStatement1 = stmt->preparedStatement;
+            preparedStatement1.setFloat(ix, d)
         })
 
-    pub def setFloat64!(ix: Int32, d: Float64, stmt: PreparedStatement[r]): Result[String, Unit] \ r =
+    pub def setFloat64(ix: Int32, d: Float64, stmt: PreparedStatement[r]): Result[String, Unit] \ IO + r =
         Result.tryCatch(_ -> {
-            import java.sql.PreparedStatement.setDouble(Int32, Float64): Unit \ r;
-            let PreparedStatement(stmt1) = stmt;
-            setDouble(stmt1, ix, d)
+            let preparedStatement1 = stmt->preparedStatement;
+            preparedStatement1.setDouble(ix, d)
         })
 
 }

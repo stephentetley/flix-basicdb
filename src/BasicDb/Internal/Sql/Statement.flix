@@ -48,7 +48,7 @@ mod BasicDb.Internal.Sql.Statement {
         Result.tryCatch(_ -> {
             let statement1 = stmt->statement;
             let ans = statement1.executeQuery(sql);
-            new ResultSet @ rc { resultset = ans }
+            new ResultSet @ rc { resultSet = ans }
         })
 
     pub def executeUpdate(sql: String, stmt: Statement[r]): Result[String, Int32] \ {IO, r} = 

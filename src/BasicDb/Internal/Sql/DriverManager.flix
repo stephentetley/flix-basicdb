@@ -18,13 +18,13 @@
 mod BasicDb.Internal.Sql.DriverManager {
 
     use BasicDb.Internal.Sql.Connection;
-    use BasicDb.Internal.Sql.Connection.{Connection};
+    
+    import java.sql.{DriverManager => JDriverManager}
 
-
-    pub def getConnection(_: Region[r], url: String): Result[String, Connection[r]] \ {IO, r} = 
-        import static java.sql.DriverManager.getConnection(String): ##java.sql.Connection \ {IO, r};
+    pub def getConnection(rc: Region[r], url: String): Result[String, Connection[r]] \ {IO, r} = 
         Result.tryCatch(_ -> {
-            getConnection(url) |> Connection
+            let ans = JDriverManager.getConnection(url);
+            new Connection @ rc {connection = ans}
         })
 
 }    
