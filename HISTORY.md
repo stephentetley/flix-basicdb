@@ -1,6 +1,6 @@
 ### v0.6.0
    Renamed `Interop` namespace to `BasicDb.Internal`.
-   Changes to use new Java interop.
+   Changed to new Java interop and structs for mutables.
 
 ### v0.5.0
    Updated dependencies.
