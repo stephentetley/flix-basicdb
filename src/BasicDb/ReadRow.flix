@@ -47,33 +47,7 @@ mod BasicDb.ReadRow {
         }
 
 
-/*
 
-    /// TODO are these general combinators in Graded?
-
-        
-    pub def liftOption(errMsg: String, x: Option[a]): RowEvaluator[r, ka, a] = match x { 
-        case Some(x1) => point(x1)
-        case None     => throwError(errMsg)
-    }
-        
-
-
-    pub def liftResult1(makeErrMsg: e -> String, x: Result[e, a]): RowEvaluator[r, ka, a] = match x { 
-        case Ok(x1) => point(x1)
-        case Err(e) => throwError(makeErrMsg(e))
-    }
-
-
-    pub def liftValidation(makeErrMsg: List[e] -> String, x: Validation[a, e]): RowEvaluator[r, ka, a] = match x { 
-        case Success(x1) => point(x1)
-        case Failure(es) => throwError(makeErrMsg(Nec.toList(es)))
-    }
-
-    def liftPrim(ask: ##java.sql.ResultSet -> Result[String, a] \ ef): RowEvaluator[r, ka, a] \ ef =
-        RowEvaluator(row -> ask(row) as \ r) as \ ef
-
-*/
     pub def optional(p: Unit -> a \ {ReadRow, ef}): Option[a] \ {ReadRow, ef} = 
         let row = do BasicDb.ReadRow.currentRow();
         match run(row, p) {
@@ -90,6 +64,7 @@ mod BasicDb.ReadRow {
                 case Err(_) => do BasicDb.ReadRow.fail("alt")
             }
         }
+
 
     pub def liftResult(x: Result[String, a]): a \ ReadRow = match x { 
         case Ok(x1)   => x1
