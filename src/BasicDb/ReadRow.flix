@@ -74,7 +74,7 @@ mod BasicDb.ReadRow {
 
     // Note - the Java.Sql's getX functions index from 1.
 
-    pub def getWith(f: JResultSet -> a \ IO): a \ ReadRow =
+    pub def withRow(f: JResultSet -> a \ IO): a \ ReadRow =
         let row = do BasicDb.ReadRow.currentRow();
         match Result.tryCatch(_ -> {unsafe f(row)}) {
             case Ok(a)    => a
@@ -83,59 +83,59 @@ mod BasicDb.ReadRow {
 
     /// This is "null safe" - if the internal result is null it is converted to the empty String.
     pub def getStringAt(ix: Int32): String \ ReadRow =
-        let s = getWith(row -> row.getString(ix));
+        let s = withRow(row -> row.getString(ix));
         if (Object.isNull(s)) "" else s
 
     /// This is "null safe" - if the internal result is null it is converted to the empty String.
     pub def getStringNamed(label: String): String \ ReadRow =
-        let s = getWith(row -> row.getString(label));
+        let s = withRow(row -> row.getString(label));
         if (Object.isNull(s)) "" else s
 
 
     // // See Javadocs for how a bool value is interpreted...
     pub def getBoolAt(ix: Int32): Bool \ ReadRow =
-        getWith(row -> row.getBoolean(ix))
+        withRow(row -> row.getBoolean(ix))
 
     // // See Javadocs for how a bool value is interpreted...
     pub def getBoolNamed(label: String): Bool \ ReadRow =
-        getWith(row -> row.getBoolean(label))
+        withRow(row -> row.getBoolean(label))
 
     pub def getInt8At(ix: Int32): Int8 \ ReadRow =
-        getWith(row -> row.getByte(ix))
+        withRow(row -> row.getByte(ix))
 
     pub def getInt8Named(label: String): Int8 \ ReadRow =
-        getWith(row -> row.getByte(label))
+        withRow(row -> row.getByte(label))
 
     pub def getInt16At(ix: Int32): Int16 \ ReadRow =
-        getWith(row -> row.getShort(ix))
+        withRow(row -> row.getShort(ix))
 
     pub def getInt16Named(label: String): Int16 \ ReadRow =
-        getWith(row -> row.getShort(label))
+        withRow(row -> row.getShort(label))
 
     pub def getInt32At(ix: Int32): Int32 \ ReadRow =
-        getWith(row -> row.getInt(ix))
+        withRow(row -> row.getInt(ix))
 
     pub def getInt32Named(label: String): Int32 \ ReadRow =
-        getWith(row -> row.getInt(label))
+        withRow(row -> row.getInt(label))
 
     pub def getInt64At(ix: Int32): Int64 \ ReadRow =
-        getWith(row -> row.getLong(ix))
+        withRow(row -> row.getLong(ix))
 
     pub def getInt64Named(label: String): Int64 \ ReadRow =
-        getWith(row -> row.getLong(label))
+        withRow(row -> row.getLong(label))
 
     pub def getFloat32At(ix: Int32): Float32 \ ReadRow =
-        getWith(row -> row.getFloat(ix))
+        withRow(row -> row.getFloat(ix))
     
     pub def getFloat32Named(label: String): Float32 \ ReadRow =
-        getWith(row -> row.getFloat(label))
+        withRow(row -> row.getFloat(label))
 
     pub def getFloat64At(ix: Int32): Float64 \ ReadRow =
-        getWith(row -> row.getDouble(ix))
+        withRow(row -> row.getDouble(ix))
     
 
     pub def getFloat64Named(label: String): Float64 \ ReadRow =
-        getWith(row -> row.getDouble(label))
+        withRow(row -> row.getDouble(label))
 
 
     /// Cell has type String...
