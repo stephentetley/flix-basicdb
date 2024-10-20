@@ -45,10 +45,10 @@ mod BasicDb.WritePreparedStatement {
 
 
     pub def putWith(f: JPreparedStatement-> Unit \ IO): Unit \ WritePreparedStatement =
-        let row = do BasicDb.WritePreparedStatement.currentPreparedStatement();
+        let row = BasicDb.WritePreparedStatement.currentPreparedStatement();
         match Result.tryCatch(_ -> {unsafe f(row)}) {
             case Ok()     => ()
-            case Err(msg) => do BasicDb.WritePreparedStatement.fail(msg)
+            case Err(msg) => BasicDb.WritePreparedStatement.fail(msg)
         }
 
 

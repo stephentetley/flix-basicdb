@@ -34,10 +34,10 @@ mod BasicDb.DbConnection {
     import java.sql.{Connection => JConnection}
 
     pub def withConnection(f: JConnection -> a \ IO): a \ DbConnection =
-        let conn = do BasicDb.DbConnection.currentConnection();
+        let conn = BasicDb.DbConnection.currentConnection();
         match Result.tryCatch(_ -> {unsafe f(conn)}) {
             case Ok(a)    => a
-            case Err(msg) => do BasicDb.DbConnection.fail(msg)
+            case Err(msg) => BasicDb.DbConnection.fail(msg)
         }
 
 

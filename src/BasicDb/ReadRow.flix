@@ -23,8 +23,6 @@ mod BasicDb {
         pub def fail(msg: String): Void
     }
 
-
-
 }
 
 mod BasicDb.ReadRow {
@@ -49,36 +47,36 @@ mod BasicDb.ReadRow {
 
 
     pub def optional(p: Unit -> a \ {ReadRow, ef}): Option[a] \ {ReadRow, ef} = 
-        let row = do BasicDb.ReadRow.currentRow();
+        let row = BasicDb.ReadRow.currentRow();
         match run(row, p) {
             case Ok(a)  => Some(a)
             case Err(_) => None
         }
 
     pub def alt(p: Unit -> a \ {ReadRow, ef}, q: Unit -> a \ {ReadRow, ef}): a \ {ReadRow, ef} = 
-        let row = do BasicDb.ReadRow.currentRow();
+        let row = BasicDb.ReadRow.currentRow();
         match run(row, p) {
             case Ok(a) => a
             case Err(_) => match run(row, q) {
-                case Ok(a) => a
-                case Err(_) => do BasicDb.ReadRow.fail("alt")
+                case Ok(a)  => a
+                case Err(_) => BasicDb.ReadRow.fail("alt")
             }
         }
 
 
     pub def liftResult(x: Result[String, a]): a \ ReadRow = match x { 
         case Ok(x1)   => x1
-        case Err(msg) => do BasicDb.ReadRow.fail(msg)
+        case Err(msg) => BasicDb.ReadRow.fail(msg)
     }
 
 
     // Note - the Java.Sql's getX functions index from 1.
 
     pub def withRow(f: JResultSet -> a \ IO): a \ ReadRow =
-        let row = do BasicDb.ReadRow.currentRow();
+        let row = BasicDb.ReadRow.currentRow();
         match Result.tryCatch(_ -> {unsafe f(row)}) {
             case Ok(a)    => a
-            case Err(msg) => do BasicDb.ReadRow.fail(msg)
+            case Err(msg) => BasicDb.ReadRow.fail(msg)
         }
 
     /// This is "null safe" - if the internal result is null it is converted to the empty String.
