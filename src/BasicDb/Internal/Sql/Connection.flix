@@ -30,6 +30,7 @@ mod BasicDb.Internal.Sql.Connection {
 
     use BasicDb.Internal.Sql.Connection
     use BasicDb.Internal.Sql.PreparedStatement
+    use BasicDb.Internal.Sql.PreparedStatement.PreparedStatement
     use BasicDb.Internal.Sql.Statement
 
 
@@ -63,13 +64,13 @@ mod BasicDb.Internal.Sql.Connection {
         })
 
     /// Creates a PreparedStatement
-    pub def prepareStatement(rc: Region[r1], 
+    pub def prepareStatement(_: Region[r1], 
                                 sql: String, 
                                 conn: Connection[r]): Result[String, PreparedStatement[r1]] \ {IO, r, r1} = 
         Result.tryCatch(_ -> {
             let Connection(conn1) = conn;
-            let ans = checked_ecast(conn1.prepareStatement(sql));
-            new PreparedStatement @ rc {preparedStatement = ans}
+            let stmt1 = unchecked_cast(conn1.prepareStatement(sql) as _ \ r1);
+            checked_ecast(PreparedStatement(stmt1))
         })
 
 }    
