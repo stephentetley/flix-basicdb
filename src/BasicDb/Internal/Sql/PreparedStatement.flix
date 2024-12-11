@@ -29,6 +29,7 @@ mod BasicDb.Internal.Sql.PreparedStatement {
 
     use BasicDb.Internal.Sql.PreparedStatement
     use BasicDb.Internal.Sql.ResultSet
+    use BasicDb.Internal.Sql.ResultSet.ResultSet
 
 
 
@@ -39,11 +40,11 @@ mod BasicDb.Internal.Sql.PreparedStatement {
         })
 
 
-    pub def executeQuery(rc: Region[r1], stmt: PreparedStatement[r]): Result[String, ResultSet[r1]] \ {IO, r, r1} =
+    pub def executeQuery(_: Region[r1], stmt: PreparedStatement[r]): Result[String, ResultSet[r1]] \ {IO, r, r1} =
         Result.tryCatch(_ -> {
             let PreparedStatement(stmt1) = stmt;
-            let ans = checked_ecast(stmt1.executeQuery());
-            new ResultSet @ rc {resultSet = ans}
+            let rs1 = unchecked_cast(stmt1.executeQuery() as _ \ r1);
+            checked_ecast(ResultSet(rs1))
         })
 
     pub def executeUpdate(stmt: PreparedStatement[r]): Result[String, Int32] \ {IO, r} =

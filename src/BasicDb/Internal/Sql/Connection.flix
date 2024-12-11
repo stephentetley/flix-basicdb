@@ -32,6 +32,7 @@ mod BasicDb.Internal.Sql.Connection {
     use BasicDb.Internal.Sql.PreparedStatement
     use BasicDb.Internal.Sql.PreparedStatement.PreparedStatement
     use BasicDb.Internal.Sql.Statement
+    use BasicDb.Internal.Sql.Statement.Statement
 
 
     pub def closeConnection(conn: Connection[r]): Result[String, Unit] \ IO + r = 
@@ -56,11 +57,11 @@ mod BasicDb.Internal.Sql.Connection {
         })
 
 
-    pub def createStatement(rc: Region[r1], conn: Connection[r]): Result[String, Statement[r1]] \ {IO, r, r1} = 
+    pub def createStatement(_: Region[r1], conn: Connection[r]): Result[String, Statement[r1]] \ {IO, r, r1} = 
         Result.tryCatch(_ -> {
             let Connection(conn1) = conn;
-            let ans = checked_ecast(conn1.createStatement());
-            new Statement @ rc { statement = ans }
+            let stmt1 = unchecked_cast(conn1.createStatement() as _ \ r1);
+            checked_ecast(Statement(stmt1))
         })
 
     /// Creates a PreparedStatement

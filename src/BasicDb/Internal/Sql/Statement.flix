@@ -21,9 +21,7 @@ mod BasicDb.Internal.Sql {
 
     /// Mutable like StringBuilder
 
-    pub struct Statement[_: Region]{
-        statement: JStatement
-    }
+    pub enum Statement[_: Region](JStatement)
 
 }
 
@@ -31,30 +29,31 @@ mod BasicDb.Internal.Sql.Statement {
 
     use BasicDb.Internal.Sql.Statement
     use BasicDb.Internal.Sql.ResultSet
+    use BasicDb.Internal.Sql.ResultSet.ResultSet
     
     pub def close(stmt: Statement[r]): Result[String, Unit] \ IO + r = 
         Result.tryCatch(_ -> {
-            let statement1 = stmt->statement;
-            checked_ecast(statement1.close())
+            let Statement(stmt1) = stmt;
+            checked_ecast(stmt1.close())
         })
 
     pub def execute(sql: String, stmt: Statement[r]): Result[String, Bool] \ {IO, r} =
         Result.tryCatch(_ -> {
-            let statement1 = stmt->statement;
-            checked_ecast(statement1.execute(sql))
+            let Statement(stmt1) = stmt;
+            checked_ecast(stmt1.execute(sql))
         })
 
-    pub def executeQuery(rc: Region[r1], sql: String, stmt: Statement[r]): Result[String, ResultSet[r1]] \ {IO, r, r1} = 
+    pub def executeQuery(_: Region[r1], sql: String, stmt: Statement[r]): Result[String, ResultSet[r1]] \ {IO, r, r1} = 
         Result.tryCatch(_ -> {
-            let statement1 = stmt->statement;
-            let ans = checked_ecast(statement1.executeQuery(sql));
-            new ResultSet @ rc { resultSet = ans }
+            let Statement(stmt1) = stmt;
+            let rs1 = unchecked_cast(stmt1.executeQuery(sql) as _ \ r1);
+            checked_ecast(ResultSet(rs1))
         })
 
     pub def executeUpdate(sql: String, stmt: Statement[r]): Result[String, Int32] \ {IO, r} = 
         Result.tryCatch(_ -> {
-            let statement1 = stmt->statement;
-            checked_ecast(statement1.executeUpdate(sql))
+            let Statement(stmt1) = stmt;
+            checked_ecast(stmt1.executeUpdate(sql))
         })
 
 }    
