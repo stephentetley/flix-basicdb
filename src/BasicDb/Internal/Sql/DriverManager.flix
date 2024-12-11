@@ -17,14 +17,16 @@
 
 mod BasicDb.Internal.Sql.DriverManager {
 
-    use BasicDb.Internal.Sql.Connection;
-    
+    use BasicDb.Internal.Sql.Connection
+    use BasicDb.Internal.Sql.Connection.Connection
+
+
     import java.sql.{DriverManager => JDriverManager}
 
-    pub def getConnection(rc: Region[r], url: String): Result[String, Connection[r]] \ {IO, r} = 
+    pub def getConnection(_: Region[r], url: String): Result[String, Connection[r]] \ {IO, r} = 
         Result.tryCatch(_ -> {
-            let ans = JDriverManager.getConnection(url);
-            new Connection @ rc {connection = ans}
+            let conn1 = unchecked_cast(JDriverManager.getConnection(url) as _ \ r);
+            checked_ecast(Connection(conn1))
         })
 
 }    

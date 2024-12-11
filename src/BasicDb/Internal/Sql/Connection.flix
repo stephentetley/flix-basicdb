@@ -19,11 +19,9 @@ mod BasicDb.Internal.Sql {
 
     import java.sql.{Connection => JConnection}
 
-    /// Mutable
+    /// Mutable like StringBuilder
 
-    pub struct Connection[rc: Region]{
-        connection: JConnection
-    }
+    pub enum Connection[_: Region](JConnection)
 
 
 }
@@ -37,30 +35,30 @@ mod BasicDb.Internal.Sql.Connection {
 
     pub def closeConnection(conn: Connection[r]): Result[String, Unit] \ IO + r = 
         Result.tryCatch(_ -> {
-            let connection1 = conn->connection;
-            checked_ecast(connection1.close())
+            let Connection(conn1) = conn;
+            checked_ecast(conn1.close())
         })
 
 
     /// This modifies the session connection - we've decided that is in IO
     pub def setAutoCommit(autoCommit: Bool, conn: Connection[r]): Result[String, Unit] \ {IO, r}  = 
         Result.tryCatch(_ -> {
-            let connection1 = conn->connection;
-            checked_ecast(connection1.setAutoCommit(autoCommit))
+            let Connection(conn1) = conn;
+            checked_ecast(conn1.setAutoCommit(autoCommit))
         })
 
     /// Modifies DB hence IO
     pub def commit(conn: Connection[r]): Result[String, Unit] \ {IO, r} = 
         Result.tryCatch(_ -> {
-            let connection1 = conn->connection;
-            checked_ecast(connection1.commit())
+            let Connection(conn1) = conn;
+            checked_ecast(conn1.commit())
         })
 
 
     pub def createStatement(rc: Region[r1], conn: Connection[r]): Result[String, Statement[r1]] \ {IO, r, r1} = 
         Result.tryCatch(_ -> {
-            let connection1 = conn->connection;
-            let ans = checked_ecast(connection1.createStatement());
+            let Connection(conn1) = conn;
+            let ans = checked_ecast(conn1.createStatement());
             new Statement @ rc { statement = ans }
         })
 
@@ -69,8 +67,8 @@ mod BasicDb.Internal.Sql.Connection {
                                 sql: String, 
                                 conn: Connection[r]): Result[String, PreparedStatement[r1]] \ {IO, r, r1} = 
         Result.tryCatch(_ -> {
-            let connection1 = conn->connection;
-            let ans = checked_ecast(connection1.prepareStatement(sql));
+            let Connection(conn1) = conn;
+            let ans = checked_ecast(conn1.prepareStatement(sql));
             new PreparedStatement @ rc {preparedStatement = ans}
         })
 
