@@ -37,21 +37,21 @@ mod BasicDb.Internal.Sql.PreparedStatement {
     pub def clearParameters(stmt: PreparedStatement[r]): Result[String, Unit] \ IO + r =
         Result.tryCatch(_ -> {
             let preparedStatement1 = stmt->preparedStatement;
-            preparedStatement1.clearParameters()
+            checked_ecast(preparedStatement1.clearParameters())
         })
 
 
     pub def executeQuery(rc: Region[r1], stmt: PreparedStatement[r]): Result[String, ResultSet[r1]] \ {IO, r, r1} =
         Result.tryCatch(_ -> {
             let preparedStatement1 = stmt->preparedStatement;
-            let ans = preparedStatement1.executeQuery();
+            let ans = checked_ecast(preparedStatement1.executeQuery());
             new ResultSet @ rc {resultSet = ans}
         })
 
     pub def executeUpdate(stmt: PreparedStatement[r]): Result[String, Int32] \ {IO, r} =
         Result.tryCatch(_ -> {
             let preparedStatement1 = stmt->preparedStatement;
-            preparedStatement1.executeUpdate()
+            checked_ecast(preparedStatement1.executeUpdate())
         })
 
 
@@ -59,55 +59,55 @@ mod BasicDb.Internal.Sql.PreparedStatement {
     pub def setNull(ix: Int32, sqlType: Int32, stmt: PreparedStatement[r]): Result[String, Unit] \ IO + r =
         Result.tryCatch(_ -> {
             let preparedStatement1 = stmt->preparedStatement;
-            preparedStatement1.setNull(ix, sqlType)
+            checked_ecast(preparedStatement1.setNull(ix, sqlType))
         })
 
     pub def setString(ix: Int32, str: String, stmt: PreparedStatement[r]): Result[String, Unit] \ IO + r =
         Result.tryCatch(_ -> {
             let preparedStatement1 = stmt->preparedStatement;
-            preparedStatement1.setString(ix, str)
+            checked_ecast(preparedStatement1.setString(ix, str))
         })
 
     pub def setBool(ix: Int32, b: Bool, stmt: PreparedStatement[r]): Result[String, Unit] \ IO + r =
         Result.tryCatch(_ -> {
             let preparedStatement1 = stmt->preparedStatement;
-            preparedStatement1.setBoolean(ix, b)
+            checked_ecast(preparedStatement1.setBoolean(ix, b))
         })
 
     pub def setInt8(ix: Int32, n: Int8, stmt: PreparedStatement[r]): Result[String, Unit] \ IO + r =
         Result.tryCatch(_ -> {
             let preparedStatement1 = stmt->preparedStatement;
-            preparedStatement1.setByte(ix, n)
+            checked_ecast(preparedStatement1.setByte(ix, n))
         })
 
     pub def setInt16(ix: Int32, n: Int16, stmt: PreparedStatement[r]): Result[String, Unit] \ IO + r =
         Result.tryCatch(_ -> {
             let preparedStatement1 = stmt->preparedStatement;
-            preparedStatement1.setShort(ix, n)
+            checked_ecast(preparedStatement1.setShort(ix, n))
         })
 
     pub def setInt32(ix: Int32, n: Int32, stmt: PreparedStatement[r]): Result[String, Unit] \ IO + r =
         Result.tryCatch(_ -> {
             let preparedStatement1 = stmt->preparedStatement;
-            preparedStatement1.setInt(ix, n)
+            checked_ecast(preparedStatement1.setInt(ix, n))
         })
 
     pub def setInt64(ix: Int32, n: Int64, stmt: PreparedStatement[r]): Result[String, Unit] \ IO + r =
         Result.tryCatch(_ -> {
             let preparedStatement1 = stmt->preparedStatement;
-            preparedStatement1.setLong(ix, n)
+            checked_ecast(preparedStatement1.setLong(ix, n))
         })
 
     pub def setFloat32(ix: Int32, d: Float32, stmt: PreparedStatement[r]): Result[String, Unit] \ IO + r =
         Result.tryCatch(_ -> {
             let preparedStatement1 = stmt->preparedStatement;
-            preparedStatement1.setFloat(ix, d)
+            checked_ecast(preparedStatement1.setFloat(ix, d))
         })
 
     pub def setFloat64(ix: Int32, d: Float64, stmt: PreparedStatement[r]): Result[String, Unit] \ IO + r =
         Result.tryCatch(_ -> {
             let preparedStatement1 = stmt->preparedStatement;
-            preparedStatement1.setDouble(ix, d)
+            checked_ecast(preparedStatement1.setDouble(ix, d))
         })
 
 }

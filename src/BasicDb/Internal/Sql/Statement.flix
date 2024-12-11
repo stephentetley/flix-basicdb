@@ -19,9 +19,9 @@ mod BasicDb.Internal.Sql {
 
     import java.sql.{Statement => JStatement}
 
-    /// Mutable
+    /// Mutable like StringBuilder
 
-    pub struct Statement[rc: Region]{
+    pub struct Statement[_: Region]{
         statement: JStatement
     }
 
@@ -35,26 +35,26 @@ mod BasicDb.Internal.Sql.Statement {
     pub def close(stmt: Statement[r]): Result[String, Unit] \ IO + r = 
         Result.tryCatch(_ -> {
             let statement1 = stmt->statement;
-            statement1.close()
+            checked_ecast(statement1.close())
         })
 
     pub def execute(sql: String, stmt: Statement[r]): Result[String, Bool] \ {IO, r} =
         Result.tryCatch(_ -> {
             let statement1 = stmt->statement;
-            statement1.execute(sql)
+            checked_ecast(statement1.execute(sql))
         })
 
     pub def executeQuery(rc: Region[r1], sql: String, stmt: Statement[r]): Result[String, ResultSet[r1]] \ {IO, r, r1} = 
         Result.tryCatch(_ -> {
             let statement1 = stmt->statement;
-            let ans = statement1.executeQuery(sql);
+            let ans = checked_ecast(statement1.executeQuery(sql));
             new ResultSet @ rc { resultSet = ans }
         })
 
     pub def executeUpdate(sql: String, stmt: Statement[r]): Result[String, Int32] \ {IO, r} = 
         Result.tryCatch(_ -> {
             let statement1 = stmt->statement;
-            statement1.executeUpdate(sql)
+            checked_ecast(statement1.executeUpdate(sql))
         })
 
 }    

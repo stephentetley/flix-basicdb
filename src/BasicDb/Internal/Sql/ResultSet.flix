@@ -36,109 +36,109 @@ mod BasicDb.Internal.Sql.ResultSet {
     pub def close(rs: ResultSet[r]): Result[String, Unit] \ IO + r =
         Result.tryCatch(_ -> {
             let resultSet1 = rs->resultSet;
-            resultSet1.close()
+            checked_ecast(resultSet1.close())
         })
 
     pub def next(rs: ResultSet[r]): Result[String, Bool] \ IO + r =
         Result.tryCatch(_ -> {
             let resultSet1 = rs->resultSet;
-            resultSet1.next()
+            checked_ecast(resultSet1.next())
         })
 
     pub def getStringAt(ix: Int32, rs: ResultSet[r]): Result[String, String] \ IO + r =
         Result.tryCatch(_ -> {
             let resultSet1 = rs->resultSet;
-            resultSet1.getString(ix)
+            checked_ecast(resultSet1.getString(ix))
         })
 
     pub def getStringNamed(label: String, rs: ResultSet[r]): Result[String, String] \ IO + r =
         Result.tryCatch(_ -> {
             let resultSet1 = rs->resultSet;
-            resultSet1.getString(label)
+            checked_ecast(resultSet1.getString(label))
         })
 
     pub def getBoolAt(ix: Int32, rs: ResultSet[r]): Result[String, Bool] \ IO + r =
         Result.tryCatch(_ -> {
             let resultSet1 = rs->resultSet;
-            resultSet1.getBoolean(ix)
+            checked_ecast(resultSet1.getBoolean(ix))
         })
 
     pub def getBoolNamed(label: String, rs: ResultSet[r]): Result[String, Bool] \ IO + r =
         Result.tryCatch(_ -> {
             let resultSet1 = rs->resultSet;
-            resultSet1.getBoolean(label)
+            checked_ecast(resultSet1.getBoolean(label))
         })
 
     pub def getInt8At(ix: Int32, rs: ResultSet[r]): Result[String, Int8] \ IO + r =
         Result.tryCatch(_ -> {
             let resultSet1 = rs->resultSet;
-            resultSet1.getByte(ix)
+            checked_ecast(resultSet1.getByte(ix))
         })
 
     pub def getInt8Named(label: String, rs: ResultSet[r]): Result[String, Int8] \ IO + r =
         Result.tryCatch(_ -> {
             let resultSet1 = rs->resultSet;
-            resultSet1.getByte(label)
+            checked_ecast(resultSet1.getByte(label))
         })
 
     pub def getInt16At(ix: Int32, rs: ResultSet[r]): Result[String, Int16] \ IO + r =
         Result.tryCatch(_ -> {
             let resultSet1 = rs->resultSet;
-            resultSet1.getShort(ix)
+            checked_ecast(resultSet1.getShort(ix))
         })
 
     pub def getInt16Named(label: String, rs: ResultSet[r]): Result[String, Int16] \ IO + r =
         Result.tryCatch(_ -> {
             let resultSet1 = rs->resultSet;
-            resultSet1.getShort(label)
+            checked_ecast(resultSet1.getShort(label))
         })
 
     pub def getInt32At(ix: Int32, rs: ResultSet[r]): Result[String, Int32] \ IO + r =
         Result.tryCatch(_ -> {
             let resultSet1 = rs->resultSet;
-            resultSet1.getInt(ix)
+            checked_ecast(resultSet1.getInt(ix))
         })
 
     pub def getInt32Named(label: String, rs: ResultSet[r]): Result[String, Int32] \ IO + r =
         Result.tryCatch(_ -> {
             let resultSet1 = rs->resultSet;
-            resultSet1.getInt(label)
+            checked_ecast(resultSet1.getInt(label))
         })
 
     pub def getInt64At(ix: Int32, rs: ResultSet[r]): Result[String, Int64] \ IO + r =
         Result.tryCatch(_ -> {
             let resultSet1 = rs->resultSet;
-            resultSet1.getLong(ix)
+            checked_ecast(resultSet1.getLong(ix))
         })
 
     pub def getInt64Named(label: String, rs: ResultSet[r]): Result[String, Int64] \ IO + r =
         Result.tryCatch(_ -> {
             let resultSet1 = rs->resultSet;
-            resultSet1.getLong(label)
+            checked_ecast(resultSet1.getLong(label))
         })
 
     pub def getFloat32At(ix: Int32, rs: ResultSet[r]): Result[String, Float32] \ IO + r =
         Result.tryCatch(_ -> {
             let resultSet1 = rs->resultSet;
-            resultSet1.getFloat(ix)
+            checked_ecast(resultSet1.getFloat(ix))
         })
 
     pub def getFloat32Named(label: String, rs: ResultSet[r]): Result[String, Float32] \ IO + r =
         Result.tryCatch(_ -> {
             let resultSet1 = rs->resultSet;
-            resultSet1.getFloat(label)
+            checked_ecast(resultSet1.getFloat(label))
         })
 
     pub def getFloat64At(ix: Int32, rs: ResultSet[r]): Result[String, Float64] \ IO + r =
         Result.tryCatch(_ -> {
             let resultSet1 = rs->resultSet;
-            resultSet1.getDouble(ix)
+            checked_ecast(resultSet1.getDouble(ix))
         })
 
     pub def getFloat64Named(label: String, rs: ResultSet[r]): Result[String, Float64] \ IO + r =
         Result.tryCatch(_ -> {
             let resultSet1 = rs->resultSet;
-            resultSet1.getDouble(label)
+            checked_ecast(resultSet1.getDouble(label))
         })
 
 

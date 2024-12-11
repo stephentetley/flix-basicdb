@@ -38,7 +38,7 @@ mod BasicDb.Internal.Sql.Connection {
     pub def closeConnection(conn: Connection[r]): Result[String, Unit] \ IO + r = 
         Result.tryCatch(_ -> {
             let connection1 = conn->connection;
-            connection1.close()
+            checked_ecast(connection1.close())
         })
 
 
@@ -46,21 +46,21 @@ mod BasicDb.Internal.Sql.Connection {
     pub def setAutoCommit(autoCommit: Bool, conn: Connection[r]): Result[String, Unit] \ {IO, r}  = 
         Result.tryCatch(_ -> {
             let connection1 = conn->connection;
-            connection1.setAutoCommit(autoCommit)
+            checked_ecast(connection1.setAutoCommit(autoCommit))
         })
 
     /// Modifies DB hence IO
     pub def commit(conn: Connection[r]): Result[String, Unit] \ {IO, r} = 
         Result.tryCatch(_ -> {
             let connection1 = conn->connection;
-            connection1.commit()
+            checked_ecast(connection1.commit())
         })
 
 
     pub def createStatement(rc: Region[r1], conn: Connection[r]): Result[String, Statement[r1]] \ {IO, r, r1} = 
         Result.tryCatch(_ -> {
             let connection1 = conn->connection;
-            let ans = connection1.createStatement();
+            let ans = checked_ecast(connection1.createStatement());
             new Statement @ rc { statement = ans }
         })
 
@@ -70,7 +70,7 @@ mod BasicDb.Internal.Sql.Connection {
                                 conn: Connection[r]): Result[String, PreparedStatement[r1]] \ {IO, r, r1} = 
         Result.tryCatch(_ -> {
             let connection1 = conn->connection;
-            let ans = connection1.prepareStatement(sql);
+            let ans = checked_ecast(connection1.prepareStatement(sql));
             new PreparedStatement @ rc {preparedStatement = ans}
         })
 

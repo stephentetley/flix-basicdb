@@ -20,9 +20,9 @@ mod BasicDb {
     import java.sql.{Connection => JConnection}
 
 
-    pub eff DbConnection {
-        pub def currentConnection(): JConnection
-        pub def fail(msg: String): Void
+    eff DbConnection {
+        def currentConnection(): JConnection
+        def fail(msg: String): Void
     }
 
 

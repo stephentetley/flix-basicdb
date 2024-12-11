@@ -19,9 +19,9 @@ mod BasicDb {
 
     import java.sql.{PreparedStatement => JPreparedStatement}
 
-    pub eff WritePreparedStatement {
-        pub def currentPreparedStatement(): JPreparedStatement
-        pub def fail(msg: String): Void
+    eff WritePreparedStatement {
+        def currentPreparedStatement(): JPreparedStatement
+        def fail(msg: String): Void
     }
 
 }
@@ -31,8 +31,8 @@ mod BasicDb.WritePreparedStatement {
     use BasicDb.WritePreparedStatement
     import java.sql.{PreparedStatement => JPreparedStatement}
 
-    pub def run(row: JPreparedStatement, action: Unit -> a \ {WritePreparedStatement, ef}): Result[String, a] \ ef = 
-        try {
+    pub def handle(row: JPreparedStatement, action: Unit -> a \ {WritePreparedStatement, ef}): Result[String, a] \ ef = 
+        run {
             Ok(action())
         } with WritePreparedStatement {
             def currentPreparedStatement(k) = {

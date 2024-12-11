@@ -18,9 +18,9 @@ mod BasicDb {
     
     import java.sql.{ResultSet => JResultSet}
 
-    pub eff ReadRow {
-        pub def currentRow(): JResultSet
-        pub def fail(msg: String): Void
+    eff ReadRow {
+        def currentRow(): JResultSet
+        def fail(msg: String): Void
     }
 
 }
@@ -32,8 +32,8 @@ mod BasicDb.ReadRow {
 
 
 
-    pub def run(row: JResultSet, action: Unit -> a \ {ReadRow, ef}): Result[String, a] \ ef = 
-        try {
+    pub def handle(row: JResultSet, action: Unit -> a \ {ReadRow, ef}): Result[String, a] \ ef = 
+        run {
             Ok(action())
         } with ReadRow {
             def currentRow(k) = {
@@ -48,16 +48,16 @@ mod BasicDb.ReadRow {
 
     pub def optional(p: Unit -> a \ {ReadRow, ef}): Option[a] \ {ReadRow, ef} = 
         let row = BasicDb.ReadRow.currentRow();
-        match run(row, p) {
+        match handle(row, p) {
             case Ok(a)  => Some(a)
             case Err(_) => None
         }
 
     pub def alt(p: Unit -> a \ {ReadRow, ef}, q: Unit -> a \ {ReadRow, ef}): a \ {ReadRow, ef} = 
         let row = BasicDb.ReadRow.currentRow();
-        match run(row, p) {
+        match handle(row, p) {
             case Ok(a) => a
-            case Err(_) => match run(row, q) {
+            case Err(_) => match handle(row, q) {
                 case Ok(a)  => a
                 case Err(_) => BasicDb.ReadRow.fail("alt")
             }
