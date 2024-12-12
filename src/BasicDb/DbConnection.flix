@@ -18,8 +18,9 @@
 mod BasicDb {
 
     import java.sql.{Connection => JConnection}
+    use BasicDb.Internal.Sql.Connection
 
-
+    // [r: Region]
     eff DbConnection {
         def currentConnection(): JConnection
         def fail(msg: String): Void
@@ -30,8 +31,10 @@ mod BasicDb {
 
 mod BasicDb.DbConnection {
 
-
+    use BasicDb.Internal.Sql.Connection
+    
     import java.sql.{Connection => JConnection}
+    import java.sql.{Statement => JStatement}
 
     pub def withConnection(f: JConnection -> a \ IO): a \ DbConnection =
         let conn = BasicDb.DbConnection.currentConnection();
@@ -41,7 +44,7 @@ mod BasicDb.DbConnection {
         }
 
 
-    pub def closeConnection(): Unit \ DbConnection = 
+    pub def close(): Unit \ DbConnection = 
         withConnection(conn -> conn.close())
 
 
@@ -50,17 +53,30 @@ mod BasicDb.DbConnection {
     pub def setAutoCommit(autoCommit: Bool): Unit \ DbConnection = 
         withConnection(conn -> conn.setAutoCommit(autoCommit))
 
+
+    pub def getAutoCommit(): Bool \ DbConnection = 
+        withConnection(conn -> conn.getAutoCommit())
+
+    pub def getSchema(): String \ DbConnection = 
+        withConnection(conn -> conn.getSchema())
+
     // Maybe should be in IO as well as DbConnection...
     pub def commit(): Unit \ DbConnection = 
         withConnection(conn -> conn.commit())
 
 
-    // pub def createStatement(rc: Region[r1], conn: Connection[r]): Result[String, Statement[r1]] \ {IO, r, r1} = 
-    //     Result.tryCatch(_ -> {
-    //         let connection1 = conn->connection;
-    //         let ans = connection1.createStatement();
-    //         new Statement @ rc { statement = ans }
-    //     })
+    pub def execute(sql: String): Bool \ DbConnection = 
+        withConnection(conn -> 
+            let stmt = conn.createStatement();
+            stmt.execute(sql)
+        )
+
+    pub def executeUpdate(sql: String): Int32 \ DbConnection = 
+        withConnection(conn -> 
+            let stmt = conn.createStatement();
+            stmt.executeUpdate(sql)
+        )
+
 
     // /// Creates a PreparedStatement
     // pub def prepareStatement(rc: Region[r1], 

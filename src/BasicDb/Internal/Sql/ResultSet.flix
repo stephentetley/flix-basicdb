@@ -37,6 +37,7 @@ mod BasicDb.Internal.Sql.ResultSet {
             checked_ecast(rs1.close())
         })
 
+    // false if there are no more rows
     pub def next(rs: ResultSet[r]): Result[String, Bool] \ IO + r =
         Result.tryCatch(_ -> {
             let ResultSet(rs1) = rs;
