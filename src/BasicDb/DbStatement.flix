@@ -21,6 +21,11 @@ mod BasicDb {
         def close(): Unit
         def cancel(): Unit
         def execute(sql: String): Bool
+        def executeUpdate(sql: String): Int32
+        def executeLargeUpdate(sql: String): Int64
+        def enquoteLiteral(sql: String): String
+        def isClosed(): Bool
+        def isCloseOnCompletion(): Bool
     }
 
 }
@@ -64,6 +69,46 @@ mod BasicDb.DbStatement {
             } catch {
                 case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
             }
+            
+            def executeUpdate(sql, k) = try {
+                let StatementHandle(jstmt) = stmt;
+                let ans = jstmt.executeUpdate(sql);
+                k(ans)
+            } catch {
+                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
+            
+            def executeLargeUpdate(sql, k) = try {
+                let StatementHandle(jstmt) = stmt;
+                let ans = jstmt.executeLargeUpdate(sql);
+                k(ans)
+            } catch {
+                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
+
+            def enquoteLiteral(sql, k) = try {
+                let StatementHandle(jstmt) = stmt;
+                let ans = jstmt.enquoteLiteral(sql);
+                k(ans)
+            } catch {
+                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
+
+            def isClosed(k) = try {
+                let StatementHandle(jstmt) = stmt;
+                let ans = jstmt.isClosed();
+                k(ans)
+            } catch {
+                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
  
+            def isCloseOnCompletion(k) = try {
+                let StatementHandle(jstmt) = stmt;
+                let ans = jstmt.isCloseOnCompletion();
+                k(ans)
+            } catch {
+                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
+
         }
 }
