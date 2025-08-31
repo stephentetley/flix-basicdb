@@ -1,6 +1,8 @@
 # flix-basicdb
 
-A basic monadic database interface for Flix using JDBC.
+A basic database interface for Flix using JDBC.
+
+_Currently broken_ - needs updating to use effects
 
 Note:
 

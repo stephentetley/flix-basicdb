@@ -2,14 +2,14 @@
 name        = "flix-basicdb"
 description = "A basic monadic database interface for Flix using JDBC."
 version     = "0.6.0"
-flix        = "0.54.0"
+flix        = "0.61.1"
 license     = "Apache-2.0"
 authors     = ["Stephen Tetley <stephen.tetley@gmail.com>"]
 
 [dependencies]
-"github:stephentetley/charset-locale"            = "0.8.0"
-"github:stephentetley/flix-time"                 = "0.14.0"
+"github:stephentetley/charset-locale"            = "0.9.1"
+"github:stephentetley/flix-time"                 = "0.15.0"
 
 
 [mvn-dependencies]
-"org.xerial:sqlite-jdbc" = "3.46.1.0"
+"org.xerial:sqlite-jdbc" = "3.50.3.0"
