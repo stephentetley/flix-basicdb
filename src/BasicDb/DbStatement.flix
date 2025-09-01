@@ -17,12 +17,17 @@
 
 mod BasicDb {
 
+    use BasicDb.ResultSetHandle
+
     eff DbStatement {
         def close(): Unit
+        def getMaxRows(): Int32
+        def setMaxRows(maxRows: Int32): Unit
         def cancel(): Unit
         def execute(sql: String): Bool
         def executeUpdate(sql: String): Int32
         def executeLargeUpdate(sql: String): Int64
+        def getResultSet(): ResultSetHandle
         def enquoteLiteral(sql: String): String
         def isClosed(): Bool
         def isCloseOnCompletion(): Bool
@@ -34,6 +39,8 @@ mod BasicDb.DbStatement {
     
     use BasicDb.StatementHandle
     use BasicDb.StatementHandle.StatementHandle
+    use BasicDb.ResultSetHandle
+    use BasicDb.ResultSetHandle.ResultSetHandle
     use BasicDb.DbStatement
     use IoError.ErrorKind
     use IoError.IoError
@@ -49,6 +56,22 @@ mod BasicDb.DbStatement {
             def close(k) = try {
                 let StatementHandle(jstmt) = stmt;
                 jstmt.close();
+                k()
+            } catch {
+                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
+
+            def getMaxRows(k) = try {
+                let StatementHandle(jstmt) = stmt;
+                let ans = jstmt.getMaxRows();
+                k(ans)
+            } catch {
+                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
+
+            def setMaxRows(maxRows, k) = try {
+                let StatementHandle(jstmt) = stmt;
+                jstmt.setMaxRows(maxRows);
                 k()
             } catch {
                 case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -81,6 +104,14 @@ mod BasicDb.DbStatement {
             def executeLargeUpdate(sql, k) = try {
                 let StatementHandle(jstmt) = stmt;
                 let ans = jstmt.executeLargeUpdate(sql);
+                k(ans)
+            } catch {
+                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
+
+            def getResultSet(k) = try {
+                let StatementHandle(jstmt) = stmt;
+                let ans = ResultSetHandle(jstmt.getResultSet());
                 k(ans)
             } catch {
                 case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
