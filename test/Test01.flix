@@ -5,11 +5,16 @@
 
 mod Test01 {
 
+    use BasicDb.DbConnection
+    use BasicDb.DbStatement
 
     @test
     def test01(): Bool \ IO = 
         println("test01") ;
-        true
+        match BasicDb.runSQLite("dbms1.sqlite", _ -> println("todo")) {
+            case Ok(_) => true
+            case Err(_) => false
+        }
 
 
     // @test
@@ -21,6 +26,12 @@ mod Test01 {
     //         case Ok(_)  => 0
     //     }
     // }
+
+    // def action1(): Unit \ (DbConnection + IO) = 
+    //     let stmt = DbConnection.createStatement();
+    //     DbStatement.runWithIO(stmt, () -> DbStatement.execute("DROP TABLE IF EXISTS databases;"));
+    //     ()
+
 
     // def action1(rc: Region[r1]): DbMonad[r, ka, r + r1 + IO, Bool] = 
     //     BasicDb.DbMonad.executeSql!(rc, "DROP TABLE IF EXISTS dbms;")                                                   >>= _       ->

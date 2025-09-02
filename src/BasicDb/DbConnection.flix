@@ -214,5 +214,9 @@ mod BasicDb.DbConnection {
     // //         let ans = connection1.prepareStatement(sql);
     // //         new PreparedStatement @ rc {preparedStatement = ans}
     // //     })
+    
+    pub def runWithIO(conn: ConnectionHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbConnection) + {IO} = 
+        handle(conn, f)()
+
 
 }

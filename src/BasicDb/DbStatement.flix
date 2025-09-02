@@ -142,4 +142,7 @@ mod BasicDb.DbStatement {
             }
 
         }
+
+    pub def runWithIO(stmt: StatementHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbStatement) + {IO} = 
+        handle(stmt, f)()
 }
