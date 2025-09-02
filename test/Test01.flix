@@ -6,7 +6,10 @@
 mod Test01 {
 
 
-
+    @test
+    def test01(): Bool \ IO = 
+        println("test01") ;
+        true
 
 
     // @test
