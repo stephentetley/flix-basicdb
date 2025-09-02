@@ -10,15 +10,32 @@ mod Test01 {
 
     @test
     def test01(): Bool \ IO = 
-        println("test01") ;
-        match BasicDb.runSQLite("dbms1.sqlite", _ -> println("todo")) {
-            case Ok(_) => true
-            case Err(_) => false
-        }
+        FileWrite.runWithIO(_ -> 
+            let dir = FileWrite.mkTempDir("flix");
+            let path = "${dir}/test-db-12345.duckdb";
+            println(path);
+            match BasicDb.runDuckDb(path, _ -> println("todo")) {
+                case Err(err) => {println(err); Err(err) }
+                case Ok(_) => Ok(true)
+            }
+            ) == Ok(Ok(true))
+
+    @test
+    def test02(): Bool \ IO = 
+        FileWrite.runWithIO(_ -> 
+            let dir = FileWrite.mkTempDir("flix");
+            let path = "${dir}/test-db-67890.sqlite";
+            println(path);
+            match BasicDb.runSQLite(path, _ -> println("todo")) {
+                case Err(err) => {println(err); Err(err) }
+                case Ok(_) => Ok(true)
+            }
+            ) == Ok(Ok(true))        
 
 
-    // @test
-    // def test01(): Int32 \ IO = region rc {
+
+    // // @test
+    // def test01(): Int32 \ IO =
     //     let path1 = Basis.NIO.File.Path.newPath("e:/coding/flix/flix-basicdb/data/dbms1.sqlite") 
     //                     |> Result.getWithDefault(Basis.NIO.File.Path.empty());
     //     match BasicDb.DbMonad.runSQLite(rc, action1(rc), path1) {
@@ -27,7 +44,7 @@ mod Test01 {
     //     }
     // }
 
-    // def action1(): Unit \ (DbConnection + IO) = 
+    // def action1(): Unit \ IO = 
     //     let stmt = DbConnection.createStatement();
     //     DbStatement.runWithIO(stmt, () -> DbStatement.execute("DROP TABLE IF EXISTS databases;"));
     //     ()

@@ -21,12 +21,23 @@ mod BasicDb {
     use BasicDb.DbConnection
     use IoError.IoError
 
+    import java.lang.Class
+
     pub def runSQLite(path: String, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbConnection) + {IO} = 
         let url = "jdbc:sqlite:${path}";
         println(url);
+        Class.forName("org.sqlite.JDBC");
         match DbDriverManager.runWithIO(_ -> DbDriverManager.getConnection(url)) {
             case Ok(conn) => DbConnection.runWithIO(conn, f)
             case Err(err) => Err(err)
         }
-
+    
+    pub def runDuckDb(path: String, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbConnection) + {IO} = 
+        let url = "jdbc:duckdb:${path}";
+        println(url);
+        Class.forName("org.duckdb.DuckDBDriver");
+        match DbDriverManager.runWithIO(_ -> DbDriverManager.getConnection(url)) {
+            case Ok(conn) => DbConnection.runWithIO(conn, f)
+            case Err(err) => Err(err)
+        }
 }
