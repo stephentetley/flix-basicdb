@@ -19,7 +19,7 @@ mod BasicDb {
 
     use BasicDb.StatementHandle
 
-    eff DbConnection {
+    pub eff DbConnection {
         def createStatement(): StatementHandle
         def close(): Unit
         def commit(): Unit

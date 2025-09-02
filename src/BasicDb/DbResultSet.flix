@@ -17,7 +17,7 @@
 
 mod BasicDb {
 
-    eff DbResultSet {
+    pub eff DbResultSet {
         def close(): Unit
         def next(): Unit
         def wasNull(): Bool

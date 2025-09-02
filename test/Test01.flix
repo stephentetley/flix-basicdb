@@ -5,8 +5,21 @@
 
 mod Test01 {
 
+
     use BasicDb.DbConnection
     use BasicDb.DbStatement
+
+
+    def action1(): Unit -> Unit \ DbConnection +  {IO} = _ ->
+        let stmt = DbConnection.createStatement();
+        let _ = DbStatement.runWithIO(stmt, () -> { 
+            let _ = DbStatement.execute("CREATE SCHEMA IF NOT EXISTS facts;");
+            let _ = DbStatement.execute("CREATE TABLE IF NOT EXISTS facts.databasesdbms (name VARCHAR PRIMARY KEY NOT NULL, year int);");
+            ()
+            });
+        let _ = DbConnection.commit();            
+        ()
+
 
     @test
     def test01(): Bool \ IO = 
@@ -14,7 +27,7 @@ mod Test01 {
             let dir = FileWrite.mkTempDir("flix");
             let path = "${dir}/test-db-12345.duckdb";
             println(path);
-            match BasicDb.runDuckDb(path, _ -> println("todo")) {
+            match BasicDb.runDuckDb(path, _ -> action1()) {
                 case Err(err) => {println(err); Err(err) }
                 case Ok(_) => Ok(true)
             }
@@ -44,10 +57,6 @@ mod Test01 {
     //     }
     // }
 
-    // def action1(): Unit \ IO = 
-    //     let stmt = DbConnection.createStatement();
-    //     DbStatement.runWithIO(stmt, () -> DbStatement.execute("DROP TABLE IF EXISTS databases;"));
-    //     ()
 
 
     // def action1(rc: Region[r1]): DbMonad[r, ka, r + r1 + IO, Bool] = 

@@ -19,7 +19,7 @@ mod BasicDb {
 
     use BasicDb.ConnectionHandle
 
-    eff DbDriverManager {
+    pub eff DbDriverManager {
         def getConnection(url: String): ConnectionHandle
     }
 

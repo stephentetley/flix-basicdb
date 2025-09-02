@@ -19,7 +19,7 @@ mod BasicDb {
 
     use BasicDb.ResultSetHandle
 
-    eff DbPreparedStatement {
+    pub eff DbPreparedStatement {
         def close(): Unit
         def execute(): Bool
         def executeQuery(): ResultSetHandle

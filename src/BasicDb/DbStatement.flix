@@ -19,7 +19,7 @@ mod BasicDb {
 
     use BasicDb.ResultSetHandle
 
-    eff DbStatement {
+    pub eff DbStatement {
         def close(): Unit
         def getMaxRows(): Int32
         def setMaxRows(maxRows: Int32): Unit
