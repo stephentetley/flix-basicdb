@@ -39,8 +39,7 @@ mod BasicDb.DbDriverManager {
     pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbDriverManager + IO) =
         x -> run {
             Ok(f(x))
-        } with handler DbDriverManager {
-            
+        } with handler DbDriverManager {            
             
             def getConnection(url, k) = try {
                 let ans = ConnectionHandle(DriverManager.getConnection(url));

@@ -28,7 +28,11 @@ mod BasicDb {
         println(url);
         Class.forName("org.sqlite.JDBC");
         match DbDriverManager.runWithIO(_ -> DbDriverManager.getConnection(url)) {
-            case Ok(conn) => DbConnection.runWithIO(conn, f)
+            case Ok(conn) => { 
+                let ans = DbConnection.runWithIO(conn, f);
+                let _ = DbConnection.runWithIO(conn, _ -> DbConnection.close());
+                ans
+            }
             case Err(err) => Err(err)
         }
     
@@ -37,7 +41,11 @@ mod BasicDb {
         println(url);
         Class.forName("org.duckdb.DuckDBDriver");
         match DbDriverManager.runWithIO(_ -> DbDriverManager.getConnection(url)) {
-            case Ok(conn) => DbConnection.runWithIO(conn, f)
+            case Ok(conn) => { 
+                let ans = DbConnection.runWithIO(conn, f);
+                let _ = DbConnection.runWithIO(conn, _ -> DbConnection.close());
+                ans
+            }
             case Err(err) => Err(err)
         }
 }

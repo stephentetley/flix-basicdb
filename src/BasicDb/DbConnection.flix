@@ -54,112 +54,102 @@ mod BasicDb.DbConnection {
 
 
     pub def handle(conn: ConnectionHandle, f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbConnection + IO) =
-        x -> run {
-            Ok(f(x))
-        } with handler DbConnection {
+        x -> {
+            let ConnectionHandle(jconn) = conn;
+            run {
+                Ok(f(x))
+            } with handler DbConnection {
             
-            def createStatement(k) = try {
-                let ConnectionHandle(jconn) = conn;
-                let ans = StatementHandle(jconn.createStatement());
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def createStatement(k) = try {
+                    let ans = StatementHandle(jconn.createStatement());
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def close(k) = try {
-                let ConnectionHandle(jconn) = conn;
-                jconn.close();
-                k()
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def close(k) = try {
+                    jconn.close();
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def commit(k) = try {
-                let ConnectionHandle(jconn) = conn;
-                jconn.commit();
-                k()
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def commit(k) = try {
+                    jconn.commit();
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def rollback(k) = try {
-                let ConnectionHandle(jconn) = conn;
-                jconn.rollback();
-                k()
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def rollback(k) = try {
+                    jconn.rollback();
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def isValid(t, k) = try {
-                let ConnectionHandle(jconn) = conn;
-                let ans = jconn.isValid(t);
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def isValid(t, k) = try {
+                    let ans = jconn.isValid(t);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def getAutoCommit(k) = try {
-                let ConnectionHandle(jconn) = conn;
-                let ans = jconn.getAutoCommit();
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def getAutoCommit(k) = try {
+                    let ans = jconn.getAutoCommit();
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def setAutoCommit(ac, k) = try {
-                let ConnectionHandle(jconn) = conn;
-                jconn.setAutoCommit(ac);
-                k()
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def setAutoCommit(ac, k) = try {
+                    jconn.setAutoCommit(ac);
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def isReadOnly(k) = try {
-                let ConnectionHandle(jconn) = conn;
-                let ans = jconn.isReadOnly();
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def isReadOnly(k) = try {
+                    let ans = jconn.isReadOnly();
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def setReadOnly(ro, k) = try {
-                let ConnectionHandle(jconn) = conn;
-                jconn.setReadOnly(ro);
-                k()
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def setReadOnly(ro, k) = try {
+                    jconn.setReadOnly(ro);
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def getCatalog(k) = try {
-                let ConnectionHandle(jconn) = conn;
-                let ans = jconn.getCatalog();
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def getCatalog(k) = try {
+                    let ans = jconn.getCatalog();
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def setCatalog(c, k) = try {
-                let ConnectionHandle(jconn) = conn;
-                jconn.setCatalog(c);
-                k()
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def setCatalog(c, k) = try {
+                    jconn.setCatalog(c);
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def getTransactionIsolation(k) = try {
-                let ConnectionHandle(jconn) = conn;
-                let ans = jconn.getTransactionIsolation();
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def getTransactionIsolation(k) = try {
+                    let ans = jconn.getTransactionIsolation();
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def setTransactionIsolation(l, k) = try {
-                let ConnectionHandle(jconn) = conn;
-                jconn.setTransactionIsolation(l);
-                k()
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                def setTransactionIsolation(l, k) = try {
+                    jconn.setTransactionIsolation(l);
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
             }
         }
 

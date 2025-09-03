@@ -1,7 +1,7 @@
-/// This is expected to be run with the sqlite-jdbc jar in the classpath, e.g on Windows:
-/// 
-/// > java -cp "./lib/*;../bin/flix-master.jar" ca.uwaterloo.flix.Main test
-///
+// Previously this needed running with classpath pointing to the 
+// sqlite / duckdb jars, but it seems that is unnecessary now we
+// call `Class.forName("org.duckdb.DuckDBDriver");` in the run 
+// function
 
 mod Test01 {
 
@@ -10,7 +10,7 @@ mod Test01 {
     use BasicDb.DbStatement
 
 
-    def action1(): Unit -> Unit \ DbConnection +  {IO} = _ ->
+    def duckdb_action1(): Unit -> Unit \ DbConnection +  {IO} = _ ->
         let stmt = DbConnection.createStatement();
         let _ = DbStatement.runWithIO(stmt, () -> { 
             let _ = DbStatement.execute("CREATE SCHEMA IF NOT EXISTS facts;");
@@ -27,7 +27,7 @@ mod Test01 {
             let dir = FileWrite.mkTempDir("flix");
             let path = "${dir}/test-db-12345.duckdb";
             println(path);
-            match BasicDb.runDuckDb(path, _ -> action1()) {
+            match BasicDb.runDuckDb(path, _ -> duckdb_action1()) {
                 case Err(err) => {println(err); Err(err) }
                 case Ok(_) => Ok(true)
             }
