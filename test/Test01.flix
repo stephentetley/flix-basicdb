@@ -14,10 +14,18 @@ mod Test01 {
         let stmt = DbConnection.createStatement();
         let _ = DbStatement.runWithIO(stmt, () -> { 
             let _ = DbStatement.execute("CREATE SCHEMA IF NOT EXISTS facts;");
-            let _ = DbStatement.execute("CREATE TABLE IF NOT EXISTS facts.databasesdbms (name VARCHAR PRIMARY KEY NOT NULL, year int);");
+            let _ = DbStatement.execute("CREATE TABLE IF NOT EXISTS facts.databases (name VARCHAR PRIMARY KEY NOT NULL, year int);");
             ()
-            });
-        let _ = DbConnection.commit();            
+            });         
+        ()
+
+    def sqlite_action1(): Unit -> Unit \ DbConnection +  {IO} = _ ->
+        let stmt = DbConnection.createStatement();
+        let _ = DbStatement.runWithIO(stmt, () -> { 
+            let _ = DbStatement.execute("DROP TABLE IF EXISTS facts_databases;");
+            let _ = DbStatement.execute("CREATE TABLE IF NOT EXISTS facts_databases (name VARCHAR PRIMARY KEY NOT NULL, year int);");
+            ()
+            });         
         ()
 
 
@@ -27,7 +35,7 @@ mod Test01 {
             let dir = FileWrite.mkTempDir("flix");
             let path = "${dir}/test-db-12345.duckdb";
             println(path);
-            match BasicDb.runDuckDb(path, _ -> duckdb_action1()) {
+            match BasicDb.runDuckDb(path, duckdb_action1()) {
                 case Err(err) => {println(err); Err(err) }
                 case Ok(_) => Ok(true)
             }
@@ -39,13 +47,13 @@ mod Test01 {
             let dir = FileWrite.mkTempDir("flix");
             let path = "${dir}/test-db-67890.sqlite";
             println(path);
-            match BasicDb.runSQLite(path, _ -> println("todo")) {
+            match BasicDb.runSQLite(path, sqlite_action1()) {
                 case Err(err) => {println(err); Err(err) }
                 case Ok(_) => Ok(true)
             }
             ) == Ok(Ok(true))        
 
-
+}
 
     // // @test
     // def test01(): Int32 \ IO =
@@ -88,4 +96,4 @@ mod Test01 {
     //     liftAction(_ -> println(name + ", " + Int32.toString(year)))    >>= _       -> 
     //     point()
 
-}
+

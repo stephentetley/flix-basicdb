@@ -23,29 +23,30 @@ mod BasicDb {
 
     import java.lang.Class
 
-    pub def runSQLite(path: String, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbConnection) + {IO} = 
-        let url = "jdbc:sqlite:${path}";
-        println(url);
-        Class.forName("org.sqlite.JDBC");
-        match DbDriverManager.runWithIO(_ -> DbDriverManager.getConnection(url)) {
-            case Ok(conn) => { 
-                let ans = DbConnection.runWithIO(conn, f);
-                let _ = DbConnection.runWithIO(conn, _ -> DbConnection.close());
+    pub def runSQLite(path: String, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbConnection - DbDriverManager) + {IO} = 
+        Result.flatten(run {
+            let url = "jdbc:sqlite:${path}";
+            Class.forName("org.sqlite.JDBC");
+            let conn = DbDriverManager.getConnection(url);
+            run {
+                let ans = f();
+                DbConnection.close();
                 ans
-            }
-            case Err(err) => Err(err)
-        }
+            } with DbConnection.runWithIO(conn)
+        } with DbDriverManager.runWithIO)
     
-    pub def runDuckDb(path: String, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbConnection) + {IO} = 
-        let url = "jdbc:duckdb:${path}";
-        println(url);
-        Class.forName("org.duckdb.DuckDBDriver");
-        match DbDriverManager.runWithIO(_ -> DbDriverManager.getConnection(url)) {
-            case Ok(conn) => { 
-                let ans = DbConnection.runWithIO(conn, f);
-                let _ = DbConnection.runWithIO(conn, _ -> DbConnection.close());
+
+    pub def runDuckDb(path: String, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbConnection - DbDriverManager) + {IO} = 
+        Result.flatten(run {
+            let url = "jdbc:duckdb:${path}";
+            Class.forName("org.duckdb.DuckDBDriver");
+            let conn = DbDriverManager.getConnection(url);
+            run {
+                let ans = f();
+                DbConnection.close();
                 ans
-            }
-            case Err(err) => Err(err)
-        }
+            } with DbConnection.runWithIO(conn)
+        } with DbDriverManager.runWithIO)
+
+
 }
