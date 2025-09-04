@@ -34,6 +34,7 @@ mod BasicDb {
         def setDouble(paramIx: Int32, value: Float64): Unit
         def setBigDecimal(paramIx: Int32, value: BigDecimal): Unit
         def setString(paramIx: Int32, value: String): Unit
+        def clearParameters(): Unit
     }
 
 }
@@ -51,123 +52,118 @@ mod BasicDb.DbPreparedStatement {
     import java.sql.{SQLException, SQLTimeoutException, SQLFeatureNotSupportedException}
 
     pub def handle(stmt: PreparedStatementHandle, f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbPreparedStatement + IO) =
-        x -> run {
-            Ok(f(x))
-        } with handler DbPreparedStatement {
+        x -> {
+            let PreparedStatementHandle(jstmt) = stmt;
+            run {
+                Ok(f(x))
+            } with handler DbPreparedStatement {
             
-                        
-            def close(k) = try {
-                let PreparedStatementHandle(jstmt) = stmt;
-                jstmt.close();
-                k()
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def close(k) = try {                    
+                    jstmt.close();
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def execute(k) = try {
-                let PreparedStatementHandle(jstmt) = stmt;
-                let ans = jstmt.execute();
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def execute(k) = try {
+                    let ans = jstmt.execute();
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def executeQuery(k) = try {
-                let PreparedStatementHandle(jstmt) = stmt;
-                let ans = ResultSetHandle(jstmt.executeQuery());
-                k(ans)
-            } catch {
-                case ex: SQLTimeoutException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def executeQuery(k) = try {
+                    let ans = ResultSetHandle(jstmt.executeQuery());
+                    k(ans)
+                } catch {
+                    case ex: SQLTimeoutException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def executeUpdate(k) = try {
-                let PreparedStatementHandle(jstmt) = stmt;
-                let ans = jstmt.executeUpdate();
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def executeUpdate(k) = try {
+                    let ans = jstmt.executeUpdate();
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def setNull(paramIx, sqlType, k) = try {
-                let PreparedStatementHandle(jstmt) = stmt;
-                jstmt.setNull(paramIx, sqlType);
-                k()
-            } catch {
-                case ex: SQLFeatureNotSupportedException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
-            
-            def setBoolean(paramIx, value, k) = try {
-                let PreparedStatementHandle(jstmt) = stmt;
-                jstmt.setBoolean(paramIx, value);
-                k()
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
-            
-            def setByte(paramIx, value, k) = try {
-                let PreparedStatementHandle(jstmt) = stmt;
-                jstmt.setByte(paramIx, value);
-                k()
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
-            
-            def setShort(paramIx, value, k) = try {
-                let PreparedStatementHandle(jstmt) = stmt;
-                jstmt.setShort(paramIx, value);
-                k()
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
-            
-            def setInt(paramIx, value, k) = try {
-                let PreparedStatementHandle(jstmt) = stmt;
-                jstmt.setInt(paramIx, value);
-                k()
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
-            
-            def setLong(paramIx, value, k) = try {
-                let PreparedStatementHandle(jstmt) = stmt;
-                jstmt.setLong(paramIx, value);
-                k()
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
-            
-            def setFloat(paramIx, value, k) = try {
-                let PreparedStatementHandle(jstmt) = stmt;
-                jstmt.setFloat(paramIx, value);
-                k()
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
-                        
-            def setDouble(paramIx, value, k) = try {
-                let PreparedStatementHandle(jstmt) = stmt;
-                jstmt.setDouble(paramIx, value);
-                k()
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def setNull(paramIx, sqlType, k) = try {
+                    jstmt.setNull(paramIx, sqlType);
+                    k()
+                } catch {
+                    case ex: SQLFeatureNotSupportedException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+                
+                def setBoolean(paramIx, value, k) = try {
+                    jstmt.setBoolean(paramIx, value);
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+                
+                def setByte(paramIx, value, k) = try {
+                    jstmt.setByte(paramIx, value);
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+                
+                def setShort(paramIx, value, k) = try {
+                    jstmt.setShort(paramIx, value);
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+                
+                def setInt(paramIx, value, k) = try {
+                    jstmt.setInt(paramIx, value);
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+                
+                def setLong(paramIx, value, k) = try {
+                    jstmt.setLong(paramIx, value);
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+                
+                def setFloat(paramIx, value, k) = try {
+                    jstmt.setFloat(paramIx, value);
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+                            
+                def setDouble(paramIx, value, k) = try {
+                    jstmt.setDouble(paramIx, value);
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def setBigDecimal(paramIx, value, k) = try {
-                let PreparedStatementHandle(jstmt) = stmt;
-                jstmt.setBigDecimal(paramIx, value);
-                k()
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def setBigDecimal(paramIx, value, k) = try {
+                    jstmt.setBigDecimal(paramIx, value);
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def setString(paramIx, value, k) = try {
-                let PreparedStatementHandle(jstmt) = stmt;
-                jstmt.setString(paramIx, value);
-                k()
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                def setString(paramIx, value, k) = try {
+                    jstmt.setString(paramIx, value);
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+                def clearParameters(k) = try {
+                    jstmt.clearParameters();
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
             }
        }
 }

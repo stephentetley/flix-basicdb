@@ -18,15 +18,19 @@
 mod BasicDb {
 
     use BasicDb.StatementHandle
+    use BasicDb.PreparedStatementHandle
 
     pub eff DbConnection {
         def createStatement(): StatementHandle
-        def close(): Unit
+        def prepareStatement(sql: String): PreparedStatementHandle
+        def nativeSQL(sql: String): String
+        def setAutoCommit(autoCommit: Bool): Unit
+        def getAutoCommit(): Bool
         def commit(): Unit
         def rollback(): Unit
+        def close(): Unit
+        def isClosed(): Bool
         def isValid(timeout: Int32): Bool
-        def getAutoCommit(): Bool
-        def setAutoCommit(autoCommit: Bool): Unit
         def isReadOnly(): Bool
         def setReadOnly(readOnly: Bool): Unit
         def getCatalog(): String
@@ -42,6 +46,8 @@ mod BasicDb.DbConnection {
 
     use BasicDb.ConnectionHandle
     use BasicDb.ConnectionHandle.ConnectionHandle
+    use BasicDb.PreparedStatementHandle
+    use BasicDb.PreparedStatementHandle.PreparedStatementHandle
     use BasicDb.StatementHandle
     use BasicDb.StatementHandle.StatementHandle
     use BasicDb.DbConnection
@@ -67,9 +73,30 @@ mod BasicDb.DbConnection {
                     case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def close(k) = try {
-                    jconn.close();
+                def prepareStatement(sql, k) = try {
+                    let ans = PreparedStatementHandle(jconn.prepareStatement(sql));
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+                def nativeSQL(sql, k) = try {
+                    let ans = jconn.nativeSQL(sql);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+                def setAutoCommit(ac, k) = try {
+                    jconn.setAutoCommit(ac);
                     k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+                def getAutoCommit(k) = try {
+                    let ans = jconn.getAutoCommit();
+                    k(ans)
                 } catch {
                     case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
@@ -88,23 +115,23 @@ mod BasicDb.DbConnection {
                     case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def isValid(t, k) = try {
-                    let ans = jconn.isValid(t);
-                    k(ans)
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-                def getAutoCommit(k) = try {
-                    let ans = jconn.getAutoCommit();
-                    k(ans)
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-                def setAutoCommit(ac, k) = try {
-                    jconn.setAutoCommit(ac);
+                def close(k) = try {
+                    jconn.close();
                     k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+                def isClosed(k) = try {
+                    let ans = jconn.isClosed();
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+                def isValid(timeout, k) = try {
+                    let ans = jconn.isValid(timeout);
+                    k(ans)
                 } catch {
                     case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }

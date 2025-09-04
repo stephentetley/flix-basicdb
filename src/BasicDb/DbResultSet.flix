@@ -59,220 +59,195 @@ mod BasicDb.DbResultSet {
     import java.sql.SQLException
 
     pub def handle(results: ResultSetHandle, f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbResultSet + IO) =
-        x -> run {
-            Ok(f(x))
-        } with handler DbResultSet {
+        x -> {
+            let ResultSetHandle(jresults) = results;
+            run {
+                Ok(f(x))
+            } with handler DbResultSet {
             
-            
-            def close(k) = try {
-                let ResultSetHandle(jresults) = results;
-                jresults.close();
-                k()
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def close(k) = try {
+                    jresults.close();
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def next(k) = try {
-                let ResultSetHandle(jresults) = results;
-                jresults.next();
-                k()
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
-            
-            def wasNull(k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.wasNull();
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def next(k) = try {
+                    jresults.next();
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+                
+                def wasNull(k) = try {
+                    let ans = jresults.wasNull();
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def isBeforeFirst(k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.isBeforeFirst();
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def isBeforeFirst(k) = try {
+                    let ans = jresults.isBeforeFirst();
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def isAfterLast(k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.isAfterLast();
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def isAfterLast(k) = try {
+                    let ans = jresults.isAfterLast();
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def isFirst(k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.isFirst();
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def isFirst(k) = try {
+                    let ans = jresults.isFirst();
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def isLast(k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.isLast();
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def isLast(k) = try {
+                    let ans = jresults.isLast();
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def first(k) = try {
-                let ResultSetHandle(jresults) = results;
-                jresults.first();
-                k()
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def first(k) = try {
+                    jresults.first();
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def last(k) = try {
-                let ResultSetHandle(jresults) = results;
-                jresults.last();
-                k()
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def last(k) = try {
+                    jresults.last();
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def getRow(k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.getRow();
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def getRow(k) = try {
+                    let ans = jresults.getRow();
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def getStringByIndex(ix, k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.getString(ix);
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
-            
-            def getStringByName(name, k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.getString(name);
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
-            
-            def getBooleanByIndex(ix, k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.getBoolean(ix);
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
-            
-            def getBooleanByName(name, k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.getBoolean(name);
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def getStringByIndex(ix, k) = try {
+                    let ans = jresults.getString(ix);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+                
+                def getStringByName(name, k) = try {
+                    let ans = jresults.getString(name);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+                
+                def getBooleanByIndex(ix, k) = try {
+                    let ans = jresults.getBoolean(ix);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+                
+                def getBooleanByName(name, k) = try {
+                    let ans = jresults.getBoolean(name);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
 
-            def getByteByIndex(ix, k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.getByte(ix);
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def getByteByIndex(ix, k) = try {
+                    let ans = jresults.getByte(ix);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def getByteByName(name, k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.getByte(name);
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def getByteByName(name, k) = try {
+                    let ans = jresults.getByte(name);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def getShortByIndex(ix, k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.getShort(ix);
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def getShortByIndex(ix, k) = try {
+                    let ans = jresults.getShort(ix);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def getShortByName(name, k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.getShort(name);
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def getShortByName(name, k) = try {
+                    let ans = jresults.getShort(name);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def getIntByIndex(ix, k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.getInt(ix);
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def getIntByIndex(ix, k) = try {
+                    let ans = jresults.getInt(ix);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def getIntByName(name, k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.getInt(name);
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def getIntByName(name, k) = try {
+                    let ans = jresults.getInt(name);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def getLongByIndex(ix, k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.getLong(ix);
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def getLongByIndex(ix, k) = try {
+                    let ans = jresults.getLong(ix);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def getLongByName(name, k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.getLong(name);
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def getLongByName(name, k) = try {
+                    let ans = jresults.getLong(name);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def getFloatByIndex(ix, k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.getFloat(ix);
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def getFloatByIndex(ix, k) = try {
+                    let ans = jresults.getFloat(ix);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def getFloatByName(name, k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.getFloat(name);
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def getFloatByName(name, k) = try {
+                    let ans = jresults.getFloat(name);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def getDoubleByIndex(ix, k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.getDouble(ix);
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+                def getDoubleByIndex(ix, k) = try {
+                    let ans = jresults.getDouble(ix);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
 
-            def getDoubleByName(name, k) = try {
-                let ResultSetHandle(jresults) = results;
-                let ans = jresults.getDouble(name);
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                def getDoubleByName(name, k) = try {
+                    let ans = jresults.getDouble(name);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
             }
-
 
         }
 }
