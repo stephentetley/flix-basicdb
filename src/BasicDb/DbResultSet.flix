@@ -21,6 +21,7 @@ mod BasicDb {
         def close(): Unit
         def next(): Unit
         def wasNull(): Bool
+        def findColumn(label: String): Int32
         def isBeforeFirst(): Bool
         def isAfterLast(): Bool
         def isFirst(): Bool
@@ -28,6 +29,10 @@ mod BasicDb {
         def first(): Unit
         def last(): Unit
         def getRow(): Int32
+        def absolute(row: Int32): Bool
+        def relative(rows: Int32): Bool
+        def setFetchSize(rows: Int32): Unit
+        def getFetchSize(): Int32
         def getStringByIndex(ix: Int32): String
         def getStringByName(name: String): String
         def getBooleanByIndex(ix: Int32): Bool
@@ -44,6 +49,9 @@ mod BasicDb {
         def getFloatByName(name: String): Float32
         def getDoubleByIndex(ix: Int32): Float64
         def getDoubleByName(name: String): Float64
+        def getBigDecimalByIndex(ix: Int32): BigDecimal
+        def getBigDecimalByName(name: String): BigDecimal
+        
     }
 
 }
@@ -81,6 +89,13 @@ mod BasicDb.DbResultSet {
                 
                 def wasNull(k) = try {
                     let ans = jresults.wasNull();
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+                def findColumn(label, k) = try {
+                    let ans = jresults.findColumn(label);
                     k(ans)
                 } catch {
                     case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -130,6 +145,34 @@ mod BasicDb.DbResultSet {
 
                 def getRow(k) = try {
                     let ans = jresults.getRow();
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+                def absolute(row, k) = try {
+                    let ans = jresults.absolute(row);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+                
+                def relative(rows, k) = try {
+                    let ans = jresults.relative(rows);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+                def setFetchSize(rows, k) = try {
+                    jresults.setFetchSize(rows);
+                    k()
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+                
+                def getFetchSize(k) = try {
+                    let ans = jresults.getFetchSize();
                     k(ans)
                 } catch {
                     case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -243,6 +286,20 @@ mod BasicDb.DbResultSet {
 
                 def getDoubleByName(name, k) = try {
                     let ans = jresults.getDouble(name);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+                def getBigDecimalByIndex(ix, k) = try {
+                    let ans = jresults.getBigDecimal(ix);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+                def getBigDecimalByName(name, k) = try {
+                    let ans = jresults.getBigDecimal(name);
                     k(ans)
                 } catch {
                     case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
