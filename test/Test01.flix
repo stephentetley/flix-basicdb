@@ -37,7 +37,7 @@ mod Test01 {
 
      def setter(name: String, year: Int32): Unit \ PreparedStatementSetter = {
         PreparedStatementSetter.setString(1, name);
-        PreparedStatementSetter.setInt(2, year)
+        PreparedStatementSetter.setInt32(2, year)
      }
 
     def sqlite_action1(): Unit -> Unit \ DbConnection +  {IO} = _ ->
