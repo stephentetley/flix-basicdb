@@ -11,16 +11,34 @@ mod Test01 {
 
     use BasicDb.DbConnection
     use BasicDb.DbStatement
+    use BasicDb.DbPreparedStatement
+    use BasicDb.PreparedStatementSetter
 
 
     def duckdb_action1(): Unit -> Unit \ DbConnection +  {IO} = _ ->
         let stmt = DbConnection.createStatement();
-        let _ = DbStatement.runWithIO(stmt, () -> { 
-            let _ = DbStatement.execute("CREATE SCHEMA IF NOT EXISTS facts;");
-            let _ = DbStatement.execute("CREATE TABLE IF NOT EXISTS facts.databases (name VARCHAR PRIMARY KEY NOT NULL, year int);");
-            ()
-            });         
+        let _ = run { 
+            DbStatement.execute("CREATE SCHEMA IF NOT EXISTS facts;");
+            DbStatement.execute("CREATE TABLE IF NOT EXISTS facts.databases (name VARCHAR NOT NULL, year INTEGER, PRIMARY KEY(name));");
+            DbStatement.execute("DELETE FROM facts.databases;")
+        } with DbStatement.runWithIO(stmt);
+        let pstmt = DbConnection.prepareStatement("INSERT INTO facts.databases (name, year) VALUES (?,?);");
+        let _ = run {
+            println("here...");
+            let _ = run {setter("SQLite", 2000)} with PreparedStatementSetter.runWithIO(pstmt);
+            DbPreparedStatement.addBatch();
+            let _ = run {setter("DuckDB", 2019)} with PreparedStatementSetter.runWithIO(pstmt);
+            DbPreparedStatement.addBatch();
+            DbPreparedStatement.executeBatch();
+            DbPreparedStatement.close()
+        }  with DbPreparedStatement.runWithIO(pstmt);
         ()
+
+
+     def setter(name: String, year: Int32): Unit \ PreparedStatementSetter = {
+        PreparedStatementSetter.setString(1, name);
+        PreparedStatementSetter.setInt(2, year)
+     }
 
     def sqlite_action1(): Unit -> Unit \ DbConnection +  {IO} = _ ->
         let stmt = DbConnection.createStatement();
