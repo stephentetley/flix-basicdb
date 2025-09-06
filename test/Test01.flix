@@ -12,19 +12,21 @@ mod Test01 {
     use BasicDb.DbConnection
     use BasicDb.DbStatement
     use BasicDb.DbPreparedStatement
+    use BasicDb.DbResultSet
     use BasicDb.PreparedStatementSetter
+    use BasicDb.RowReader
 
 
     def duckdb_action1(): Unit -> Unit \ DbConnection +  {IO} = _ ->
-        let stmt = DbConnection.createStatement();
+        let stmt1 = DbConnection.createStatement();
         let _ = run { 
             DbStatement.execute("CREATE SCHEMA IF NOT EXISTS facts;");
             DbStatement.execute("CREATE TABLE IF NOT EXISTS facts.databases (name VARCHAR NOT NULL, year INTEGER, PRIMARY KEY(name));");
-            DbStatement.execute("DELETE FROM facts.databases;")
-        } with DbStatement.runWithIO(stmt);
+            DbStatement.execute("DELETE FROM facts.databases;");
+            DbStatement.close()
+        } with DbStatement.runWithIO(stmt1);
         let pstmt = DbConnection.prepareStatement("INSERT INTO facts.databases (name, year) VALUES (?,?);");
         let _ = run {
-            println("here...");
             let _ = run {setter("SQLite", 2000)} with PreparedStatementSetter.runWithIO(pstmt);
             DbPreparedStatement.addBatch();
             let _ = run {setter("DuckDB", 2019)} with PreparedStatementSetter.runWithIO(pstmt);
@@ -32,12 +34,36 @@ mod Test01 {
             DbPreparedStatement.executeBatch();
             DbPreparedStatement.close()
         }  with DbPreparedStatement.runWithIO(pstmt);
+        let stmt2 = DbConnection.createStatement();
+        let _ = run { 
+            let rs = DbStatement.executeQuery("SELECT * FROM facts.databases;");
+            let _ = run {
+                def loop() = {
+                    let more = DbResultSet.next();
+                    if (more) {
+                        match run {reader()} with RowReader.runWithIO(rs) {
+                            case Ok((n, y)) => println("db: ${n}, year: ${y}")
+                            case Err(err) => println("error: ${err}")
+                        };
+                        loop()
+                    } else ()
+                };
+                loop()
+            } with DbResultSet.runWithIO(rs);
+            DbStatement.close()
+        } with DbStatement.runWithIO(stmt2);
         ()
 
 
      def setter(name: String, year: Int32): Unit \ PreparedStatementSetter = {
-        PreparedStatementSetter.setString(1, name);
-        PreparedStatementSetter.setInt32(2, year)
+        PreparedStatementSetter.setString(0, name);
+        PreparedStatementSetter.setInt32(1, year)
+     }
+
+     def reader(): (String, Int32) \ RowReader = {
+        let name = RowReader.getStringByName("name");
+        let year = RowReader.getInt32ByName("year");
+        (name, year)
      }
 
     def sqlite_action1(): Unit -> Unit \ DbConnection +  {IO} = _ ->
@@ -76,45 +102,4 @@ mod Test01 {
 
 }
 
-    // // @test
-    // def test01(): Int32 \ IO =
-    //     let path1 = Basis.NIO.File.Path.newPath("e:/coding/flix/flix-basicdb/data/dbms1.sqlite") 
-    //                     |> Result.getWithDefault(Basis.NIO.File.Path.empty());
-    //     match BasicDb.DbMonad.runSQLite(rc, action1(rc), path1) {
-    //         case Err(e) => {println("Error: ${e}"); 1}
-    //         case Ok(_)  => 0
-    //     }
-    // }
-
-
-
-    // def action1(rc: Region[r1]): DbMonad[r, ka, r + r1 + IO, Bool] = 
-    //     BasicDb.DbMonad.executeSql!(rc, "DROP TABLE IF EXISTS dbms;")                                                   >>= _       ->
-    //     BasicDb.DbMonad.executeSql!(rc, "CREATE TABLE IF NOT EXISTS dbms (name text PRIMARY KEY NOT NULL, year int);")  >>= _       ->
-    //     BasicDb.DbMonad.prepareStatement!(rc, "INSERT INTO dbms(name, year) VALUES(?,?)")                           >>= pstmt   ->
-    //     BasicDb.DbMonad.setAutoCommit!(false)                                                                       >>= _       ->
-    //     BasicDb.DbMonad.psExecuteUpdate!(pstmt, setPStmt!("SQLite", 2000))                                          >>= _       ->
-    //     BasicDb.DbMonad.psExecuteUpdate!(pstmt, setPStmt!("DuckDB", 2019))                                          >>= _       ->
-    //     BasicDb.DbMonad.psExecuteUpdate!(pstmt, setPStmt!("MonetDB", 2002))                                         >>= _       ->
-    //     BasicDb.DbMonad.psExecuteUpdate!(pstmt, setPStmt!("PostgresSQL", 1996))                                     >>= _       ->
-    //     BasicDb.DbMonad.commit!()                                                                                   >>= _       ->
-    //     BasicDb.DbMonad.createStatement!(rc)                                                                        >>= stmt    ->
-    //     BasicDb.DbMonad.executeQuery!(rc, "SELECT name, year FROM dbms ORDER BY year", stmt)                        >>= rs      -> 
-    //     BasicDb.DbMonad.foreachRow(rsEvalRow(), rs)                                                                 >>= _       ->
-    //     BasicDb.DbMonad.rsClose!(rs)                                                                                >>= _       ->
-    //     point(true)
-
-    // def setPStmt!(name: String, year: Int32): PreparedStatementSetter[r, ka, r, Unit] = 
-    //     use BasicDb.PreparedStatementSetter.{putStringAt!, putInt32At!};
-    //     putStringAt!(0,  name)  >>= _ -> 
-    //     putInt32At!( 1,  year)  >>= _ -> 
-    //     point()
-
-    // def rsEvalRow(): RowEvaluator[r, ka, r + IO, Unit] = 
-    //     use BasicDb.RowEvaluator.{getStringAt, getInt32At, liftAction};
-    //     getStringAt(0)                                                  >>= name    -> 
-    //     getInt32At(1)                                                   >>= year    ->
-    //     liftAction(_ -> println(name + ", " + Int32.toString(year)))    >>= _       -> 
-    //     point()
-
-
+    

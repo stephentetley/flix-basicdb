@@ -57,7 +57,7 @@ mod BasicDb.PreparedStatementSetter {
             
 
                 def setNull(paramIx, sqlType, k) = try {
-                    jstmt.setNull(paramIx - 1, sqlType);
+                    jstmt.setNull(paramIx + 1, sqlType);
                     k()
                 } catch {
                     case ex: SQLFeatureNotSupportedException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -65,63 +65,63 @@ mod BasicDb.PreparedStatementSetter {
                 }
                 
                 def setBool(paramIx, value, k) = try {
-                    jstmt.setBoolean(paramIx - 1, value);
+                    jstmt.setBoolean(paramIx + 1, value);
                     k()
                 } catch {
                     case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
                 
                 def setInt8(paramIx, value, k) = try {
-                    jstmt.setByte(paramIx - 1, value);
+                    jstmt.setByte(paramIx + 1, value);
                     k()
                 } catch {
                     case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
                 
                 def setInt16(paramIx, value, k) = try {
-                    jstmt.setShort(paramIx - 1, value);
+                    jstmt.setShort(paramIx + 1, value);
                     k()
                 } catch {
                     case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
                 
                 def setInt32(paramIx, value, k) = try {
-                    jstmt.setInt(paramIx - 1, value);
+                    jstmt.setInt(paramIx + 1, value);
                     k()
                 } catch {
                     case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
                 
                 def setInt64(paramIx, value, k) = try {
-                    jstmt.setLong(paramIx - 1, value);
+                    jstmt.setLong(paramIx + 1, value);
                     k()
                 } catch {
                     case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
                 
                 def setFloat32(paramIx, value, k) = try {
-                    jstmt.setFloat(paramIx - 1, value);
+                    jstmt.setFloat(paramIx + 1, value);
                     k()
                 } catch {
                     case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
                             
                 def setFloat64(paramIx, value, k) = try {
-                    jstmt.setDouble(paramIx - 1, value);
+                    jstmt.setDouble(paramIx + 1, value);
                     k()
                 } catch {
                     case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
                 def setBigDecimal(paramIx, value, k) = try {
-                    jstmt.setBigDecimal(paramIx - 1, value);
+                    jstmt.setBigDecimal(paramIx + 1, value);
                     k()
                 } catch {
                     case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
                 def setString(paramIx, value, k) = try {
-                    jstmt.setString(paramIx - 1, value);
+                    jstmt.setString(paramIx + 1, value);
                     k()
                 } catch {
                     case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))

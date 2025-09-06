@@ -27,6 +27,7 @@ mod BasicDb {
         def execute(sql: String): Bool
         def executeUpdate(sql: String): Int32
         def executeLargeUpdate(sql: String): Int64
+        def executeQuery(sql: String): ResultSetHandle
         def getResultSet(): ResultSetHandle
         def enquoteLiteral(sql: String): String
         def isClosed(): Bool
@@ -98,6 +99,13 @@ mod BasicDb.DbStatement {
                 
                 def executeLargeUpdate(sql, k) = try {
                     let ans = jstmt.executeLargeUpdate(sql);
+                    k(ans)
+                } catch {
+                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+                
+                def executeQuery(sql, k) = try {
+                    let ans = ResultSetHandle(jstmt.executeQuery(sql));
                     k(ans)
                 } catch {
                     case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
