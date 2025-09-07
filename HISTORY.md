@@ -1,5 +1,5 @@
 ### v0.6.0
-   Re-implemented to work use effects.
+   Re-implemented to use effects.
 
 ### v0.5.0
    Updated dependencies.

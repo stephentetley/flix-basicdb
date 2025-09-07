@@ -6,7 +6,7 @@
 // > java --enable-native-access=ALL-UNNAMED -jar ../bin/flix.0.61.0.jar test
 
 
-mod Test01 {
+mod TestDuckDB {
 
 
     use BasicDb.DbConnection
@@ -66,15 +66,6 @@ mod Test01 {
         (name, year)
      }
 
-    def sqlite_action1(): Unit -> Unit \ DbConnection +  {IO} = _ ->
-        let stmt = DbConnection.createStatement();
-        let _ = DbStatement.runWithIO(stmt, () -> { 
-            let _ = DbStatement.execute("DROP TABLE IF EXISTS facts_databases;");
-            let _ = DbStatement.execute("CREATE TABLE IF NOT EXISTS facts_databases (name VARCHAR PRIMARY KEY NOT NULL, year int);");
-            ()
-            });         
-        ()
-
 
     @test
     def test01(): Bool \ IO = 
@@ -88,17 +79,6 @@ mod Test01 {
             }
             ) == Ok(Ok(true))
 
-    @test
-    def test02(): Bool \ IO = 
-        FileWrite.runWithIO(_ -> 
-            let dir = FileWrite.mkTempDir("flix");
-            let path = "${dir}/test-db-67890.sqlite";
-            println(path);
-            match BasicDb.runSQLite(path, sqlite_action1()) {
-                case Err(err) => {println(err); Err(err) }
-                case Ok(_) => Ok(true)
-            }
-            ) == Ok(Ok(true))        
 
 }
 

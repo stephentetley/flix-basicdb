@@ -2,11 +2,13 @@
 
 A basic database interface for Flix using JDBC.
 
-_Currently broken_ - needs updating to use effects
+September 2025 - flix-basicdb has been rewritten to use 
+effects. However the APIs are very rough and large changes
+are expected.
 
 Note:
 
-For development and testing SQLite JDBC jar is included as a 
-dependency. Other JDBC connections should work (for instance 
-DuckDB) but expect to supply Java's classpath with a path to 
-the respective jar when invoking Flix to run your program.
+For development and testing SQLite JDBC and DuckDB jars are 
+included as dependencies. Other JDBC connections should 
+work but may require some configuration (e.g. with command 
+line flags) to work.
