@@ -17,7 +17,7 @@
 
 mod BasicDb {
 
-    use BasicDb.ResultSetHandle
+
 
     // Note zero-indexed unlike JDBC which is one-indexed
 

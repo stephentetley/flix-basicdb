@@ -1,3 +1,6 @@
+### v0.7.0
+   Added DuckDBAppender.
+
 ### v0.6.0
    Re-implemented to use effects.
 
