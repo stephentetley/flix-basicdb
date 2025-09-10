@@ -180,57 +180,7 @@ mod BasicDb.DbConnection {
             }
         }
 
-    // pub def withConnection(f: JConnection -> a \ IO): a \ DbConnection =
-    //     let conn = BasicDb.DbConnection.currentConnection();
-    //     match Result.tryCatch(_ -> {unsafe f(conn)}) {
-    //         case Ok(a)    => a
-    //         case Err(msg) => BasicDb.DbConnection.fail(msg)
-    //     }
 
-
-    // pub def close(): Unit \ DbConnection = 
-    //     withConnection(conn -> conn.close())
-
-
-
-    // /// This modifies the session connection
-    // pub def setAutoCommit(autoCommit: Bool): Unit \ DbConnection = 
-    //     withConnection(conn -> conn.setAutoCommit(autoCommit))
-
-
-    // pub def getAutoCommit(): Bool \ DbConnection = 
-    //     withConnection(conn -> conn.getAutoCommit())
-
-    // pub def getSchema(): String \ DbConnection = 
-    //     withConnection(conn -> conn.getSchema())
-
-    // // Maybe should be in IO as well as DbConnection...
-    // pub def commit(): Unit \ DbConnection = 
-    //     withConnection(conn -> conn.commit())
-
-
-    // pub def execute(sql: String): Bool \ DbConnection = 
-    //     withConnection(conn -> 
-    //         let stmt = conn.createStatement();
-    //         stmt.execute(sql)
-    //     )
-
-    // pub def executeUpdate(sql: String): Int32 \ DbConnection = 
-    //     withConnection(conn -> 
-    //         let stmt = conn.createStatement();
-    //         stmt.executeUpdate(sql)
-    //     )
-
-
-    // // /// Creates a PreparedStatement
-    // // pub def prepareStatement(rc: Region[r1], 
-    // //                             sql: String, 
-    // //                             conn: Connection[r]): Result[String, PreparedStatement[r1]] \ {IO, r, r1} = 
-    // //     Result.tryCatch(_ -> {
-    // //         let connection1 = conn->connection;
-    // //         let ans = connection1.prepareStatement(sql);
-    // //         new PreparedStatement @ rc {preparedStatement = ans}
-    // //     })
     
     pub def runWithIO(conn: ConnectionHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbConnection) + {IO} = 
         handle(conn, f)()
