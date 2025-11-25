@@ -1,5 +1,6 @@
 ### v0.7.0
    Added DuckDBAppender.
+   Updates to work with Flix 0.67.0.
 
 ### v0.6.0
    Re-implemented to use effects.

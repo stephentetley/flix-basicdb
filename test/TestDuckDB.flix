@@ -20,9 +20,9 @@ mod TestDuckDB {
     def duckdb_action1(): Unit -> Unit \ DbConnection +  {IO} = _ ->
         let stmt1 = DbConnection.createStatement();
         let _ = run { 
-            DbStatement.execute("CREATE SCHEMA IF NOT EXISTS facts;");
-            DbStatement.execute("CREATE TABLE IF NOT EXISTS facts.databases (name VARCHAR NOT NULL, year INTEGER, PRIMARY KEY(name));");
-            DbStatement.execute("DELETE FROM facts.databases;");
+            discard DbStatement.execute("CREATE SCHEMA IF NOT EXISTS facts;");
+            discard DbStatement.execute("CREATE TABLE IF NOT EXISTS facts.databases (name VARCHAR NOT NULL, year INTEGER, PRIMARY KEY(name));");
+            discard DbStatement.execute("DELETE FROM facts.databases;");
             DbStatement.close()
         } with DbStatement.runWithIO(stmt1);
         let pstmt = DbConnection.prepareStatement("INSERT INTO facts.databases (name, year) VALUES (?,?);");
