@@ -15,9 +15,16 @@
  */
 
 
-mod BasicDb {
 
-    use BasicDb.ResultSetHandle
+pub mod BasicDb.DbStatement {
+    
+    use BasicDb.DbResultSet.ResultSetHandle
+    use BasicDb.DbStatement
+    use IoError.ErrorKind
+    use IoError.IoError
+
+    import java.sql.SQLException
+    import java.sql.{Statement => JStatement}
 
     pub eff DbStatement {
         def close(): Unit
@@ -33,24 +40,12 @@ mod BasicDb {
         def isClosed(): Bool
         def isCloseOnCompletion(): Bool
     }
-
-}
-
-mod BasicDb.DbStatement {
     
-    use BasicDb.StatementHandle
-    use BasicDb.StatementHandle.StatementHandle
-    use BasicDb.ResultSetHandle
-    use BasicDb.ResultSetHandle.ResultSetHandle
-    use BasicDb.DbStatement
-    use IoError.ErrorKind
-    use IoError.IoError
-
-    import java.sql.SQLException
+    pub enum StatementHandle (JStatement)
 
     pub def handle(stmt: StatementHandle, f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbStatement + IO) =
         x -> {
-            let StatementHandle(jstmt) = stmt; 
+            let StatementHandle.StatementHandle(jstmt) = stmt; 
             run {
                 Ok(f(x))
             } with handler DbStatement {
@@ -105,14 +100,14 @@ mod BasicDb.DbStatement {
                 }
                 
                 def executeQuery(sql, k) = try {
-                    let ans = ResultSetHandle(jstmt.executeQuery(sql));
+                    let ans = ResultSetHandle.ResultSetHandle(jstmt.executeQuery(sql));
                     k(ans)
                 } catch {
                     case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
                 def getResultSet(k) = try {
-                    let ans = ResultSetHandle(jstmt.getResultSet());
+                    let ans = ResultSetHandle.ResultSetHandle(jstmt.getResultSet());
                     k(ans)
                 } catch {
                     case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))

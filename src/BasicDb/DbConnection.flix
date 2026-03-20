@@ -15,10 +15,21 @@
  */
 
 
-mod BasicDb {
+pub mod BasicDb.DbConnection {
 
-    use BasicDb.StatementHandle
-    use BasicDb.PreparedStatementHandle
+    use BasicDb.PreparedStatementSetter.PreparedStatementHandle
+    use BasicDb.DbStatement.StatementHandle
+    use BasicDb.DbStatement.StatementHandle.StatementHandle
+    use BasicDb.DbConnection
+    use IoError.ErrorKind
+    use IoError.IoError
+    
+    import java.sql.{Connection => JConnection}
+    import java.sql.{Statement => JStatement}
+    import java.sql.SQLException
+
+    import java.sql.{Connection => JConnection}
+
 
     pub eff DbConnection {
         def createStatement(): StatementHandle
@@ -39,29 +50,11 @@ mod BasicDb {
         def setTransactionIsolation(level: Int32): Unit
     }
 
-
-}
-
-mod BasicDb.DbConnection {
-
-    use BasicDb.ConnectionHandle
-    use BasicDb.ConnectionHandle.ConnectionHandle
-    use BasicDb.PreparedStatementHandle
-    use BasicDb.PreparedStatementHandle.PreparedStatementHandle
-    use BasicDb.StatementHandle
-    use BasicDb.StatementHandle.StatementHandle
-    use BasicDb.DbConnection
-    use IoError.ErrorKind
-    use IoError.IoError
-    
-    import java.sql.{Connection => JConnection}
-    import java.sql.{Statement => JStatement}
-    import java.sql.SQLException
-
+    pub enum ConnectionHandle (JConnection)
 
     pub def handle(conn: ConnectionHandle, f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbConnection + IO) =
         x -> {
-            let ConnectionHandle(jconn) = conn;
+            let ConnectionHandle.ConnectionHandle(jconn) = conn;
             run {
                 Ok(f(x))
             } with handler DbConnection {
@@ -74,7 +67,7 @@ mod BasicDb.DbConnection {
                 }
 
                 def prepareStatement(sql, k) = try {
-                    let ans = PreparedStatementHandle(jconn.prepareStatement(sql));
+                    let ans = PreparedStatementHandle.PreparedStatementHandle(jconn.prepareStatement(sql));
                     k(ans)
                 } catch {
                     case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))

@@ -15,26 +15,22 @@
  */
 
 
-mod BasicDb {
 
-    use BasicDb.ConnectionHandle
-
-    pub eff DbDriverManager {
-        def getConnection(url: String): ConnectionHandle
-    }
-
-}
-
-mod BasicDb.DbDriverManager {
+pub mod BasicDb.DbDriverManager {
     
 
     use BasicDb.DbDriverManager
-    use BasicDb.ConnectionHandle.ConnectionHandle
+    use BasicDb.DbConnection.ConnectionHandle
+    use BasicDb.DbConnection.ConnectionHandle.{ConnectionHandle}
     use IoError.ErrorKind
     use IoError.IoError
 
     import java.sql.SQLException
     import java.sql.DriverManager
+
+    pub eff DbDriverManager {
+        def getConnection(url: String): ConnectionHandle
+    }
 
     pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbDriverManager + IO) =
         x -> run {

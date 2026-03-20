@@ -15,7 +15,16 @@
  */
 
 
-mod BasicDb {
+
+pub mod BasicDb.DbResultSet {
+    
+
+    use BasicDb.DbResultSet
+    use IoError.ErrorKind
+    use IoError.IoError
+
+    import java.sql.SQLException
+    import java.sql.{ResultSet => JResultSet}
 
     pub eff DbResultSet {
         def close(): Unit
@@ -35,21 +44,12 @@ mod BasicDb {
         def getFetchSize(): Int32
     }
 
-}
-
-mod BasicDb.DbResultSet {
     
-    use BasicDb.ResultSetHandle
-    use BasicDb.ResultSetHandle.ResultSetHandle
-    use BasicDb.DbResultSet
-    use IoError.ErrorKind
-    use IoError.IoError
-
-    import java.sql.SQLException
+    pub enum ResultSetHandle (JResultSet)
 
     pub def handle(results: ResultSetHandle, f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbResultSet + IO) =
         x -> {
-            let ResultSetHandle(jresults) = results;
+            let ResultSetHandle.ResultSetHandle(jresults) = results;
             run {
                 Ok(f(x))
             } with handler DbResultSet {

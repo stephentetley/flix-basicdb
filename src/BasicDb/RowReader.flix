@@ -15,7 +15,15 @@
  */
 
 
-mod BasicDb {
+
+pub mod BasicDb.RowReader {
+    
+    use BasicDb.DbResultSet.ResultSetHandle
+    use IoError.ErrorKind
+    use IoError.IoError
+
+    import java.sql.SQLException
+    import java.sql.{ResultSet => JResultSet}
 
     pub eff RowReader {
         def getStringByIndex(ix: Int32): String
@@ -39,21 +47,12 @@ mod BasicDb {
         
     }
 
-}
 
-mod BasicDb.RowReader {
-    
-    use BasicDb.ResultSetHandle
-    use BasicDb.ResultSetHandle.ResultSetHandle
-    use BasicDb.RowReader
-    use IoError.ErrorKind
-    use IoError.IoError
 
-    import java.sql.SQLException
 
     pub def handle(results: ResultSetHandle, f: a -> b \ ef): a -> Result[IoError, b] \ (ef - RowReader + IO) =
         x -> {
-            let ResultSetHandle(jresults) = results;
+            let ResultSetHandle.ResultSetHandle(jresults) = results;
             run {
                 Ok(f(x))
             } with handler RowReader {

@@ -15,11 +15,17 @@
  */
 
 
-mod BasicDb {
 
+pub mod BasicDb.PreparedStatementSetter {
 
+    use BasicDb.DbResultSet.ResultSetHandle
+    use BasicDb.PreparedStatementSetter
+    use IoError.ErrorKind
+    use IoError.IoError
 
-    // Note zero-indexed unlike JDBC which is one-indexed
+    import java.sql.{SQLException, SQLTimeoutException, SQLFeatureNotSupportedException}
+
+    import java.sql.{PreparedStatement => JPreparedStatement}
 
     pub eff PreparedStatementSetter {
         def setNull(paramIx: Int32, sqlType: Int32): Unit
@@ -34,23 +40,12 @@ mod BasicDb {
         def setString(paramIx: Int32, value: String): Unit
     }
 
-}
+    pub enum PreparedStatementHandle (JPreparedStatement)
 
-mod BasicDb.PreparedStatementSetter {
-    
-    use BasicDb.PreparedStatementHandle
-    use BasicDb.PreparedStatementHandle.PreparedStatementHandle
-    use BasicDb.ResultSetHandle
-    use BasicDb.ResultSetHandle.ResultSetHandle
-    use BasicDb.PreparedStatementSetter
-    use IoError.ErrorKind
-    use IoError.IoError
-
-    import java.sql.{SQLException, SQLTimeoutException, SQLFeatureNotSupportedException}
 
     pub def handle(stmt: PreparedStatementHandle, f: a -> b \ ef): a -> Result[IoError, b] \ (ef - PreparedStatementSetter + IO) =
         x -> {
-            let PreparedStatementHandle(jstmt) = stmt;
+            let PreparedStatementHandle.PreparedStatementHandle(jstmt) = stmt;
             run {
                 Ok(f(x))
             } with handler PreparedStatementSetter {

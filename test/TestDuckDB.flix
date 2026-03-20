@@ -10,12 +10,12 @@ mod TestDuckDB {
 
     use Assert.{assertEq}
 
-    use BasicDb.DbConnection
-    use BasicDb.DbStatement
-    use BasicDb.DbPreparedStatement
-    use BasicDb.DbResultSet
-    use BasicDb.PreparedStatementSetter
-    use BasicDb.RowReader
+    use BasicDb.DbConnection.DbConnection
+    use BasicDb.DbStatement.DbStatement
+    use BasicDb.DbPreparedStatement.DbPreparedStatement
+    use BasicDb.DbResultSet.DbResultSet
+    use BasicDb.PreparedStatementSetter.PreparedStatementSetter
+    use BasicDb.RowReader.RowReader
 
 
     def duckdb_action1(): Unit -> Unit \ DbConnection +  {IO} = _ ->
@@ -25,16 +25,16 @@ mod TestDuckDB {
             discard DbStatement.execute("CREATE TABLE IF NOT EXISTS facts.databases (name VARCHAR NOT NULL, year INTEGER, PRIMARY KEY(name));");
             discard DbStatement.execute("DELETE FROM facts.databases;");
             DbStatement.close()
-        } with DbStatement.runWithIO(stmt1);
+        } with BasicDb.DbStatement.runWithIO(stmt1);
         let pstmt = DbConnection.prepareStatement("INSERT INTO facts.databases (name, year) VALUES (?,?);");
         let _ = run {
-            let _ = run {setter("SQLite", 2000)} with PreparedStatementSetter.runWithIO(pstmt);
+            let _ = run {setter("SQLite", 2000)} with BasicDb.PreparedStatementSetter.runWithIO(pstmt);
             DbPreparedStatement.addBatch();
-            let _ = run {setter("DuckDB", 2019)} with PreparedStatementSetter.runWithIO(pstmt);
+            let _ = run {setter("DuckDB", 2019)} with BasicDb.PreparedStatementSetter.runWithIO(pstmt);
             DbPreparedStatement.addBatch();
             DbPreparedStatement.executeBatch();
             DbPreparedStatement.close()
-        }  with DbPreparedStatement.runWithIO(pstmt);
+        }  with BasicDb.DbPreparedStatement.runWithIO(pstmt);
         let stmt2 = DbConnection.createStatement();
         let _ = run { 
             let rs = DbStatement.executeQuery("SELECT * FROM facts.databases;");
@@ -42,7 +42,7 @@ mod TestDuckDB {
                 def loop() = {
                     let more = DbResultSet.next();
                     if (more) {
-                        match run {reader()} with RowReader.runWithIO(rs) {
+                        match run {reader()} with BasicDb.RowReader.runWithIO(rs) {
                             case Ok((n, y)) => println("db: ${n}, year: ${y}")
                             case Err(err) => println("error: ${err}")
                         };
@@ -50,9 +50,9 @@ mod TestDuckDB {
                     } else ()
                 };
                 loop()
-            } with DbResultSet.runWithIO(rs);
+            } with BasicDb.DbResultSet.runWithIO(rs);
             DbStatement.close()
-        } with DbStatement.runWithIO(stmt2);
+        } with BasicDb.DbStatement.runWithIO(stmt2);
         ()
 
 

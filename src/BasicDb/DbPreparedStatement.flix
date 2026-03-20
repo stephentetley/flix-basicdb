@@ -15,9 +15,18 @@
  */
 
 
-mod BasicDb {
 
+pub mod BasicDb.DbPreparedStatement {
+    
     use BasicDb.PreparedStatementSetter
+    use BasicDb.PreparedStatementSetter.PreparedStatementHandle
+    use BasicDb.DbResultSet.ResultSetHandle
+    use BasicDb.DbPreparedStatement
+    use BasicDb.PreparedStatementSetter
+    use IoError.ErrorKind
+    use IoError.IoError
+
+    import java.sql.{SQLException, SQLTimeoutException, SQLFeatureNotSupportedException}
 
     pub eff DbPreparedStatement {
         def close(): Unit
@@ -29,24 +38,9 @@ mod BasicDb {
         def clearParameters(): Unit
     }
 
-}
-
-mod BasicDb.DbPreparedStatement {
-    
-    use BasicDb.PreparedStatementHandle
-    use BasicDb.PreparedStatementHandle.PreparedStatementHandle
-    use BasicDb.ResultSetHandle
-    use BasicDb.ResultSetHandle.ResultSetHandle
-    use BasicDb.DbPreparedStatement
-    use BasicDb.PreparedStatementSetter
-    use IoError.ErrorKind
-    use IoError.IoError
-
-    import java.sql.{SQLException, SQLTimeoutException, SQLFeatureNotSupportedException}
-
     pub def handle(stmt: PreparedStatementHandle, f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbPreparedStatement + IO) =
         x -> {
-            let PreparedStatementHandle(jstmt) = stmt;
+            let PreparedStatementHandle.PreparedStatementHandle(jstmt) = stmt;
             run {
                 Ok(f(x))
             } with handler DbPreparedStatement {
@@ -80,7 +74,7 @@ mod BasicDb.DbPreparedStatement {
                 }
 
                 def executeQuery(k) = try {
-                    let ans = ResultSetHandle(jstmt.executeQuery());
+                    let ans = ResultSetHandle.ResultSetHandle(jstmt.executeQuery());
                     k(ans)
                 } catch {
                     case ex: SQLTimeoutException => Err(IoError(ErrorKind.Other, ex.getMessage()))

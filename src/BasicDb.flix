@@ -15,10 +15,10 @@
  */
 
 
-mod BasicDb {
+pub mod BasicDb {
 
-    use BasicDb.DbDriverManager
-    use BasicDb.DbConnection
+    use BasicDb.DbDriverManager.DbDriverManager
+    use BasicDb.DbConnection.DbConnection
     use IoError.IoError
 
     import java.lang.Class
@@ -32,8 +32,8 @@ mod BasicDb {
                 let ans = f();
                 DbConnection.close();
                 ans
-            } with DbConnection.runWithIO(conn)
-        } with DbDriverManager.runWithIO)
+            } with BasicDb.DbConnection.runWithIO(conn)
+        } with BasicDb.DbDriverManager.runWithIO)
     
 
     pub def runDuckDb(path: String, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbConnection - DbDriverManager) + {IO} = 
@@ -45,8 +45,8 @@ mod BasicDb {
                 let ans = f();
                 DbConnection.close();
                 ans
-            } with DbConnection.runWithIO(conn)
-        } with DbDriverManager.runWithIO)
+            } with BasicDb.DbConnection.runWithIO(conn)
+        } with BasicDb.DbDriverManager.runWithIO)
 
 
 }

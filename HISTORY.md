@@ -1,5 +1,7 @@
 ### v0.8.0
-   Removed `DuckDBAppender` - for DuckDB spefic functionality 
+   Exposed modules as `pub` and pushed datatypes down one layer 
+   into their respective modules.
+   Removed `DuckDBAppender` - for DuckDB specific functionality 
    please see the project `flix-basic-duckdb`.
    Updated tests to use `Assert` effect.
 

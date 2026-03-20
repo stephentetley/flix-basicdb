@@ -10,8 +10,8 @@ mod TestSQLite {
 
     use Assert.{assertEq}
 
-    use BasicDb.DbConnection
-    use BasicDb.DbStatement
+    use BasicDb.DbConnection.DbConnection
+    use BasicDb.DbStatement.DbStatement
     use BasicDb.DbPreparedStatement
     use BasicDb.DbResultSet
     use BasicDb.PreparedStatementSetter
@@ -20,7 +20,7 @@ mod TestSQLite {
 
     def sqlite_action1(): Unit -> Unit \ DbConnection +  {IO} = _ ->
         let stmt = DbConnection.createStatement();
-        let _ = DbStatement.runWithIO(stmt, () -> { 
+        let _ = BasicDb.DbStatement.runWithIO(stmt, () -> { 
             let _ = DbStatement.execute("DROP TABLE IF EXISTS facts_databases;");
             let _ = DbStatement.execute("CREATE TABLE IF NOT EXISTS facts_databases (name VARCHAR PRIMARY KEY NOT NULL, year int);");
             ()
