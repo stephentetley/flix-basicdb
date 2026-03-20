@@ -8,6 +8,7 @@
 
 mod TestSQLite {
 
+    use Assert.{assertEq}
 
     use BasicDb.DbConnection
     use BasicDb.DbStatement
@@ -28,17 +29,21 @@ mod TestSQLite {
 
 
 
-    @test
-    def test01(): Bool \ IO = 
-        FileWrite.runWithIO(_ -> 
-            let dir = FileWrite.mkTempDir("flix");
-            let path = "${dir}/test-db-67890.sqlite";
-            println(path);
-            match BasicDb.runSQLite(path, sqlite_action1()) {
-                case Err(err) => {println(err); Err(err) }
-                case Ok(_) => Ok(true)
-            }
-            ) == Ok(Ok(true))        
+    @Test
+    def test01(): Unit \ {Assert + IO} = 
+        assertEq(
+            expected = Ok(Ok(true)),
+            FileWrite.runWithIO(_ -> 
+                let dir = FileWrite.mkTempDir("flix");
+                let path = "${dir}/test-db-67890.sqlite";
+                println(path);
+                match BasicDb.runSQLite(path, sqlite_action1()) {
+                    case Err(err) => {println(err); Err(err) }
+                    case Ok(_) => Ok(true)
+                }
+            )
+        )
+        
 
 }
 

@@ -1,5 +1,10 @@
+### v0.8.0
+   Removed `DuckDBAppender` - for DuckDB spefic functionality 
+   please see the project `flix-basic-duckdb`.
+   Updated tests to use `Assert` effect.
+
 ### v0.7.0
-   Added DuckDBAppender.
+   Added `DuckDBAppender`.
    Updates to work with Flix 0.67.0.
 
 ### v0.6.0
