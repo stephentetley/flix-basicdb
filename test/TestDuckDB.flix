@@ -9,6 +9,9 @@
 mod TestDuckDB {
 
     use Assert.{assertEq}
+    
+    use Fs.FileWrite
+    use Fs.WriteFile
 
     use BasicDb.DbConnection.DbConnection
     use BasicDb.DbStatement.DbStatement
@@ -71,17 +74,16 @@ mod TestDuckDB {
     @Test
     def test01(): Unit \ {Assert + IO} = 
         assertEq(
-            expected = Ok(Ok(true)),
-            FileWrite.runWithIO(_ -> 
-                let dir = FileWrite.mkTempDir("flix");
-                let path = "${dir}/test-db-12345.duckdb";
-                println(path);
-                match BasicDb.runDuckDb(path, duckdb_action1()) {
-                    case Err(err) => {println(err); Err(err) }
-                    case Ok(_) => Ok(true)
-                }
-            )
+            expected = Ok(true),
+            run {
+                forM (
+                    dir <- FileWrite.mkTempDir("flix-duckdb");
+                    path <- Ok("${dir}/test-db-12345.duckdb");
+                    _ <- BasicDb.runDuckDb(path, duckdb_action1())
+                ) yield true
+            } with FileWrite.runWithIO
         )
+
 
 
 }

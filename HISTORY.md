@@ -1,3 +1,6 @@
+### v0.9.0
+   Updated to work with Flix version 0.70.0 (typed Java generics).
+
 ### v0.8.0
    Exposed modules as `pub` and pushed datatypes down one layer 
    into their respective modules.
