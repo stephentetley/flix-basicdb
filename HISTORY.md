@@ -1,3 +1,6 @@
+### v0.9.1
+   Updated to work with Flix version 0.71.0.
+
 ### v0.9.0
    Updated to work with Flix version 0.70.0 (typed Java generics).
 

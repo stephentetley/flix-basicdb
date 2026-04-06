@@ -6,6 +6,9 @@ September 2025 - flix-basicdb has been rewritten to use
 effects. However the APIs are very rough and large changes
 are expected.
 
+See the project `flix-basic-duckdb` for a DuckDB specific 
+database interface.
+
 Note:
 
 For development and testing SQLite JDBC and DuckDB jars are 

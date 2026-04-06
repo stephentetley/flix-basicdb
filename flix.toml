@@ -1,14 +1,14 @@
 [package]
 name        = "flix-basicdb"
 description = "A basic effect-based database interface for Flix using JDBC"
-version     = "0.9.0"
-flix        = "0.70.0"
+version     = "0.9.1"
+flix        = "0.71.0"
 license     = "Apache-2.0"
 authors     = ["Stephen Tetley <stephen.tetley@gmail.com>"]
 
 [dependencies]
-"github:stephentetley/charset-locale" = { version = "0.12.0", security = "unrestricted" }
-"github:stephentetley/flix-time"= { version = "0.17.0",  security = "unrestricted" }
+"github:stephentetley/charset-locale" = { version = "0.13.0", security = "unrestricted" }
+"github:stephentetley/flix-time"= { version = "0.18.0",  security = "unrestricted" }
 
 
 [mvn-dependencies]
