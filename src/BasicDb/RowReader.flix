@@ -22,7 +22,7 @@ pub mod BasicDb.RowReader {
     use IoError.ErrorKind
     use IoError.IoError
 
-    import java.sql.SQLException
+    import java.sql.{SQLException => JSQLException}
     import java.sql.{ResultSet => JResultSet}
 
     pub eff RowReader {
@@ -50,144 +50,148 @@ pub mod BasicDb.RowReader {
 
 
 
-    pub def handle(results: ResultSetHandle, f: a -> b \ ef): a -> Result[IoError, b] \ (ef - RowReader + IO) =
-        x -> {
-            let ResultSetHandle.ResultSetHandle(jresults) = results;
-            run {
-                Ok(f(x))
-            } with handler RowReader {
+    pub def handle(results: ResultSetHandle, f: a -> b \ ef): a -> Result[IoError, b] \ (ef - RowReader) = x -> {
+        let ResultSetHandle.ResultSetHandle(jresults) = results;
+        run {
+            Ok(f(x))
+        } with handler RowReader {
+        
+            def getStringByIndex(ix, k) = 
+                try {
+                    let ans = unsafe IO as {ef - RowReader} { jresults.getString(ix + 1) };
+                    k(ans)
+                } catch {
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+            def getStringByName(name, k) = 
+                try {
+                    let ans = unsafe IO as {ef - RowReader} { jresults.getString(name) };
+                    k(ans)
+                } catch {
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
             
-                def getStringByIndex(ix, k) = try {
-                    let ans = jresults.getString(ix + 1);
+            def getBoolByIndex(ix, k) = 
+                try {
+                    let ans = unsafe IO as {ef - RowReader} { jresults.getBoolean(ix + 1) };
                     k(ans)
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+            
+            def getBoolByName(name, k) = 
+                try {
+                    let ans = unsafe IO as {ef - RowReader} { jresults.getBoolean(name) };
+                    k(ans)
+                } catch {
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def getStringByName(name, k) = try {
-                    let ans = jresults.getString(name);
+            def getInt8ByIndex(ix, k) = 
+                try {
+                    let ans = unsafe IO as {ef - RowReader} { jresults.getByte(ix + 1) };
                     k(ans)
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-                
-                def getBoolByIndex(ix, k) = try {
-                    let ans = jresults.getBoolean(ix + 1);
-                    k(ans)
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-                
-                def getBoolByName(name, k) = try {
-                    let ans = jresults.getBoolean(name);
-                    k(ans)
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-
-                def getInt8ByIndex(ix, k) = try {
-                    let ans = jresults.getByte(ix + 1);
+            def getInt8ByName(name, k) = 
+                try {
+                    let ans = unsafe IO as {ef - RowReader} { jresults.getByte(name) };
                     k(ans)
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def getInt8ByName(name, k) = try {
-                    let ans = jresults.getByte(name);
-                    k(ans)
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-                def getInt16ByIndex(ix, k) = try {
-                    let ans = jresults.getShort(ix + 1);
-                    k(ans)
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-                def getInt16ByName(name, k) = try {
-                    let ans = jresults.getShort(name);
-                    k(ans)
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-                def getInt32ByIndex(ix, k) = try {
-                    let ans = jresults.getInt(ix + 1);
-                    k(ans)
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-                def getInt32ByName(name, k) = try {
-                    let ans = jresults.getInt(name);
-                    k(ans)
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-                def getInt64ByIndex(ix, k) = try {
-                    let ans = jresults.getLong(ix + 1);
-                    k(ans)
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-                def getInt64ByName(name, k) = try {
-                    let ans = jresults.getLong(name);
-                    k(ans)
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-                def getFloat32ByIndex(ix, k) = try {
-                    let ans = jresults.getFloat(ix + 1);
-                    k(ans)
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-                def getFloat32ByName(name, k) = try {
-                    let ans = jresults.getFloat(name);
-                    k(ans)
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-                def getFloat64ByIndex(ix, k) = try {
-                    let ans = jresults.getDouble(ix + 1);
-                    k(ans)
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-                def getFloat64ByName(name, k) = try {
-                    let ans = jresults.getDouble(name);
-                    k(ans)
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-                def getBigDecimalByIndex(ix, k) = try {
-                    let ans = jresults.getBigDecimal(ix + 1);
-                    k(ans)
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-                def getBigDecimalByName(name, k) = try {
-                    let ans = jresults.getBigDecimal(name);
-                    k(ans)
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
+            def getInt16ByIndex(ix, k) = try {
+                let ans = unsafe IO as {ef - RowReader} { jresults.getShort(ix + 1) };
+                k(ans)
+            } catch {
+                case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
             }
 
+            def getInt16ByName(name, k) = try {
+                let ans = unsafe IO as {ef - RowReader} { jresults.getShort(name) };
+                k(ans)
+            } catch {
+                case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
+
+            def getInt32ByIndex(ix, k) = try {
+                let ans = unsafe IO as {ef - RowReader} { jresults.getInt(ix + 1) };
+                k(ans)
+            } catch {
+                case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
+
+            def getInt32ByName(name, k) = try {
+                let ans = unsafe IO as {ef - RowReader} { jresults.getInt(name) };
+                k(ans)
+            } catch {
+                case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
+
+            def getInt64ByIndex(ix, k) = try {
+                let ans = unsafe IO as {ef - RowReader} { jresults.getLong(ix + 1) };
+                k(ans)
+            } catch {
+                case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
+
+            def getInt64ByName(name, k) = try {
+                let ans = unsafe IO as {ef - RowReader} { jresults.getLong(name) };
+                k(ans)
+            } catch {
+                case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
+
+            def getFloat32ByIndex(ix, k) = try {
+                let ans = unsafe IO as {ef - RowReader} { jresults.getFloat(ix + 1) };
+                k(ans)
+            } catch {
+                case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
+
+            def getFloat32ByName(name, k) = try {
+                let ans = unsafe IO as {ef - RowReader} { jresults.getFloat(name) };
+                k(ans)
+            } catch {
+                case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
+
+            def getFloat64ByIndex(ix, k) = try {
+                let ans = unsafe IO as {ef - RowReader} { jresults.getDouble(ix + 1) };
+                k(ans)
+            } catch {
+                case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
+
+            def getFloat64ByName(name, k) = try {
+                let ans = unsafe IO as {ef - RowReader} { jresults.getDouble(name) };
+                k(ans)
+            } catch {
+                case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
+
+            def getBigDecimalByIndex(ix, k) = try {
+                let ans = unsafe IO as {ef - RowReader} { jresults.getBigDecimal(ix + 1) };
+                k(ans)
+            } catch {
+                case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
+
+            def getBigDecimalByName(name, k) = try {
+                let ans = unsafe IO as {ef - RowReader} { jresults.getBigDecimal(name) };
+                k(ans)
+            } catch {
+                case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+            }
         }
 
-    pub def runWithIO(rset: ResultSetHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - RowReader) + {IO} = 
+    }
+
+    pub def runWithIO(rset: ResultSetHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - RowReader)  = 
         handle(rset, f)()
 
 }

@@ -1,3 +1,7 @@
+### v0.10.0
+   Changes to effects - removed IO from the signatures of nested 
+   effects.
+
 ### v0.9.1
    Updated to work with Flix version 0.71.0.
 
