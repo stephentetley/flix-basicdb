@@ -26,7 +26,7 @@ pub mod BasicDb.DbConnection {
     
     import java.sql.{Connection => JConnection}
     import java.sql.{Statement => JStatement}
-    import java.sql.SQLException
+    import java.sql.{SQLException => JSQLException}
 
     import java.sql.{Connection => JConnection}
 
@@ -52,130 +52,145 @@ pub mod BasicDb.DbConnection {
 
     pub enum ConnectionHandle (JConnection)
 
-    pub def handle(conn: ConnectionHandle, f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbConnection + IO) =
-        x -> {
-            let ConnectionHandle.ConnectionHandle(jconn) = conn;
-            run {
-                Ok(f(x))
-            } with handler DbConnection {
-            
-                def createStatement(k) = try {
-                    let ans = StatementHandle(jconn.createStatement());
-                    k(ans)
+    pub def handle(conn: ConnectionHandle, f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbConnection) = x -> {
+        let ConnectionHandle.ConnectionHandle(jconn) = conn;
+        run {
+            Ok(f(x))
+        } with handler DbConnection {
+        
+            def createStatement(k) = 
+                try {
+                    let ans = unsafe IO as {ef - DbConnection} { jconn.createStatement() };
+                    k(StatementHandle.StatementHandle(ans))
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def prepareStatement(sql, k) = try {
-                    let ans = PreparedStatementHandle.PreparedStatementHandle(jconn.prepareStatement(sql));
-                    k(ans)
+            def prepareStatement(sql, k) = 
+                try {
+                    let ans = unsafe IO as {ef - DbConnection} { jconn.prepareStatement(sql) };
+                    k(PreparedStatementHandle.PreparedStatementHandle(ans))
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def nativeSQL(sql, k) = try {
-                    let ans = jconn.nativeSQL(sql);
+            def nativeSQL(sql, k) = 
+                try {
+                    let ans = unsafe IO as {ef - DbConnection} { jconn.nativeSQL(sql) };
                     k(ans)
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def setAutoCommit(ac, k) = try {
-                    jconn.setAutoCommit(ac);
+            def setAutoCommit(ac, k) = 
+                try {
+                    unsafe IO as {ef - DbConnection} { jconn.setAutoCommit(ac) };
                     k()
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def getAutoCommit(k) = try {
-                    let ans = jconn.getAutoCommit();
+            def getAutoCommit(k) = 
+                try {
+                    let ans = unsafe IO as {ef - DbConnection} { jconn.getAutoCommit() };
                     k(ans)
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def commit(k) = try {
-                    jconn.commit();
+            def commit(k) = 
+                try {
+                    unsafe IO as {ef - DbConnection} { jconn.commit() };
                     k()
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def rollback(k) = try {
-                    jconn.rollback();
+            def rollback(k) = 
+                try {
+                    unsafe IO as {ef - DbConnection} { jconn.rollback() };
                     k()
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def close(k) = try {
-                    jconn.close();
+            def close(k) = 
+                try {
+                    unsafe IO as {ef - DbConnection} { jconn.close() };
                     k()
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def isClosed(k) = try {
-                    let ans = jconn.isClosed();
+            def isClosed(k) = 
+                try {
+                    let ans = unsafe IO as {ef - DbConnection} { jconn.isClosed() };
                     k(ans)
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def isValid(timeout, k) = try {
-                    let ans = jconn.isValid(timeout);
+            def isValid(timeout, k) = 
+                try {
+                    let ans = unsafe IO as {ef - DbConnection} { jconn.isValid(timeout) };
                     k(ans)
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def isReadOnly(k) = try {
-                    let ans = jconn.isReadOnly();
+            def isReadOnly(k) = 
+                try {
+                    let ans = unsafe IO as {ef - DbConnection} { jconn.isReadOnly() };
                     k(ans)
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def setReadOnly(ro, k) = try {
-                    jconn.setReadOnly(ro);
+            def setReadOnly(ro, k) = 
+                try {
+                    unsafe IO as {ef - DbConnection} { jconn.setReadOnly(ro) };
                     k()
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def getCatalog(k) = try {
-                    let ans = jconn.getCatalog();
+            def getCatalog(k) = 
+                try {
+                    let ans = unsafe IO as {ef - DbConnection} { jconn.getCatalog() };
                     k(ans)
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def setCatalog(c, k) = try {
-                    jconn.setCatalog(c);
+            def setCatalog(c, k) = 
+                try {
+                    unsafe IO as {ef - DbConnection} { jconn.setCatalog(c) };
                     k()
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def getTransactionIsolation(k) = try {
-                    let ans = jconn.getTransactionIsolation();
+            def getTransactionIsolation(k) = 
+                try {
+                    let ans = unsafe IO as {ef - DbConnection} { jconn.getTransactionIsolation() };
                     k(ans)
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def setTransactionIsolation(l, k) = try {
-                    jconn.setTransactionIsolation(l);
+            def setTransactionIsolation(l, k) = 
+                try {
+                    unsafe IO as {ef - DbConnection} { jconn.setTransactionIsolation(l) };
                     k()
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
-            }
         }
+    }
 
 
     
-    pub def runWithIO(conn: ConnectionHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbConnection) + {IO} = 
+    pub def runWithIO(conn: ConnectionHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbConnection) = 
         handle(conn, f)()
 
 

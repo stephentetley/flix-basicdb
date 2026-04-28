@@ -32,19 +32,19 @@ pub mod BasicDb.DbDriverManager {
         def getConnection(url: String): ConnectionHandle
     }
 
-    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbDriverManager + IO) =
-        x -> run {
-            Ok(f(x))
-        } with handler DbDriverManager {            
-            
-            def getConnection(url, k) = try {
+    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbDriverManager + IO) = x -> run {
+        Ok(f(x))
+    } with handler DbDriverManager {            
+        
+        def getConnection(url, k) = 
+            try {
                 let ans = ConnectionHandle(DriverManager.getConnection(url));
                 k(ans)
             } catch {
                 case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
             }
 
-        }
+    }
 
     pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbDriverManager) + {IO} = 
         handle(f)()
