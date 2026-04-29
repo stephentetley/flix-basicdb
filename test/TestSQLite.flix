@@ -22,7 +22,7 @@ mod TestSQLite {
     use BasicDb.RowReader
 
 
-    def sqlite_action1(): Unit -> Unit \ DbConnection +  {IO} = _ ->
+    def sqlite_action1(): Unit -> Unit \ DbConnection = _ ->
         let stmt = DbConnection.createStatement();
         let _ = BasicDb.DbStatement.runWithIO(stmt, () -> { 
             let _ = DbStatement.execute("DROP TABLE IF EXISTS facts_databases;");

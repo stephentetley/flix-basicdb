@@ -47,7 +47,8 @@ pub mod BasicDb.DbResultSet {
     
     pub enum ResultSetHandle (JResultSet)
 
-    pub def handle(results: ResultSetHandle, f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbResultSet) = x -> {
+    pub def handle(results: ResultSetHandle, 
+                    f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbResultSet) = x -> {
         let ResultSetHandle.ResultSetHandle(jresults) = results;
         run {
             Ok(f(x))

@@ -26,7 +26,7 @@ pub mod BasicDb.DbPreparedStatement {
     use IoError.ErrorKind
     use IoError.IoError
 
-    import java.sql.{SQLException, SQLTimeoutException, SQLFeatureNotSupportedException}
+    import java.sql.{SQLException => JSQLException}
 
     pub eff DbPreparedStatement {
         def close(): Unit
@@ -38,65 +38,71 @@ pub mod BasicDb.DbPreparedStatement {
         def clearParameters(): Unit
     }
 
-    pub def handle(stmt: PreparedStatementHandle, f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbPreparedStatement + IO) =
-        x -> {
-            let PreparedStatementHandle.PreparedStatementHandle(jstmt) = stmt;
-            run {
-                Ok(f(x))
-            } with handler DbPreparedStatement {
-            
-                def close(k) = try {                    
-                    jstmt.close();
+    pub def handle(stmt: PreparedStatementHandle, 
+                    f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbPreparedStatement) = x -> {
+        let PreparedStatementHandle.PreparedStatementHandle(jstmt) = stmt;
+        run {
+            Ok(f(x))
+        } with handler DbPreparedStatement {
+        
+            def close(k) = 
+                try {
+                    unsafe IO as {ef - DbPreparedStatement} { jstmt.close() };
                     k()
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def execute(k) = try {
-                    let ans = jstmt.execute();
+            def execute(k) = 
+                try {
+                    let ans = unsafe IO as {ef - DbPreparedStatement} { jstmt.execute() };
                     k(ans)
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def addBatch(k) = try {
-                    jstmt.addBatch();
+            def addBatch(k) = 
+                try {
+                    unsafe IO as {ef - DbPreparedStatement} { jstmt.addBatch() };
                     k()
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def executeBatch(k) = try {
-                    let _ = jstmt.executeBatch();
+            def executeBatch(k) = 
+                try {
+                    unsafe IO as {ef - DbPreparedStatement} { discard jstmt.executeBatch() };
                     k()
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def executeQuery(k) = try {
-                    let ans = ResultSetHandle.ResultSetHandle(jstmt.executeQuery());
+            def executeQuery(k) = 
+                try { 
+                    let ans = unsafe IO as {ef - DbPreparedStatement} { jstmt.executeQuery() };
+                    k(ResultSetHandle.ResultSetHandle(ans))
+                } catch {
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+            def executeUpdate(k) = 
+                try {
+                    let ans = unsafe IO as {ef - DbPreparedStatement} { jstmt.executeUpdate() };
                     k(ans)
                 } catch {
-                    case ex: SQLTimeoutException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def executeUpdate(k) = try {
-                    let ans = jstmt.executeUpdate();
-                    k(ans)
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-                def clearParameters(k) = try {
-                    jstmt.clearParameters();
+            def clearParameters(k) = 
+                try {
+                    unsafe IO as {ef - DbPreparedStatement} { jstmt.clearParameters() };
                     k()
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
-            }
-       }
+        }
+    }
 
-    pub def runWithIO(stmt: PreparedStatementHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbPreparedStatement) + {IO} = 
+    pub def runWithIO(stmt: PreparedStatementHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbPreparedStatement) = 
         handle(stmt, f)()       
 }

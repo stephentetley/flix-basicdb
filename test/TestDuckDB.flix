@@ -1,9 +1,3 @@
-// Previously this needed running with classpath pointing to the 
-// sqlite / duckdb jars, but it seems that is unnecessary now we
-// call `Class.forName("org.duckdb.DuckDBDriver");` in the run 
-// function. However we can avoid a warning by enabling native access: 
-// 
-// > java --enable-native-access=ALL-UNNAMED -jar ../bin/flix.0.61.0.jar test
 
 
 mod TestDuckDB {
@@ -21,7 +15,7 @@ mod TestDuckDB {
     use BasicDb.RowReader.RowReader
 
 
-    def duckdb_action1(): Unit -> Unit \ DbConnection +  {IO} = _ ->
+    def duckdb_action1(): Unit -> Unit \ DbConnection + {IO} = _ ->
         let stmt1 = DbConnection.createStatement();
         let _ = run { 
             discard DbStatement.execute("CREATE SCHEMA IF NOT EXISTS facts;");

@@ -23,7 +23,7 @@ pub mod BasicDb.DbStatement {
     use IoError.ErrorKind
     use IoError.IoError
 
-    import java.sql.SQLException
+    import java.sql.{SQLException => JSQLException}
     import java.sql.{Statement => JStatement}
 
     pub eff DbStatement {
@@ -43,99 +43,111 @@ pub mod BasicDb.DbStatement {
     
     pub enum StatementHandle (JStatement)
 
-    pub def handle(stmt: StatementHandle, f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbStatement + IO) =
-        x -> {
-            let StatementHandle.StatementHandle(jstmt) = stmt; 
-            run {
-                Ok(f(x))
-            } with handler DbStatement {
+    pub def handle(stmt: StatementHandle, 
+                    f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbStatement) = x -> {
+        let StatementHandle.StatementHandle(jstmt) = stmt; 
+        run {
+            Ok(f(x))
+        } with handler DbStatement {
+        
+            def close(k) = 
+                try {
+                    unsafe IO as {ef - DbStatement} { jstmt.close() };
+                    k()
+                } catch {
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+            def getMaxRows(k) = 
+                try {
+                    let ans = unsafe IO as {ef - DbStatement} { jstmt.getMaxRows() };
+                    k(ans)
+                } catch {
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+            def setMaxRows(maxRows, k) = 
+                try {
+                    unsafe IO as {ef - DbStatement} { jstmt.setMaxRows(maxRows) };
+                    k()
+                } catch {
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+            def cancel(k) = 
+                try {
+                    unsafe IO as {ef - DbStatement} { jstmt.cancel() };
+                    k()
+                } catch {
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
             
-                def close(k) = try {
-                    jstmt.close();
-                    k()
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-                def getMaxRows(k) = try {
-                    let ans = jstmt.getMaxRows();
+            def execute(sql, k) = 
+                try {
+                    let ans = unsafe IO as {ef - DbStatement} { jstmt.execute(sql) };
                     k(ans)
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-                def setMaxRows(maxRows, k) = try {
-                    jstmt.setMaxRows(maxRows);
-                    k()
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
-                def cancel(k) = try {
-                    jstmt.cancel();
-                    k()
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
                 
-                def execute(sql, k) = try {
-                    let ans = jstmt.execute(sql);
+            def executeUpdate(sql, k) = 
+                try {
+                    let ans = unsafe IO as {ef - DbStatement} { jstmt.executeUpdate(sql) };
                     k(ans)
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
-                
-                def executeUpdate(sql, k) = try {
-                    let ans = jstmt.executeUpdate(sql);
+            
+            def executeLargeUpdate(sql, k) = 
+                try {
+                    let ans = unsafe IO as {ef - DbStatement} { jstmt.executeLargeUpdate(sql) };
                     k(ans)
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
-                
-                def executeLargeUpdate(sql, k) = try {
-                    let ans = jstmt.executeLargeUpdate(sql);
-                    k(ans)
+            
+            def executeQuery(sql, k) = 
+                try {
+                    let ans = unsafe IO as {ef - DbStatement} { jstmt.executeQuery(sql) };
+                    k(ResultSetHandle.ResultSetHandle(ans))
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-                
-                def executeQuery(sql, k) = try {
-                    let ans = ResultSetHandle.ResultSetHandle(jstmt.executeQuery(sql));
-                    k(ans)
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def getResultSet(k) = try {
-                    let ans = ResultSetHandle.ResultSetHandle(jstmt.getResultSet());
-                    k(ans)
+            def getResultSet(k) = 
+                try {
+                    let ans = unsafe IO as {ef - DbStatement} { jstmt.getResultSet() };
+                    k(ResultSetHandle.ResultSetHandle(ans))
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def enquoteLiteral(sql, k) = try {
-                    let ans = jstmt.enquoteLiteral(sql);
+            def enquoteLiteral(sql, k) = 
+                try {
+                    let ans = unsafe IO as {ef - DbStatement} { jstmt.enquoteLiteral(sql) };
                     k(ans)
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def isClosed(k) = try {
-                    let ans = jstmt.isClosed();
+            def isClosed(k) = 
+                try {
+                    let ans = unsafe IO as {ef - DbStatement} { jstmt.isClosed() };
                     k(ans)
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
     
-                def isCloseOnCompletion(k) = try {
-                    let ans = jstmt.isCloseOnCompletion();
+            def isCloseOnCompletion(k) = 
+                try {
+                    let ans = unsafe IO as {ef - DbStatement} { jstmt.isCloseOnCompletion() };
                     k(ans)
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
-            }
         }
+    }
 
-    pub def runWithIO(stmt: StatementHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbStatement) + {IO} = 
+    pub def runWithIO(stmt: StatementHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbStatement)  = 
         handle(stmt, f)()
 }

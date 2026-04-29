@@ -23,7 +23,7 @@ pub mod BasicDb.PreparedStatementSetter {
     use IoError.ErrorKind
     use IoError.IoError
 
-    import java.sql.{SQLException, SQLTimeoutException, SQLFeatureNotSupportedException}
+    import java.sql.{SQLException => JSQLException}
 
     import java.sql.{PreparedStatement => JPreparedStatement}
 
@@ -43,89 +43,97 @@ pub mod BasicDb.PreparedStatementSetter {
     pub enum PreparedStatementHandle (JPreparedStatement)
 
 
-    pub def handle(stmt: PreparedStatementHandle, f: a -> b \ ef): a -> Result[IoError, b] \ (ef - PreparedStatementSetter + IO) =
-        x -> {
-            let PreparedStatementHandle.PreparedStatementHandle(jstmt) = stmt;
-            run {
-                Ok(f(x))
-            } with handler PreparedStatementSetter {
+    pub def handle(stmt: PreparedStatementHandle, 
+                    f: a -> b \ ef): a -> Result[IoError, b] \ (ef - PreparedStatementSetter) = x -> {
+        let PreparedStatementHandle.PreparedStatementHandle(jstmt) = stmt;
+        run {
+            Ok(f(x))
+        } with handler PreparedStatementSetter {
+        
+            def setNull(paramIx, sqlType, k) = 
+                try {
+                    unsafe IO as {ef - PreparedStatementSetter} { jstmt.setNull(paramIx + 1, sqlType) };
+                    k()
+                } catch {
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
             
-
-                def setNull(paramIx, sqlType, k) = try {
-                    jstmt.setNull(paramIx + 1, sqlType);
+            def setBool(paramIx, value, k) = 
+                try {
+                    unsafe IO as {ef - PreparedStatementSetter} { jstmt.setBoolean(paramIx + 1, value) };
                     k()
                 } catch {
-                    case ex: SQLFeatureNotSupportedException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
-                
-                def setBool(paramIx, value, k) = try {
-                    jstmt.setBoolean(paramIx + 1, value);
+            
+            def setInt8(paramIx, value, k) = 
+                try {
+                    unsafe IO as {ef - PreparedStatementSetter} { jstmt.setByte(paramIx + 1, value) };
                     k()
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
-                
-                def setInt8(paramIx, value, k) = try {
-                    jstmt.setByte(paramIx + 1, value);
+            
+            def setInt16(paramIx, value, k) = 
+                try {
+                    unsafe IO as {ef - PreparedStatementSetter} { jstmt.setShort(paramIx + 1, value) };
                     k()
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
-                
-                def setInt16(paramIx, value, k) = try {
-                    jstmt.setShort(paramIx + 1, value);
+            
+            def setInt32(paramIx, value, k) = 
+                try {
+                    unsafe IO as {ef - PreparedStatementSetter} { jstmt.setInt(paramIx + 1, value) };
                     k()
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
-                
-                def setInt32(paramIx, value, k) = try {
-                    jstmt.setInt(paramIx + 1, value);
+            
+            def setInt64(paramIx, value, k) = 
+                try {
+                    unsafe IO as {ef - PreparedStatementSetter} { jstmt.setLong(paramIx + 1, value) };
                     k()
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
-                
-                def setInt64(paramIx, value, k) = try {
-                    jstmt.setLong(paramIx + 1, value);
+            
+            def setFloat32(paramIx, value, k) = 
+                try {
+                    unsafe IO as {ef - PreparedStatementSetter} { jstmt.setFloat(paramIx + 1, value) };
                     k()
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
-                
-                def setFloat32(paramIx, value, k) = try {
-                    jstmt.setFloat(paramIx + 1, value);
+                        
+            def setFloat64(paramIx, value, k) = 
+                try {
+                    unsafe IO as {ef - PreparedStatementSetter} { jstmt.setDouble(paramIx + 1, value) };
                     k()
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-                            
-                def setFloat64(paramIx, value, k) = try {
-                    jstmt.setDouble(paramIx + 1, value);
-                    k()
-                } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def setBigDecimal(paramIx, value, k) = try {
-                    jstmt.setBigDecimal(paramIx + 1, value);
+            def setBigDecimal(paramIx, value, k) = 
+                try {
+                    unsafe IO as {ef - PreparedStatementSetter} { jstmt.setBigDecimal(paramIx + 1, value) };
                     k()
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-                def setString(paramIx, value, k) = try {
-                    jstmt.setString(paramIx + 1, value);
+            def setString(paramIx, value, k) = 
+                try {
+                    unsafe IO as {ef - PreparedStatementSetter} { jstmt.setString(paramIx + 1, value) };
                     k()
                 } catch {
-                    case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-            }
-       }
+        }
+    }
 
-    pub def runWithIO(stmt: PreparedStatementHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - PreparedStatementSetter) + {IO} = 
+    pub def runWithIO(stmt: PreparedStatementHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - PreparedStatementSetter) = 
         handle(stmt, f)()
 
 }
