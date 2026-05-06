@@ -37,8 +37,16 @@ pub mod BasicDb {
     
 
     pub def runDuckDb(path: String, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbConnection - DbDriverManager) + {IO} = 
+        let url = "jdbc:duckdb:${path}";
+        runDuckDbHelper(url, f)
+    
+    pub def runDuckDbInMemory(f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbConnection - DbDriverManager) + {IO} = 
+        let url = "jdbc:duckdb:";
+        runDuckDbHelper(url, f)
+
+
+    def runDuckDbHelper(url: String, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbConnection - DbDriverManager) + {IO} = 
         Result.flatten(run {
-            let url = "jdbc:duckdb:${path}";
             Class.forName("org.duckdb.DuckDBDriver");
             let conn = DbDriverManager.getConnection(url);
             run {
@@ -47,6 +55,6 @@ pub mod BasicDb {
                 ans
             } with BasicDb.DbConnection.runWithIO(conn)
         } with BasicDb.DbDriverManager.runWithIO)
-
+    
 
 }

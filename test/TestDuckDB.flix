@@ -67,16 +67,11 @@ mod TestDuckDB {
 
     @Test
     def test01(): Unit \ {Assert + IO} = 
-        assertEq(
-            expected = Ok(true),
-            run {
-                forM (
-                    dir <- FileWrite.mkTempDir("flix-duckdb");
-                    path <- Ok("${dir}/test-db-12345.duckdb");
-                    _ <- BasicDb.runDuckDb(path, duckdb_action1())
-                ) yield true
-            } with FileWrite.runWithIO
-        )
+        let ans:Result[IoError, Bool] = run {
+            let a1 = BasicDb.runDuckDbInMemory(duckdb_action1);
+            Result.map(_ -> true, a1)
+        } with FileWrite.runWithIO;
+        assertEq(expected = Ok(true), ans)
 
 
 
