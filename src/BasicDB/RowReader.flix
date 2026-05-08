@@ -16,9 +16,9 @@
 
 
 
-pub mod BasicDb.RowReader {
+pub mod BasicDB.RowReader {
     
-    use BasicDb.DbResultSet.ResultSetHandle
+    use BasicDB.DBResultSet.ResultSetHandle
     use IoError.ErrorKind
     use IoError.IoError
 

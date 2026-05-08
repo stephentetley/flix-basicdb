@@ -2,14 +2,14 @@
 name        = "flix-basicdb"
 description = "A basic effect-based database interface for Flix using JDBC"
 version     = "0.10.0"
-flix        = "0.71.0"
+flix        = "0.72.0"
 license     = "Apache-2.0"
 authors     = ["Stephen Tetley <stephen.tetley@gmail.com>"]
 
 [dependencies]
 "github:stephentetley/charset-locale" = { version = "0.13.0", security = "unrestricted" }
 "github:stephentetley/flix-time"= { version = "0.18.0",  security = "unrestricted" }
-
+"github:stephentetley/effect-extras" = { version = "0.1.0", security = "unrestricted" }
 
 [mvn-dependencies]
 "org.duckdb:duckdb_jdbc" = "1.5.2.0"

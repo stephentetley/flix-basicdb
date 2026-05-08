@@ -15,12 +15,15 @@
  */
 
 
-pub mod BasicDb.DbConnection {
+pub mod BasicDB.DBConnection {
 
-    use BasicDb.PreparedStatementSetter.PreparedStatementHandle
-    use BasicDb.DbStatement.StatementHandle
-    use BasicDb.DbStatement.StatementHandle.StatementHandle
-    use BasicDb.DbConnection
+    use EffectExtras.Fail.Fail
+    use BasicDB.PreparedStatementSetter.PreparedStatementHandle
+    use BasicDB.PreparedStatementSetter.PreparedStatementSetterWithAlt
+    use BasicDB.DBPreparedStatement.DBPreparedStatement
+    use BasicDB.DBStatement.StatementHandle
+    use BasicDB.DBStatement.StatementHandle.StatementHandle
+    use BasicDB.DBConnection
     use IoError.ErrorKind
     use IoError.IoError
     
@@ -31,7 +34,10 @@ pub mod BasicDb.DbConnection {
     import java.sql.{Connection => JConnection}
 
 
-    pub eff DbConnection {
+    pub eff DBConnection {
+        // `ConnectionHandle` should not be used in user code
+        // It is a hack until we can run local effects polymorphically
+        def askDBConnectionHandle(): ConnectionHandle
         def createStatement(): StatementHandle
         def prepareStatement(sql: String): PreparedStatementHandle
         def nativeSQL(sql: String): String
@@ -52,15 +58,17 @@ pub mod BasicDb.DbConnection {
 
     pub enum ConnectionHandle (JConnection)
 
-    pub def handle(conn: ConnectionHandle, f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbConnection) = x -> {
+    pub def handle(conn: ConnectionHandle, f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DBConnection) = x -> {
         let ConnectionHandle.ConnectionHandle(jconn) = conn;
         run {
             Ok(f(x))
-        } with handler DbConnection {
+        } with handler DBConnection {
         
+            def askDBConnectionHandle(k) = k(conn)
+
             def createStatement(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbConnection} { jconn.createStatement() };
+                    let ans = unsafe IO as {ef - DBConnection} { jconn.createStatement() };
                     k(StatementHandle.StatementHandle(ans))
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -68,7 +76,7 @@ pub mod BasicDb.DbConnection {
 
             def prepareStatement(sql, k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbConnection} { jconn.prepareStatement(sql) };
+                    let ans = unsafe IO as {ef - DBConnection} { jconn.prepareStatement(sql) };
                     k(PreparedStatementHandle.PreparedStatementHandle(ans))
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -76,7 +84,7 @@ pub mod BasicDb.DbConnection {
 
             def nativeSQL(sql, k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbConnection} { jconn.nativeSQL(sql) };
+                    let ans = unsafe IO as {ef - DBConnection} { jconn.nativeSQL(sql) };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -84,7 +92,7 @@ pub mod BasicDb.DbConnection {
 
             def setAutoCommit(ac, k) = 
                 try {
-                    unsafe IO as {ef - DbConnection} { jconn.setAutoCommit(ac) };
+                    unsafe IO as {ef - DBConnection} { jconn.setAutoCommit(ac) };
                     k()
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -92,7 +100,7 @@ pub mod BasicDb.DbConnection {
 
             def getAutoCommit(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbConnection} { jconn.getAutoCommit() };
+                    let ans = unsafe IO as {ef - DBConnection} { jconn.getAutoCommit() };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -100,7 +108,7 @@ pub mod BasicDb.DbConnection {
 
             def commit(k) = 
                 try {
-                    unsafe IO as {ef - DbConnection} { jconn.commit() };
+                    unsafe IO as {ef - DBConnection} { jconn.commit() };
                     k()
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -108,23 +116,16 @@ pub mod BasicDb.DbConnection {
 
             def rollback(k) = 
                 try {
-                    unsafe IO as {ef - DbConnection} { jconn.rollback() };
+                    unsafe IO as {ef - DBConnection} { jconn.rollback() };
                     k()
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-            def close(k) = 
-                try {
-                    unsafe IO as {ef - DbConnection} { jconn.close() };
-                    k()
-                } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
 
             def isClosed(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbConnection} { jconn.isClosed() };
+                    let ans = unsafe IO as {ef - DBConnection} { jconn.isClosed() };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -132,7 +133,7 @@ pub mod BasicDb.DbConnection {
 
             def isValid(timeout, k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbConnection} { jconn.isValid(timeout) };
+                    let ans = unsafe IO as {ef - DBConnection} { jconn.isValid(timeout) };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -140,7 +141,7 @@ pub mod BasicDb.DbConnection {
 
             def isReadOnly(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbConnection} { jconn.isReadOnly() };
+                    let ans = unsafe IO as {ef - DBConnection} { jconn.isReadOnly() };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -148,7 +149,7 @@ pub mod BasicDb.DbConnection {
 
             def setReadOnly(ro, k) = 
                 try {
-                    unsafe IO as {ef - DbConnection} { jconn.setReadOnly(ro) };
+                    unsafe IO as {ef - DBConnection} { jconn.setReadOnly(ro) };
                     k()
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -156,7 +157,7 @@ pub mod BasicDb.DbConnection {
 
             def getCatalog(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbConnection} { jconn.getCatalog() };
+                    let ans = unsafe IO as {ef - DBConnection} { jconn.getCatalog() };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -164,7 +165,7 @@ pub mod BasicDb.DbConnection {
 
             def setCatalog(c, k) = 
                 try {
-                    unsafe IO as {ef - DbConnection} { jconn.setCatalog(c) };
+                    unsafe IO as {ef - DBConnection} { jconn.setCatalog(c) };
                     k()
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -172,7 +173,7 @@ pub mod BasicDb.DbConnection {
 
             def getTransactionIsolation(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbConnection} { jconn.getTransactionIsolation() };
+                    let ans = unsafe IO as {ef - DBConnection} { jconn.getTransactionIsolation() };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -180,7 +181,7 @@ pub mod BasicDb.DbConnection {
 
             def setTransactionIsolation(l, k) = 
                 try {
-                    unsafe IO as {ef - DbConnection} { jconn.setTransactionIsolation(l) };
+                    unsafe IO as {ef - DBConnection} { jconn.setTransactionIsolation(l) };
                     k()
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -190,8 +191,17 @@ pub mod BasicDb.DbConnection {
 
 
     
-    pub def runWithIO(conn: ConnectionHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbConnection) = 
+    pub def runDBConnection(conn: ConnectionHandle, f: Unit -> a \ ef): a \ {ef + Fail - DBConnection} =
         handle(conn, f)()
+
+    pub def execDBPreparedStatement(sql: String,
+                                        f: Unit -> a \ PreparedStatementSetterWithAlt + ef): a \ {Fail + ef + DBConnection} - DBPreparedStatement =
+        let stmt = DBConnection.prepareStatement(sql);
+        let ans = run {
+            f()
+        } with BasicDB.DBPreparedStatement.runDBPreparedStatement(stmt);
+        DBConnection.closePreparedStatement(stmt);
+        ans
 
 
 }

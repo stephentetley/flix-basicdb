@@ -16,17 +16,17 @@
 
 
 
-pub mod BasicDb.DbStatement {
+pub mod BasicDB.DBStatement {
     
-    use BasicDb.DbResultSet.ResultSetHandle
-    use BasicDb.DbStatement
+    use BasicDB.DBResultSet.ResultSetHandle
+    use BasicDB.DBStatement
     use IoError.ErrorKind
     use IoError.IoError
 
     import java.sql.{SQLException => JSQLException}
     import java.sql.{Statement => JStatement}
 
-    pub eff DbStatement {
+    pub eff DBStatement {
         def close(): Unit
         def getMaxRows(): Int32
         def setMaxRows(maxRows: Int32): Unit
@@ -44,15 +44,15 @@ pub mod BasicDb.DbStatement {
     pub enum StatementHandle (JStatement)
 
     pub def handle(stmt: StatementHandle, 
-                    f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbStatement) = x -> {
+                    f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DBStatement) = x -> {
         let StatementHandle.StatementHandle(jstmt) = stmt; 
         run {
             Ok(f(x))
-        } with handler DbStatement {
+        } with handler DBStatement {
         
             def close(k) = 
                 try {
-                    unsafe IO as {ef - DbStatement} { jstmt.close() };
+                    unsafe IO as {ef - DBStatement} { jstmt.close() };
                     k()
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -60,7 +60,7 @@ pub mod BasicDb.DbStatement {
 
             def getMaxRows(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbStatement} { jstmt.getMaxRows() };
+                    let ans = unsafe IO as {ef - DBStatement} { jstmt.getMaxRows() };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -68,7 +68,7 @@ pub mod BasicDb.DbStatement {
 
             def setMaxRows(maxRows, k) = 
                 try {
-                    unsafe IO as {ef - DbStatement} { jstmt.setMaxRows(maxRows) };
+                    unsafe IO as {ef - DBStatement} { jstmt.setMaxRows(maxRows) };
                     k()
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -76,7 +76,7 @@ pub mod BasicDb.DbStatement {
 
             def cancel(k) = 
                 try {
-                    unsafe IO as {ef - DbStatement} { jstmt.cancel() };
+                    unsafe IO as {ef - DBStatement} { jstmt.cancel() };
                     k()
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -84,7 +84,7 @@ pub mod BasicDb.DbStatement {
             
             def execute(sql, k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbStatement} { jstmt.execute(sql) };
+                    let ans = unsafe IO as {ef - DBStatement} { jstmt.execute(sql) };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -92,7 +92,7 @@ pub mod BasicDb.DbStatement {
                 
             def executeUpdate(sql, k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbStatement} { jstmt.executeUpdate(sql) };
+                    let ans = unsafe IO as {ef - DBStatement} { jstmt.executeUpdate(sql) };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -100,7 +100,7 @@ pub mod BasicDb.DbStatement {
             
             def executeLargeUpdate(sql, k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbStatement} { jstmt.executeLargeUpdate(sql) };
+                    let ans = unsafe IO as {ef - DBStatement} { jstmt.executeLargeUpdate(sql) };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -108,7 +108,7 @@ pub mod BasicDb.DbStatement {
             
             def executeQuery(sql, k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbStatement} { jstmt.executeQuery(sql) };
+                    let ans = unsafe IO as {ef - DBStatement} { jstmt.executeQuery(sql) };
                     k(ResultSetHandle.ResultSetHandle(ans))
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -116,7 +116,7 @@ pub mod BasicDb.DbStatement {
 
             def getResultSet(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbStatement} { jstmt.getResultSet() };
+                    let ans = unsafe IO as {ef - DBStatement} { jstmt.getResultSet() };
                     k(ResultSetHandle.ResultSetHandle(ans))
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -124,7 +124,7 @@ pub mod BasicDb.DbStatement {
 
             def enquoteLiteral(sql, k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbStatement} { jstmt.enquoteLiteral(sql) };
+                    let ans = unsafe IO as {ef - DBStatement} { jstmt.enquoteLiteral(sql) };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -132,7 +132,7 @@ pub mod BasicDb.DbStatement {
 
             def isClosed(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbStatement} { jstmt.isClosed() };
+                    let ans = unsafe IO as {ef - DBStatement} { jstmt.isClosed() };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -140,7 +140,7 @@ pub mod BasicDb.DbStatement {
     
             def isCloseOnCompletion(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbStatement} { jstmt.isCloseOnCompletion() };
+                    let ans = unsafe IO as {ef - DBStatement} { jstmt.isCloseOnCompletion() };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -148,6 +148,6 @@ pub mod BasicDb.DbStatement {
         }
     }
 
-    pub def runWithIO(stmt: StatementHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbStatement)  = 
+    pub def runWithIO(stmt: StatementHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DBStatement)  = 
         handle(stmt, f)()
 }

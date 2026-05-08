@@ -16,36 +16,64 @@
 
 
 
-pub mod BasicDb.DbDriverManager {
+pub mod BasicDB.DBDriverManager {
     
-
-    use BasicDb.DbDriverManager
-    use BasicDb.DbConnection.ConnectionHandle
-    use BasicDb.DbConnection.ConnectionHandle.{ConnectionHandle}
+    use EffectExtras.Fail.Fail
+    use BasicDB.DBDriverManager
+    use BasicDB.DBConnection.DBConnection
+    use BasicDB.DBConnection.ConnectionHandle
     use IoError.ErrorKind
     use IoError.IoError
 
-    import java.sql.SQLException
+    import java.sql.{SQLException => JSQLException}
     import java.sql.DriverManager
 
-    pub eff DbDriverManager {
+    pub eff DBDriverManager {
         def getConnection(url: String): ConnectionHandle
+        def closeConnection(conn: ConnectionHandle): Unit
     }
 
-    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbDriverManager + IO) = x -> run {
-        Ok(f(x))
-    } with handler DbDriverManager {            
-        
-        def getConnection(url, k) = 
-            try {
-                let ans = ConnectionHandle(DriverManager.getConnection(url));
-                k(ans)
-            } catch {
-                case ex: SQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-            }
+    pub def handle(f: a -> b \ ef): a -> b \ {ef + IO + Fail} - DBDriverManager = x -> 
+        run {
+            f(x)
+        } with handler DBDriverManager {
+            
+            def getConnection(url, k) = 
+                try {
+                    let ans = DriverManager.getConnection(url);
+                    k(ConnectionHandle.ConnectionHandle(ans))
+                } catch {
+                    case ex: JSQLException => Fail.report(ex.getMessage())
+                }
 
-    }
 
-    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbDriverManager) + {IO} = 
+            def closeConnection(conn, k) = 
+                try {
+                    let ConnectionHandle.ConnectionHandle(jconn) = conn;
+                    jconn.close();
+                    k()
+                } catch {
+                    case ex: JSQLException => Fail.report(ex.getMessage())
+                }
+
+        }
+
+    pub def runWithIO(f: Unit -> a \ ef): a \ {ef + Fail + IO} - DBDriverManager = 
         handle(f)()
+
+
+    pub def runWithIOAndFail(f: Unit -> a \ ef): Result[IoError, a] \ {IO + ef} - DBDriverManager - Fail =
+        run {
+             runWithIO(f)
+        } with EffectExtras.Fail.runWithResultOfIoError
+
+    pub def execDBConnection(url: String, 
+                                f: Unit -> a \ DBConnection + ef): a \ {Fail + ef + DBDriverManager} - DBConnection = 
+        let conn = DBDriver.getConnection(url);
+        let ans = run {
+            f()
+        } with BasicDB.DBConnection.runDBConnection(conn);
+        DBDriverManager.closeConnection(conn);
+        ans
+
 }

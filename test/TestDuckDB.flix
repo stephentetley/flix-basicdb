@@ -7,49 +7,49 @@ mod TestDuckDB {
     use Fs.FileWrite
     use Fs.WriteFile
 
-    use BasicDb.DbConnection.DbConnection
-    use BasicDb.DbStatement.DbStatement
-    use BasicDb.DbPreparedStatement.DbPreparedStatement
-    use BasicDb.DbResultSet.DbResultSet
-    use BasicDb.PreparedStatementSetter.PreparedStatementSetter
-    use BasicDb.RowReader.RowReader
+    use BasicDB.DBConnection.DBConnection
+    use BasicDB.DBStatement.DBStatement
+    use BasicDB.DBPreparedStatement.DBPreparedStatement
+    use BasicDB.DBResultSet.DBResultSet
+    use BasicDB.PreparedStatementSetter.PreparedStatementSetter
+    use BasicDB.RowReader.RowReader
 
 
-    def duckdb_action1(): Unit -> Unit \ DbConnection + {IO} = _ ->
-        let stmt1 = DbConnection.createStatement();
+    def duckdb_action1(): Unit -> Unit \ DBConnection + {IO} = _ ->
+        let stmt1 = DBConnection.createStatement();
         let _ = run { 
-            discard DbStatement.execute("CREATE SCHEMA IF NOT EXISTS facts;");
-            discard DbStatement.execute("CREATE TABLE IF NOT EXISTS facts.databases (name VARCHAR NOT NULL, year INTEGER, PRIMARY KEY(name));");
-            discard DbStatement.execute("DELETE FROM facts.databases;");
-            DbStatement.close()
-        } with BasicDb.DbStatement.runWithIO(stmt1);
-        let pstmt = DbConnection.prepareStatement("INSERT INTO facts.databases (name, year) VALUES (?,?);");
+            discard DBStatement.execute("CREATE SCHEMA IF NOT EXISTS facts;");
+            discard DBStatement.execute("CREATE TABLE IF NOT EXISTS facts.databases (name VARCHAR NOT NULL, year INTEGER, PRIMARY KEY(name));");
+            discard DBStatement.execute("DELETE FROM facts.databases;");
+            DBStatement.close()
+        } with BasicDB.DBStatement.runWithIO(stmt1);
+        let pstmt = DBConnection.prepareStatement("INSERT INTO facts.databases (name, year) VALUES (?,?);");
         let _ = run {
-            let _ = run {setter("SQLite", 2000)} with BasicDb.PreparedStatementSetter.runWithIO(pstmt);
-            DbPreparedStatement.addBatch();
-            let _ = run {setter("DuckDB", 2019)} with BasicDb.PreparedStatementSetter.runWithIO(pstmt);
-            DbPreparedStatement.addBatch();
-            DbPreparedStatement.executeBatch();
-            DbPreparedStatement.close()
-        }  with BasicDb.DbPreparedStatement.runWithIO(pstmt);
-        let stmt2 = DbConnection.createStatement();
+            let _ = run {setter("SQLite", 2000)} with BasicDB.PreparedStatementSetter.runPreparedStatementSetter(pstmt);
+            DBPreparedStatement.addBatch();
+            let _ = run {setter("DuckDB", 2019)} with BasicDB.PreparedStatementSetter.runPreparedStatementSetter(pstmt);
+            DBPreparedStatement.addBatch();
+            DBPreparedStatement.executeBatch();
+            DBPreparedStatement.close()
+        }  with BasicDB.DBPreparedStatement.runWithIO(pstmt);
+        let stmt2 = DBConnection.createStatement();
         let _ = run { 
-            let rs = DbStatement.executeQuery("SELECT * FROM facts.databases;");
+            let rs = DBStatement.executeQuery("SELECT * FROM facts.databases;");
             let _ = run {
                 def loop() = {
-                    let more = DbResultSet.next();
+                    let more = DBResultSet.next();
                     if (more) {
-                        match run {reader()} with BasicDb.RowReader.runWithIO(rs) {
-                            case Ok((n, y)) => println("db: ${n}, year: ${y}")
+                        match run {reader()} with BasicDB.RowReader.runWithIO(rs) {
+                            case Ok((n, y)) => println("DB: ${n}, year: ${y}")
                             case Err(err) => println("error: ${err}")
                         };
                         loop()
                     } else ()
                 };
                 loop()
-            } with BasicDb.DbResultSet.runWithIO(rs);
-            DbStatement.close()
-        } with BasicDb.DbStatement.runWithIO(stmt2);
+            } with BasicDB.DBResultSet.runWithIO(rs);
+            DBStatement.close()
+        } with BasicDB.DBStatement.runWithIO(stmt2);
         ()
 
 
@@ -68,7 +68,7 @@ mod TestDuckDB {
     @Test
     def test01(): Unit \ {Assert + IO} = 
         let ans:Result[IoError, Bool] = run {
-            let a1 = BasicDb.runDuckDbInMemory(duckdb_action1);
+            let a1 = BasicDB.runDuckDBInMemory(duckdb_action1);
             Result.map(_ -> true, a1)
         } with FileWrite.runWithIO;
         assertEq(expected = Ok(true), ans)

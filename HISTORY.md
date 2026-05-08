@@ -1,4 +1,5 @@
 ### v0.10.0
+   Changed capitalization of namespaces `Db` is now `DB` e.g `BasicDB`
    Changes to effects - removed IO from the signatures of nested 
    effects.
 

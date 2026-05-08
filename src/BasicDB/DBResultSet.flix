@@ -16,17 +16,17 @@
 
 
 
-pub mod BasicDb.DbResultSet {
+pub mod BasicDB.DBResultSet {
     
 
-    use BasicDb.DbResultSet
+    use BasicDB.DBResultSet
     use IoError.ErrorKind
     use IoError.IoError
 
     import java.sql.{SQLException => JSQLException}
     import java.sql.{ResultSet => JResultSet}
 
-    pub eff DbResultSet {
+    pub eff DBResultSet {
         def close(): Unit
         def next(): Bool
         def wasNull(): Bool
@@ -48,15 +48,15 @@ pub mod BasicDb.DbResultSet {
     pub enum ResultSetHandle (JResultSet)
 
     pub def handle(results: ResultSetHandle, 
-                    f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DbResultSet) = x -> {
+                    f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DBResultSet) = x -> {
         let ResultSetHandle.ResultSetHandle(jresults) = results;
         run {
             Ok(f(x))
-        } with handler DbResultSet {
+        } with handler DBResultSet {
         
             def close(k) = 
                 try {
-                    unsafe IO as {ef - DbResultSet} { jresults.close() };
+                    unsafe IO as {ef - DBResultSet} { jresults.close() };
                     k()
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -64,7 +64,7 @@ pub mod BasicDb.DbResultSet {
 
             def next(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbResultSet} { jresults.next() };
+                    let ans = unsafe IO as {ef - DBResultSet} { jresults.next() };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -72,7 +72,7 @@ pub mod BasicDb.DbResultSet {
             
             def wasNull(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbResultSet} { jresults.wasNull() };
+                    let ans = unsafe IO as {ef - DBResultSet} { jresults.wasNull() };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -80,7 +80,7 @@ pub mod BasicDb.DbResultSet {
 
             def findColumn(label, k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbResultSet} { jresults.findColumn(label) };
+                    let ans = unsafe IO as {ef - DBResultSet} { jresults.findColumn(label) };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -88,7 +88,7 @@ pub mod BasicDb.DbResultSet {
 
             def isBeforeFirst(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbResultSet} { jresults.isBeforeFirst() };
+                    let ans = unsafe IO as {ef - DBResultSet} { jresults.isBeforeFirst() };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -96,7 +96,7 @@ pub mod BasicDb.DbResultSet {
 
             def isAfterLast(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbResultSet} { jresults.isAfterLast() };
+                    let ans = unsafe IO as {ef - DBResultSet} { jresults.isAfterLast() };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -104,7 +104,7 @@ pub mod BasicDb.DbResultSet {
 
             def isFirst(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbResultSet} { jresults.isFirst() };
+                    let ans = unsafe IO as {ef - DBResultSet} { jresults.isFirst() };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -112,7 +112,7 @@ pub mod BasicDb.DbResultSet {
 
             def isLast(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbResultSet} { jresults.isLast() };
+                    let ans = unsafe IO as {ef - DBResultSet} { jresults.isLast() };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -120,7 +120,7 @@ pub mod BasicDb.DbResultSet {
 
             def first(k) = 
                 try {
-                    unsafe IO as {ef - DbResultSet} { discard jresults.first() };
+                    unsafe IO as {ef - DBResultSet} { discard jresults.first() };
                     k()
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -128,7 +128,7 @@ pub mod BasicDb.DbResultSet {
 
             def last(k) = 
                 try {
-                    unsafe IO as {ef - DbResultSet} { discard jresults.last() };
+                    unsafe IO as {ef - DBResultSet} { discard jresults.last() };
                     k()
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -136,7 +136,7 @@ pub mod BasicDb.DbResultSet {
 
             def getRow(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbResultSet} { jresults.getRow() };
+                    let ans = unsafe IO as {ef - DBResultSet} { jresults.getRow() };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -144,7 +144,7 @@ pub mod BasicDb.DbResultSet {
 
             def absolute(row, k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbResultSet} { jresults.absolute(row) };
+                    let ans = unsafe IO as {ef - DBResultSet} { jresults.absolute(row) };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -152,7 +152,7 @@ pub mod BasicDb.DbResultSet {
             
             def relative(rows, k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbResultSet} { jresults.relative(rows) };
+                    let ans = unsafe IO as {ef - DBResultSet} { jresults.relative(rows) };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -160,7 +160,7 @@ pub mod BasicDb.DbResultSet {
 
             def setFetchSize(rows, k) = 
                 try {
-                    unsafe IO as {ef - DbResultSet} { jresults.setFetchSize(rows) };
+                    unsafe IO as {ef - DBResultSet} { jresults.setFetchSize(rows) };
                     k()
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -168,7 +168,7 @@ pub mod BasicDb.DbResultSet {
             
             def getFetchSize(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DbResultSet} { jresults.getFetchSize() };
+                    let ans = unsafe IO as {ef - DBResultSet} { jresults.getFetchSize() };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -178,6 +178,6 @@ pub mod BasicDb.DbResultSet {
 
     }
         
-    pub def runWithIO(rset: ResultSetHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DbResultSet) = 
+    pub def runWithIO(rset: ResultSetHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DBResultSet) = 
         handle(rset, f)()
 }
