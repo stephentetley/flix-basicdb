@@ -46,7 +46,7 @@ pub mod BasicDB.PreparedStatementSetter {
     pub type alias PreparedStatementSetterWithAlt = PreparedStatementSetter + Alt
 
     pub def handle(stmt: PreparedStatementHandle, 
-                    f: a -> b \ ef): a -> b \ (ef + Fail - PreparedStatementSetterWithAlt) = x -> {
+                    f: a -> b \ ef): a -> b \ {ef + Fail - PreparedStatementSetterWithAlt} = x -> {
         let PreparedStatementHandle.PreparedStatementHandle(jstmt) = stmt;
         let result = run {
             Ok(f(x))
@@ -149,7 +149,7 @@ pub mod BasicDB.PreparedStatementSetter {
     }
 
     pub def runPreparedStatementSetter(stmt: PreparedStatementHandle, 
-                                        f: Unit -> a \ {PreparedStatementSetterWithAlt + ef} ): a \ {ef + Fail - PreparedStatementSetterWithAlt} = 
+                                        f: Unit -> a \ ef): a \ {ef + Fail - PreparedStatementSetterWithAlt} = 
         handle(stmt, f)()
 
 }

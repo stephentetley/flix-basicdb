@@ -17,12 +17,14 @@
 
 
 pub mod BasicDB.DBStatement {
+    use BasicDB.DBStatement
+    use BasicDB.RowReader
     
     use IoError.ErrorKind
     use IoError.IoError
     use EffectExtras.Fail.Fail    
     use BasicDB.DBResultSet.ResultSetHandle
-    use BasicDB.DBStatement
+    use BasicDB.RowReader.RowReaderWithAlt
 
 
     import java.sql.{SQLException => JSQLException}
@@ -36,6 +38,7 @@ pub mod BasicDB.DBStatement {
         def executeUpdate(sql: String): Int32
         def executeLargeUpdate(sql: String): Int64
         def executeQuery(sql: String): ResultSetHandle
+        def closeResultSet(rset: ResultSetHandle): Unit
         def getResultSet(): ResultSetHandle
         def enquoteLiteral(sql: String): String
         def isClosed(): Bool
@@ -107,6 +110,16 @@ pub mod BasicDB.DBStatement {
                     case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
+
+            def closeResultSet(results, k) = 
+                try {
+                    let ResultSetHandle.ResultSetHandle(jresults) = results;
+                    unsafe IO as {ef + Fail - DBStatement} { jresults.close() };
+                    k()
+                } catch {
+                    case ex: JSQLException => Fail.report(ex.getMessage())
+                }
+
             def getResultSet(k) = 
                 try {
                     let ans = unsafe IO as {ef + Fail - DBStatement} { jstmt.getResultSet() };
@@ -144,4 +157,13 @@ pub mod BasicDB.DBStatement {
     pub def runDBStatement(stmt: StatementHandle, 
                             f: Unit -> a \ ef): a \ (ef + Fail - DBStatement)  = 
         handle(stmt, f)()
+
+    // TODO this is single row answer...
+    pub def execQuery(sql: String, 
+                        f: Unit -> a \ {RowReaderWithAlt + ef}): a \ {Fail + ef + DBStatement} - RowReaderWithAlt =
+        let results = DBStatement.executeQuery(sql);
+        let ans = BasicDB.RowReader.runRowReader(results, f);
+        DBStatement.closeResultSet(results);
+        ans
+
 }

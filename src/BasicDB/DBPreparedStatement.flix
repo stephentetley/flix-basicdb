@@ -17,6 +17,7 @@
 
 
 pub mod BasicDB.DBPreparedStatement {
+    use BasicDB.PreparedStatementSetter
     
     use IoError.ErrorKind
     use IoError.IoError
@@ -102,10 +103,11 @@ pub mod BasicDB.DBPreparedStatement {
         }
     }
 
-    pub def runDBPreparedStatement(stmt: PreparedStatementHandle, f: Unit -> a \ ef): a \ (ef + Fail - DBPreparedStatement) = 
+    pub def runDBPreparedStatement(stmt: PreparedStatementHandle, 
+                                    f: Unit -> a \ ef): a \ (ef + Fail - DBPreparedStatement) = 
         handle(stmt, f)()
 
-    pub def execPreparedStatementSetter(f: Unit -> a \ {PreparedStatementSetterWithAlt + ef}): a \ {Fail + ef + DBPreparedStatement} - PreparedStatementSetterWithAlt =
+    pub def execPreparedStatementSetter(f: Unit -> a \ ef): a \ {Fail + ef + DBPreparedStatement} - PreparedStatementSetterWithAlt =
         let stmt = DBPreparedStatement.askPreparedStatementHandle();
         BasicDB.PreparedStatementSetter.runPreparedStatementSetter(stmt, f)
 

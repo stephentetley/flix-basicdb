@@ -14,10 +14,11 @@ mod TestDuckDB {
     use BasicDB.DBResultSet.DBResultSet
     use BasicDB.PreparedStatementSetter.PreparedStatementSetterWithAlt
     use BasicDB.PreparedStatementSetter.PreparedStatementSetter
+    use BasicDB.RowReader.RowReaderWithAlt
     use BasicDB.RowReader.RowReader
 
 
-    def duckdb_action1(): Unit \ Fail + DBConnection =
+    def duckdb_action1(): Unit \ IO + ef + DBConnection + Fail - DBPreparedStatement - DBStatement - DBResultSet =
         BasicDB.DBConnection.execDBStatement(() -> {
             discard DBStatement.execute("CREATE SCHEMA IF NOT EXISTS facts;");
             discard DBStatement.execute("CREATE TABLE IF NOT EXISTS facts.databases (name VARCHAR NOT NULL, year INTEGER, PRIMARY KEY(name));");
@@ -35,11 +36,11 @@ mod TestDuckDB {
         let stmt2 = DBConnection.createStatement();
         let _ = run { 
             let rs = DBStatement.executeQuery("SELECT * FROM facts.databases;");
-            let _ = run {
+            run {
                 def loop() = {
                     let more = DBResultSet.next();
                     if (more) {
-                        match run {reader()} with BasicDB.RowReader.runWithIO(rs) {
+                        match BasicDB.RowReader.runRowReaderWithAlt(rs, reader) {
                             case Ok((n, y)) => println("DB: ${n}, year: ${y}")
                             case Err(err) => println("error: ${err}")
                         };
@@ -47,10 +48,10 @@ mod TestDuckDB {
                     } else ()
                 };
                 loop()
-            } with BasicDB.DBResultSet.runWithIO(rs);
-            DBStatement.close()
-        } with BasicDB.DBStatement.runWithIO(stmt2);
-        ()
+            } with BasicDB.DBResultSet.runDBResultSet(rs)
+        } with BasicDB.DBStatement.runDBStatement(stmt2);
+        DBConnection.closeStatement(stmt2)
+
 
 
      def setter(name: String, year: Int32): Unit \ PreparedStatementSetterWithAlt = checked_ecast({
@@ -58,11 +59,11 @@ mod TestDuckDB {
         PreparedStatementSetter.setInt32(1, year)
      })
 
-     def reader(): (String, Int32) \ RowReader = {
+     def reader(): (String, Int32) \ RowReaderWithAlt = checked_ecast({
         let name = RowReader.getStringByName("name");
         let year = RowReader.getInt32ByName("year");
         (name, year)
-     }
+     })
 
 
     @Test

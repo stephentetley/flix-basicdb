@@ -18,16 +18,19 @@
 
 pub mod BasicDB.DBResultSet {
     
-
-    use BasicDB.DBResultSet
     use IoError.ErrorKind
     use IoError.IoError
+
+    use EffectExtras.Fail.Fail
+    use BasicDB.RowReader.RowReaderWithAlt
 
     import java.sql.{SQLException => JSQLException}
     import java.sql.{ResultSet => JResultSet}
 
     pub eff DBResultSet {
-        def close(): Unit
+        // `askResultSetHandle` should not be used in user code
+        // It is a hack until we can run local effects polymorphically
+        def askResultSetHandle(): ResultSetHandle
         def next(): Bool
         def wasNull(): Bool
         def findColumn(label: String): Int32
@@ -48,136 +51,137 @@ pub mod BasicDB.DBResultSet {
     pub enum ResultSetHandle (JResultSet)
 
     pub def handle(results: ResultSetHandle, 
-                    f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DBResultSet) = x -> {
+                    f: a -> b \ ef): a -> b \ (ef + Fail - DBResultSet) = x -> {
         let ResultSetHandle.ResultSetHandle(jresults) = results;
         run {
-            Ok(f(x))
+            f(x)
         } with handler DBResultSet {
         
-            def close(k) = 
-                try {
-                    unsafe IO as {ef - DBResultSet} { jresults.close() };
-                    k()
-                } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
+            def askResultSetHandle(k) = k(results)
+
 
             def next(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DBResultSet} { jresults.next() };
+                    let ans = unsafe IO as {ef + Fail - DBResultSet} { jresults.next() };
                     k(ans)
                 } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
             
             def wasNull(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DBResultSet} { jresults.wasNull() };
+                    let ans = unsafe IO as {ef + Fail - DBResultSet} { jresults.wasNull() };
                     k(ans)
                 } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def findColumn(label, k) = 
                 try {
-                    let ans = unsafe IO as {ef - DBResultSet} { jresults.findColumn(label) };
+                    let ans = unsafe IO as {ef + Fail - DBResultSet} { jresults.findColumn(label) };
                     k(ans)
                 } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def isBeforeFirst(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DBResultSet} { jresults.isBeforeFirst() };
+                    let ans = unsafe IO as {ef + Fail - DBResultSet} { jresults.isBeforeFirst() };
                     k(ans)
                 } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def isAfterLast(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DBResultSet} { jresults.isAfterLast() };
+                    let ans = unsafe IO as {ef + Fail - DBResultSet} { jresults.isAfterLast() };
                     k(ans)
                 } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def isFirst(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DBResultSet} { jresults.isFirst() };
+                    let ans = unsafe IO as {ef + Fail - DBResultSet} { jresults.isFirst() };
                     k(ans)
                 } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def isLast(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DBResultSet} { jresults.isLast() };
+                    let ans = unsafe IO as {ef + Fail - DBResultSet} { jresults.isLast() };
                     k(ans)
                 } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def first(k) = 
                 try {
-                    unsafe IO as {ef - DBResultSet} { discard jresults.first() };
+                    unsafe IO as {ef + Fail - DBResultSet} { discard jresults.first() };
                     k()
                 } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def last(k) = 
                 try {
-                    unsafe IO as {ef - DBResultSet} { discard jresults.last() };
+                    unsafe IO as {ef + Fail - DBResultSet} { discard jresults.last() };
                     k()
                 } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def getRow(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DBResultSet} { jresults.getRow() };
+                    let ans = unsafe IO as {ef + Fail - DBResultSet} { jresults.getRow() };
                     k(ans)
                 } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def absolute(row, k) = 
                 try {
-                    let ans = unsafe IO as {ef - DBResultSet} { jresults.absolute(row) };
+                    let ans = unsafe IO as {ef + Fail - DBResultSet} { jresults.absolute(row) };
                     k(ans)
                 } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
             
             def relative(rows, k) = 
                 try {
-                    let ans = unsafe IO as {ef - DBResultSet} { jresults.relative(rows) };
+                    let ans = unsafe IO as {ef + Fail - DBResultSet} { jresults.relative(rows) };
                     k(ans)
                 } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def setFetchSize(rows, k) = 
                 try {
-                    unsafe IO as {ef - DBResultSet} { jresults.setFetchSize(rows) };
+                    unsafe IO as {ef + Fail - DBResultSet} { jresults.setFetchSize(rows) };
                     k()
                 } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
             
             def getFetchSize(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DBResultSet} { jresults.getFetchSize() };
+                    let ans = unsafe IO as {ef + Fail - DBResultSet} { jresults.getFetchSize() };
                     k(ans)
                 } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
         }
 
     }
         
-    pub def runDBResultSet(rset: ResultSetHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DBResultSet) = 
+    pub def runDBResultSet(rset: ResultSetHandle, f: Unit -> a \ ef):  a \ (ef + Fail - DBResultSet) = 
         handle(rset, f)()
+
+    pub def execRowReader(f: Unit -> a \ {RowReaderWithAlt + ef}): a \ {Fail + ef + DBResultSet} - RowReaderWithAlt =
+        let rset = DBResultSet.askResultSetHandle();
+        BasicDB.RowReader.runRowReader(rset, f)
+
+
 }

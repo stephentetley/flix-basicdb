@@ -208,14 +208,14 @@ pub mod BasicDB.DBConnection {
     pub def runDBConnection(conn: ConnectionHandle, f: Unit -> a \ ef): a \ {ef + Fail - DBConnection} =
         handle(conn, f)()
 
-    pub def execDBStatement(f: Unit -> a \ DBStatement + ef): a \ {Fail + ef + DBConnection} - DBStatement =
+    pub def execDBStatement(f: Unit -> a \ ef): a \ {Fail + ef + DBConnection} - DBStatement =
         let stmt = DBConnection.createStatement();
         let ans = BasicDB.DBStatement.runDBStatement(stmt, f);
         DBConnection.closeStatement(stmt);
         ans
 
     pub def execDBPreparedStatement(sql: String,
-                                        f: Unit -> a \ DBPreparedStatement + ef): a \ {Fail + ef + DBConnection} - DBPreparedStatement =
+                                        f: Unit -> a \ ef): a \ {Fail + ef + DBConnection} - DBPreparedStatement =
         let stmt = DBConnection.prepareStatement(sql);
         let ans = BasicDB.DBPreparedStatement.runDBPreparedStatement(stmt, f);
         DBConnection.closePreparedStatement(stmt);
