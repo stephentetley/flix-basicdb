@@ -7,31 +7,31 @@ mod TestDuckDB {
     use Fs.FileWrite
     use Fs.WriteFile
 
+    use EffectExtras.Fail.Fail
     use BasicDB.DBConnection.DBConnection
     use BasicDB.DBStatement.DBStatement
     use BasicDB.DBPreparedStatement.DBPreparedStatement
     use BasicDB.DBResultSet.DBResultSet
+    use BasicDB.PreparedStatementSetter.PreparedStatementSetterWithAlt
     use BasicDB.PreparedStatementSetter.PreparedStatementSetter
     use BasicDB.RowReader.RowReader
 
 
-    def duckdb_action1(): Unit -> Unit \ DBConnection + {IO} = _ ->
-        let stmt1 = DBConnection.createStatement();
-        let _ = run { 
+    def duckdb_action1(): Unit \ Fail + DBConnection =
+        BasicDB.DBConnection.execDBStatement(() -> {
             discard DBStatement.execute("CREATE SCHEMA IF NOT EXISTS facts;");
             discard DBStatement.execute("CREATE TABLE IF NOT EXISTS facts.databases (name VARCHAR NOT NULL, year INTEGER, PRIMARY KEY(name));");
-            discard DBStatement.execute("DELETE FROM facts.databases;");
-            DBStatement.close()
-        } with BasicDB.DBStatement.runWithIO(stmt1);
-        let pstmt = DBConnection.prepareStatement("INSERT INTO facts.databases (name, year) VALUES (?,?);");
-        let _ = run {
-            let _ = run {setter("SQLite", 2000)} with BasicDB.PreparedStatementSetter.runPreparedStatementSetter(pstmt);
-            DBPreparedStatement.addBatch();
-            let _ = run {setter("DuckDB", 2019)} with BasicDB.PreparedStatementSetter.runPreparedStatementSetter(pstmt);
-            DBPreparedStatement.addBatch();
-            DBPreparedStatement.executeBatch();
-            DBPreparedStatement.close()
-        }  with BasicDB.DBPreparedStatement.runWithIO(pstmt);
+            discard DBStatement.execute("DELETE FROM facts.databases;")
+        });
+        BasicDB.DBConnection.execDBPreparedStatement(
+                "INSERT INTO facts.databases (name, year) VALUES (?,?);",
+                () -> {
+                    BasicDB.DBPreparedStatement.execPreparedStatementSetter(_ -> setter("SQLite", 2000));
+                    DBPreparedStatement.addBatch();
+                    BasicDB.DBPreparedStatement.execPreparedStatementSetter(_ -> setter("DuckDB", 2019));
+                    DBPreparedStatement.addBatch();
+                    DBPreparedStatement.executeBatch()
+        });
         let stmt2 = DBConnection.createStatement();
         let _ = run { 
             let rs = DBStatement.executeQuery("SELECT * FROM facts.databases;");
@@ -53,10 +53,10 @@ mod TestDuckDB {
         ()
 
 
-     def setter(name: String, year: Int32): Unit \ PreparedStatementSetter = {
+     def setter(name: String, year: Int32): Unit \ PreparedStatementSetterWithAlt = checked_ecast({
         PreparedStatementSetter.setString(0, name);
         PreparedStatementSetter.setInt32(1, year)
-     }
+     })
 
      def reader(): (String, Int32) \ RowReader = {
         let name = RowReader.getStringByName("name");

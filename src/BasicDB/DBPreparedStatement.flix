@@ -18,18 +18,21 @@
 
 pub mod BasicDB.DBPreparedStatement {
     
-    use BasicDB.PreparedStatementSetter
-    use BasicDB.PreparedStatementSetter.PreparedStatementHandle
-    use BasicDB.DBResultSet.ResultSetHandle
-    use BasicDB.DBPreparedStatement
-    use BasicDB.PreparedStatementSetter
     use IoError.ErrorKind
     use IoError.IoError
+    use EffectExtras.Fail.Fail
+    use BasicDB.PreparedStatementSetter.PreparedStatementSetterWithAlt
+    use BasicDB.DBResultSet.ResultSetHandle
+    use BasicDB.DBPreparedStatement
+
 
     import java.sql.{SQLException => JSQLException}
+    import java.sql.{PreparedStatement => JPreparedStatement}
 
     pub eff DBPreparedStatement {
-        def close(): Unit
+        // `askPreparedStatementHandle` should not be used in user code
+        // It is a hack until we can run local effects polymorphically
+        def askPreparedStatementHandle(): PreparedStatementHandle
         def execute(): Bool
         def addBatch(): Unit
         def executeBatch(): Unit
@@ -38,71 +41,72 @@ pub mod BasicDB.DBPreparedStatement {
         def clearParameters(): Unit
     }
 
+    pub enum PreparedStatementHandle (JPreparedStatement)
+
     pub def handle(stmt: PreparedStatementHandle, 
-                    f: a -> b \ ef): a -> Result[IoError, b] \ (ef - DBPreparedStatement) = x -> {
+                    f: a -> b \ ef): a -> b \ {ef + Fail - DBPreparedStatement} = x -> {
         let PreparedStatementHandle.PreparedStatementHandle(jstmt) = stmt;
         run {
-            Ok(f(x))
+            f(x)
         } with handler DBPreparedStatement {
         
-            def close(k) = 
-                try {
-                    unsafe IO as {ef - DBPreparedStatement} { jstmt.close() };
-                    k()
-                } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
+            def askPreparedStatementHandle(k) = k(stmt)
+            
             def execute(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DBPreparedStatement} { jstmt.execute() };
+                    let ans = unsafe IO as {ef + Fail - DBPreparedStatement} { jstmt.execute() };
                     k(ans)
                 } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def addBatch(k) = 
                 try {
-                    unsafe IO as {ef - DBPreparedStatement} { jstmt.addBatch() };
+                    unsafe IO as {ef + Fail - DBPreparedStatement} { jstmt.addBatch() };
                     k()
                 } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def executeBatch(k) = 
                 try {
-                    unsafe IO as {ef - DBPreparedStatement} { discard jstmt.executeBatch() };
+                    unsafe IO as {ef + Fail - DBPreparedStatement} { discard jstmt.executeBatch() };
                     k()
                 } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def executeQuery(k) = 
                 try { 
-                    let ans = unsafe IO as {ef - DBPreparedStatement} { jstmt.executeQuery() };
+                    let ans = unsafe IO as {ef + Fail - DBPreparedStatement} { jstmt.executeQuery() };
                     k(ResultSetHandle.ResultSetHandle(ans))
                 } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def executeUpdate(k) = 
                 try {
-                    let ans = unsafe IO as {ef - DBPreparedStatement} { jstmt.executeUpdate() };
+                    let ans = unsafe IO as {ef + Fail - DBPreparedStatement} { jstmt.executeUpdate() };
                     k(ans)
                 } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def clearParameters(k) = 
                 try {
-                    unsafe IO as {ef - DBPreparedStatement} { jstmt.clearParameters() };
+                    unsafe IO as {ef + Fail - DBPreparedStatement} { jstmt.clearParameters() };
                     k()
                 } catch {
-                    case ex: JSQLException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
         }
     }
 
-    pub def runDBPreparedStatement(stmt: PreparedStatementHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DBPreparedStatement) = 
-        handle(stmt, f)()       
+    pub def runDBPreparedStatement(stmt: PreparedStatementHandle, f: Unit -> a \ ef): a \ (ef + Fail - DBPreparedStatement) = 
+        handle(stmt, f)()
+
+    pub def execPreparedStatementSetter(f: Unit -> a \ {PreparedStatementSetterWithAlt + ef}): a \ {Fail + ef + DBPreparedStatement} - PreparedStatementSetterWithAlt =
+        let stmt = DBPreparedStatement.askPreparedStatementHandle();
+        BasicDB.PreparedStatementSetter.runPreparedStatementSetter(stmt, f)
+
 }

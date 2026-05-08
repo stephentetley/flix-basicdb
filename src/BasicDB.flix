@@ -16,45 +16,44 @@
 
 
 pub mod BasicDB {
-
+    use IoError.IoError
+    use EffectExtras.Fail.Fail
     use BasicDB.DBDriverManager.DBDriverManager
     use BasicDB.DBConnection.DBConnection
-    use IoError.IoError
 
     import java.lang.Class
 
-    pub def runSQLite(path: String, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DBConnection - DBDriverManager) + {IO} = 
-        Result.flatten(run {
+    pub def runSQLite(path: String, 
+                        f: Unit -> a \ ef): Result[IoError, a] \ {ef + IO - Fail - DBConnection - DBDriverManager} = 
+        run {
             let url = "jdbc:sqlite:${path}";
             Class.forName("org.sqlite.JDBC");
             let conn = DBDriverManager.getConnection(url);
-            run {
-                let ans = f();
-                DBConnection.close();
-                ans
-            } with BasicDB.DBConnection.runWithIO(conn)
-        } with BasicDB.DBDriverManager.runWithIO)
+            let ans = BasicDB.DBConnection.runDBConnection(conn, f);
+            DBDriverManager.closeConnection(conn);
+            ans
+        } with BasicDB.DBDriverManager.runWithIOAndFail
     
 
-    pub def runDuckDB(path: String, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DBConnection - DBDriverManager) + {IO} = 
+    pub def runDuckDB(path: String, 
+                    f: Unit -> a \ ef): Result[IoError, a] \ {ef + IO - Fail - DBConnection - DBDriverManager} = 
         let url = "jdbc:duckdb:${path}";
         runDuckDBHelper(url, f)
     
-    pub def runDuckDBInMemory(f: Unit -> a \ ef): Result[IoError, a] \ (ef - DBConnection - DBDriverManager) + {IO} = 
+    pub def runDuckDBInMemory(f: Unit -> a \ ef): Result[IoError, a] \ {ef + IO - Fail - DBConnection - DBDriverManager} = 
         let url = "jdbc:duckdb:";
         runDuckDBHelper(url, f)
 
 
-    def runDuckDBHelper(url: String, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DBConnection - DBDriverManager) + {IO} = 
-        Result.flatten(run {
+    def runDuckDBHelper(url: String, f: Unit -> a \ ef): Result[IoError, a] \ {ef + IO - Fail - DBConnection - DBDriverManager} = 
+        run {
             Class.forName("org.duckdb.DuckDBDriver");
             let conn = DBDriverManager.getConnection(url);
-            run {
-                let ans = f();
-                DBConnection.close();
-                ans
-            } with BasicDB.DBConnection.runWithIO(conn)
-        } with BasicDB.DBDriverManager.runWithIO)
+            let ans = BasicDB.DBConnection.runDBConnection(conn, f);
+            DBDriverManager.closeConnection(conn);
+            ans
+        } with BasicDB.DBDriverManager.runWithIOAndFail
     
 
 }
+

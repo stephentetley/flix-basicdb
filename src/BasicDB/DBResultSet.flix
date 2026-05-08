@@ -178,6 +178,6 @@ pub mod BasicDB.DBResultSet {
 
     }
         
-    pub def runWithIO(rset: ResultSetHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DBResultSet) = 
+    pub def runDBResultSet(rset: ResultSetHandle, f: Unit -> a \ ef): Result[IoError, a] \ (ef - DBResultSet) = 
         handle(rset, f)()
 }

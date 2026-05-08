@@ -21,12 +21,11 @@ pub mod BasicDB.PreparedStatementSetter {
     use EffectExtras.Alt.Alt
     use EffectExtras.Fail.Fail
     use BasicDB.DBResultSet.ResultSetHandle
-    use BasicDB.PreparedStatementSetter
+    use BasicDB.DBPreparedStatement.PreparedStatementHandle
     use IoError.ErrorKind
     use IoError.IoError
 
     import java.sql.{SQLException => JSQLException}
-
     import java.sql.{PreparedStatement => JPreparedStatement}
 
     pub eff PreparedStatementSetter {
@@ -42,7 +41,7 @@ pub mod BasicDB.PreparedStatementSetter {
         def setString(paramIx: Int32, value: String): Unit
     }
 
-    pub enum PreparedStatementHandle (JPreparedStatement)
+
 
     pub type alias PreparedStatementSetterWithAlt = PreparedStatementSetter + Alt
 
@@ -149,7 +148,8 @@ pub mod BasicDB.PreparedStatementSetter {
         }
     }
 
-    pub def runPreparedStatementSetter(stmt: PreparedStatementHandle, f: Unit -> a \ ef): a \ (ef + Fail - PreparedStatementSetterWithAlt) = 
+    pub def runPreparedStatementSetter(stmt: PreparedStatementHandle, 
+                                        f: Unit -> a \ {PreparedStatementSetterWithAlt + ef} ): a \ {ef + Fail - PreparedStatementSetterWithAlt} = 
         handle(stmt, f)()
 
 }

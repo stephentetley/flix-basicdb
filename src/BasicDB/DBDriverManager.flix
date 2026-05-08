@@ -69,7 +69,7 @@ pub mod BasicDB.DBDriverManager {
 
     pub def execDBConnection(url: String, 
                                 f: Unit -> a \ DBConnection + ef): a \ {Fail + ef + DBDriverManager} - DBConnection = 
-        let conn = DBDriver.getConnection(url);
+        let conn = DBDriverManager.getConnection(url);
         let ans = run {
             f()
         } with BasicDB.DBConnection.runDBConnection(conn);

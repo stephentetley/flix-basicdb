@@ -14,6 +14,7 @@ mod TestSQLite {
     use Fs.ReadFile
     use Fs.WriteFile
 
+    use EffectExtras.Fail.Fail
     use BasicDB.DBConnection.DBConnection
     use BasicDB.DBStatement.DBStatement
     use BasicDB.DBPreparedStatement
@@ -22,14 +23,12 @@ mod TestSQLite {
     use BasicDB.RowReader
 
 
-    def sqlite_action1(): Unit -> Unit \ DBConnection = _ ->
-        let stmt = DBConnection.createStatement();
-        let _ = BasicDB.DBStatement.runWithIO(stmt, () -> { 
-            let _ = DBStatement.execute("DROP TABLE IF EXISTS facts_databases;");
-            let _ = DBStatement.execute("CREATE TABLE IF NOT EXISTS facts_databases (name VARCHAR PRIMARY KEY NOT NULL, year int);");
+    def sqlite_action1(): Unit \ Fail + DBConnection =
+        BasicDB.DBConnection.execDBStatement(() -> { 
+            discard DBStatement.execute("DROP TABLE IF EXISTS facts_databases;");
+            discard DBStatement.execute("CREATE TABLE IF NOT EXISTS facts_databases (name VARCHAR PRIMARY KEY NOT NULL, year int);");
             ()
-            });         
-        ()
+        })
 
 
 
@@ -39,7 +38,7 @@ mod TestSQLite {
             forM (
                 dir <- FileWrite.mkTempDir("flix-sqlite");
                 path <- Ok("${dir}/test-DB-67890.sqlite");
-                ans <- BasicDB.runSQLite(path, sqlite_action1())
+                ans <- BasicDB.runSQLite(path, sqlite_action1)
             ) yield ans
         } with WriteFile.runWithFileWrite;
         assertOk(ans)        
