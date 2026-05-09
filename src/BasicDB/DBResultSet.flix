@@ -176,12 +176,41 @@ pub mod BasicDB.DBResultSet {
 
     }
         
-    pub def runDBResultSet(rset: ResultSetHandle, f: Unit -> a \ ef):  a \ (ef + Fail - DBResultSet) = 
-        handle(rset, f)()
+    pub def runDBResultSet(results: ResultSetHandle, f: Unit -> a \ ef):  a \ (ef + Fail - DBResultSet) = 
+        handle(results, f)()
 
-    pub def execRowReader(f: Unit -> a \ {RowReaderWithAlt + ef}): a \ {Fail + ef + DBResultSet} - RowReaderWithAlt =
+    pub def execRowReader(f: Unit -> a \ ef): a \ {ef + Fail + DBResultSet} - RowReaderWithAlt =
         let rset = DBResultSet.askResultSetHandle();
         BasicDB.RowReader.runRowReader(rset, f)
 
+    // forEach
+
+    // Note - doesn't close resultset even though it will be exhausted
+    pub def forEach(f: Unit -> Unit \ ef): Unit \ {ef + Fail + DBResultSet} - RowReaderWithAlt =
+        def loop(fk, sk) = {
+            let more = DBResultSet.next();
+            if (more) {
+                let rowAnswer = EffectExtras.Fail.runWithResult(_ -> execRowReader(f));
+                match rowAnswer {
+                    case Ok()     => loop(fk, sk)
+                    case Err(err) => fk(err)
+                }
+            } else sk()
+        };
+        loop(e -> Fail.report(e), a -> a)
+
+    // fold
+    pub def fold(f: s -> s \ ef, st: s): s \ {ef + Fail + DBResultSet} - RowReaderWithAlt =
+        def loop(acc, fk, sk) = {
+            let more = DBResultSet.next();
+            if (more) {
+                let rowAnswer = EffectExtras.Fail.runWithResult(_ -> execRowReader(_ -> f(acc)));
+                match rowAnswer {
+                    case Ok(acc1) => loop(acc1, fk, sk)
+                    case Err(err) => fk(err)
+                }
+            } else sk(acc)
+        };
+        loop(st, e -> Fail.report(e), a -> a)
 
 }

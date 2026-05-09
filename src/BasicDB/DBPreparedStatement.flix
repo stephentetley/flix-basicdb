@@ -17,14 +17,16 @@
 
 
 pub mod BasicDB.DBPreparedStatement {
-    use BasicDB.PreparedStatementSetter
     
     use IoError.ErrorKind
     use IoError.IoError
+    
     use EffectExtras.Fail.Fail
     use BasicDB.PreparedStatementSetter.PreparedStatementSetterWithAlt
+    use BasicDB.DBResultSet.DBResultSet
     use BasicDB.DBResultSet.ResultSetHandle
-    use BasicDB.DBPreparedStatement
+    use BasicDB.RowReader.RowReaderWithAlt
+
 
 
     import java.sql.{SQLException => JSQLException}
@@ -38,6 +40,7 @@ pub mod BasicDB.DBPreparedStatement {
         def addBatch(): Unit
         def executeBatch(): Unit
         def executeQuery(): ResultSetHandle
+        def closeResultSet(results: ResultSetHandle): Unit
         def executeUpdate(): Int32
         def clearParameters(): Unit
     }
@@ -85,6 +88,17 @@ pub mod BasicDB.DBPreparedStatement {
                     case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
+
+            def closeResultSet(results, k) = 
+                try {
+                    let ResultSetHandle.ResultSetHandle(jresults) = results;
+                    unsafe IO as {ef + Fail - DBPreparedStatement} { jresults.close() };
+                    k()
+                } catch {
+                    case ex: JSQLException => Fail.report(ex.getMessage())
+                }
+
+
             def executeUpdate(k) = 
                 try {
                     let ans = unsafe IO as {ef + Fail - DBPreparedStatement} { jstmt.executeUpdate() };
@@ -106,6 +120,24 @@ pub mod BasicDB.DBPreparedStatement {
     pub def runDBPreparedStatement(stmt: PreparedStatementHandle, 
                                     f: Unit -> a \ ef): a \ (ef + Fail - DBPreparedStatement) = 
         handle(stmt, f)()
+
+    // This is single row answer...
+    pub def scalarQuery(f: Unit -> a \ {RowReaderWithAlt + ef}): a \ {Fail + ef + DBPreparedStatement} - RowReaderWithAlt =
+        let results = DBPreparedStatement.executeQuery();
+        let ans = BasicDB.RowReader.runRowReader(results, f);
+        DBPreparedStatement.closeResultSet(results);
+        ans
+
+    pub def forEachQuery(f: Unit -> Unit \ ef): Unit \ {ef + Fail + DBPreparedStatement} - DBResultSet - RowReaderWithAlt = 
+        let results = DBPreparedStatement.executeQuery();
+        BasicDB.DBResultSet.runDBResultSet(results, _ -> BasicDB.DBResultSet.forEach(f));
+        DBPreparedStatement.closeResultSet(results)
+
+    pub def foldQuery(f: s -> s \ ef, st: s): s \ {ef + Fail + DBPreparedStatement} - DBResultSet - RowReaderWithAlt = 
+        let results = DBPreparedStatement.executeQuery();
+        let ans = BasicDB.DBResultSet.runDBResultSet(results, _ -> BasicDB.DBResultSet.fold(f, st));
+        DBPreparedStatement.closeResultSet(results);
+        ans
 
     pub def execPreparedStatementSetter(f: Unit -> a \ ef): a \ {Fail + ef + DBPreparedStatement} - PreparedStatementSetterWithAlt =
         let stmt = DBPreparedStatement.askPreparedStatementHandle();

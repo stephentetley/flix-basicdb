@@ -17,12 +17,11 @@
 
 
 pub mod BasicDB.DBStatement {
-    use BasicDB.DBStatement
-    use BasicDB.RowReader
     
     use IoError.ErrorKind
     use IoError.IoError
     use EffectExtras.Fail.Fail    
+    use BasicDB.DBResultSet.DBResultSet
     use BasicDB.DBResultSet.ResultSetHandle
     use BasicDB.RowReader.RowReaderWithAlt
 
@@ -38,7 +37,7 @@ pub mod BasicDB.DBStatement {
         def executeUpdate(sql: String): Int32
         def executeLargeUpdate(sql: String): Int64
         def executeQuery(sql: String): ResultSetHandle
-        def closeResultSet(rset: ResultSetHandle): Unit
+        def closeResultSet(results: ResultSetHandle): Unit
         def getResultSet(): ResultSetHandle
         def enquoteLiteral(sql: String): String
         def isClosed(): Bool
@@ -158,11 +157,24 @@ pub mod BasicDB.DBStatement {
                             f: Unit -> a \ ef): a \ (ef + Fail - DBStatement)  = 
         handle(stmt, f)()
 
-    // TODO this is single row answer...
-    pub def execQuery(sql: String, 
-                        f: Unit -> a \ {RowReaderWithAlt + ef}): a \ {Fail + ef + DBStatement} - RowReaderWithAlt =
+    // This is single row answer...
+    pub def scalarQuery(sql: String, 
+                            f: Unit -> a \ ef): a \ {ef + Fail + DBStatement} - RowReaderWithAlt =
         let results = DBStatement.executeQuery(sql);
         let ans = BasicDB.RowReader.runRowReader(results, f);
+        DBStatement.closeResultSet(results);
+        ans
+
+    pub def forEachQuery(sql: String, 
+                            f: Unit -> Unit \ ef): Unit \ {ef + Fail + DBStatement} - DBResultSet - RowReaderWithAlt = 
+        let results = DBStatement.executeQuery(sql);
+        let ans = BasicDB.DBResultSet.runDBResultSet(results, _ -> BasicDB.DBResultSet.forEach(f));
+        DBStatement.closeResultSet(results);
+        ans
+
+    pub def foldQuery(sql: String, f: s -> s \ ef, st: s): s \ {ef + Fail + DBStatement} - DBResultSet - RowReaderWithAlt = 
+        let results = DBStatement.executeQuery(sql);
+        let ans = BasicDB.DBResultSet.runDBResultSet(results, _ -> BasicDB.DBResultSet.fold(f, st));
         DBStatement.closeResultSet(results);
         ans
 

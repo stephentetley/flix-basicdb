@@ -1,10 +1,13 @@
+### v0.11.0
+   Added `fold` and `forEach` to `DBResultSet`.
+
 ### v0.10.0
    Changed capitalization of namespaces `Db` is now `DB` e.g `BasicDB`
    Changes to effects - removed IO from the signatures of nested 
    effects.
    Changed error internal type from `IoError` to `String` and 
    removed IO from run functions of nested effects.
-   
+
 ### v0.9.1
    Updated to work with Flix version 0.71.0.
 
