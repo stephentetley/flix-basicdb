@@ -1,3 +1,6 @@
+### v0.12.0
+   Updated dependecies to work with Flix 0.75.0.
+
 ### v0.11.0
    Added `fold` and `forEach` to `DBResultSet`.
 
