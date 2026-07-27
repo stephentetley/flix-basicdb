@@ -1,3 +1,5 @@
+### v0.11.1
+   Updated dependencies.
 
 ### v0.11.0
    Added `fold` and `forEach` to `DBResultSet`.

@@ -19,7 +19,6 @@
 pub mod BasicDB.DBDriverManager {
     
     use EffectExtras.Fail.Fail
-    use BasicDB.DBDriverManager
     use BasicDB.DBConnection.DBConnection
     use BasicDB.DBConnection.ConnectionHandle
     use IoError.ErrorKind

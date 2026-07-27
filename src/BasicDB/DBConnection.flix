@@ -23,7 +23,6 @@ pub mod BasicDB.DBConnection {
     use BasicDB.DBPreparedStatement.DBPreparedStatement
     use BasicDB.DBStatement.DBStatement
     use BasicDB.DBStatement.StatementHandle
-    use BasicDB.DBConnection
     use IoError.ErrorKind
     use IoError.IoError
     
