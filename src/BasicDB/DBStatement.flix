@@ -20,7 +20,10 @@ pub mod BasicDB.DBStatement {
     
     use IoError.ErrorKind
     use IoError.IoError
-    use EffectExtras.Fail.Fail    
+    use EffectExtras.Fail.Fail
+    
+    use BasicDB.{Statement}
+    use BasicDB.DBConnection.DBConnection
     use BasicDB.DBResultSet.DBResultSet
     use BasicDB.DBResultSet.ResultSetHandle
     use BasicDB.RowReader.RowReaderWithAlt
@@ -44,11 +47,10 @@ pub mod BasicDB.DBStatement {
         def isCloseOnCompletion(): Bool
     }
     
-    pub enum StatementHandle (JStatement)
 
-    pub def handle(stmt: StatementHandle, 
+    pub def handle(stmt: Statement, 
                     f: a -> b \ ef): a -> b \ {ef + Fail - DBStatement} = x -> {
-        let StatementHandle.StatementHandle(jstmt) = stmt; 
+        let jstmt = ToJava.toJava(stmt); 
         run {
             f(x)
         } with handler DBStatement {
@@ -153,9 +155,17 @@ pub mod BasicDB.DBStatement {
         }
     }
 
-    pub def runDBStatement(stmt: StatementHandle, 
+    pub def runDBStatement(stmt: Statement, 
                             f: Unit -> a \ ef): a \ (ef + Fail - DBStatement)  = 
         handle(stmt, f)()
+
+
+    pub def runJDBCStatement1(f: Unit -> a \ ef): a \ {ef + Fail + DBConnection} - DBStatement = 
+        let stmt = DBConnection.createStatement();
+        let ans = handle(stmt, f)();
+        DBConnection.closeStatement(stmt);
+        ans
+
 
     // This is single row answer...
     pub def scalarQuery(sql: String, 

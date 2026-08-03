@@ -43,6 +43,22 @@ mod TestSQLite {
         } with WriteFile.runWithFileWrite;
         assertOk(ans)        
 
+    // @Test
+    // def test02(): Unit \ {Assert + IO} = 
+    //     def readLangs() = {
+    //         let stmt = DBConnection.createStatement();
+    //         let sql = "SELECT * FROM langs";
+    //         let rset = BasicDB.DBStatement.runDBStatement(stmt, DBStatement.executeQuery(sql));
+    //         BasicDB.DBResultSet.runDBResultSet(rset, BasicDB.DBResultSet.forEach(() -> {
+    //             let lang = RowReader.getStringByName("name");
+    //             println(lang)
+    //         }))
+    //     };
+    //     let path = "../data/langs.sqlite";
+    //     let _ans = BasicDB.runSQLite(path, readLangs );
+    //     assertOk(Ok(1))
+
+
 }
 
     

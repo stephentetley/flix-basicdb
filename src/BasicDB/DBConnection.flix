@@ -18,11 +18,11 @@
 pub mod BasicDB.DBConnection {
 
     use EffectExtras.Fail.Fail
+    use BasicDB.{Statement}
     use BasicDB.DBPreparedStatement.PreparedStatementHandle
     use BasicDB.PreparedStatementSetter.PreparedStatementSetterWithAlt
     use BasicDB.DBPreparedStatement.DBPreparedStatement
     use BasicDB.DBStatement.DBStatement
-    use BasicDB.DBStatement.StatementHandle
     use IoError.ErrorKind
     use IoError.IoError
     
@@ -34,8 +34,8 @@ pub mod BasicDB.DBConnection {
 
 
     pub eff DBConnection {
-        def createStatement(): StatementHandle
-        def closeStatement(stmt: StatementHandle): Unit
+        def createStatement(): Statement
+        def closeStatement(stmt: Statement): Unit
         def prepareStatement(sql: String): PreparedStatementHandle
         def closePreparedStatement(stmt: PreparedStatementHandle): Unit
         def nativeSQL(sql: String): String
@@ -64,14 +64,14 @@ pub mod BasicDB.DBConnection {
             def createStatement(k) = 
                 try {
                     let ans = unsafe IO as {ef + Fail - DBConnection} { jconn.createStatement() };
-                    k(StatementHandle.StatementHandle(ans))
+                    k(ToFlix.toFlix(ans))
                 } catch {
                     case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def closeStatement(stmt, k) = 
                 try {
-                    let StatementHandle.StatementHandle(jstmt) = stmt;
+                    let jstmt = ToJava.toJava(stmt);
                     unsafe IO as {ef + Fail - DBConnection} { jstmt.close() };
                     k()
                 } catch {
@@ -206,6 +206,8 @@ pub mod BasicDB.DBConnection {
     
     pub def runDBConnection(conn: ConnectionHandle, f: Unit -> a \ ef): a \ {ef + Fail - DBConnection} =
         handle(conn, f)()
+
+
 
     pub def execDBStatement(f: Unit -> a \ ef): a \ {Fail + ef + DBConnection} - DBStatement =
         let stmt = DBConnection.createStatement();

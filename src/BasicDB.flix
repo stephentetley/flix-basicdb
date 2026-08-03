@@ -16,18 +16,20 @@
 
 
 pub mod BasicDB {
+
     use IoError.IoError
     use EffectExtras.Fail.Fail
     use BasicDB.DBDriverManager.DBDriverManager
     use BasicDB.DBConnection.DBConnection
 
-    import java.lang.Class
+    import java.lang.{Class => JClass}
+    import java.sql.{Statement => JStatement}
 
     pub def runSQLite(path: String, 
                         f: Unit -> a \ ef): Result[IoError, a] \ {ef + IO - Fail - DBConnection - DBDriverManager} = 
         run {
             let url = "jdbc:sqlite:${path}";
-            Class.forName("org.sqlite.JDBC");
+            JClass.forName("org.sqlite.JDBC");
             let conn = DBDriverManager.getConnection(url);
             let ans = BasicDB.DBConnection.runDBConnection(conn, f);
             DBDriverManager.closeConnection(conn);
@@ -47,13 +49,26 @@ pub mod BasicDB {
 
     def runDuckDBHelper(url: String, f: Unit -> a \ ef): Result[IoError, a] \ {ef + IO - Fail - DBConnection - DBDriverManager} = 
         run {
-            Class.forName("org.duckdb.DuckDBDriver");
+            JClass.forName("org.duckdb.DuckDBDriver");
             let conn = DBDriverManager.getConnection(url);
             let ans = BasicDB.DBConnection.runDBConnection(conn, f);
             DBDriverManager.closeConnection(conn);
             ans
         } with BasicDB.DBDriverManager.runWithIOAndFail
     
+    pub enum Statement (JStatement)
+    
+    instance ToJava[Statement] {
+        type Out = JStatement
+        pub def toJava(x: Statement): JStatement =
+            let Statement.Statement(x1) = x;
+            x1
+    }
+
+    instance ToFlix[Statement] {
+        type In = JStatement
+        pub def toFlix(x: JStatement): Statement = Statement.Statement(x)
+    }
 
 }
 

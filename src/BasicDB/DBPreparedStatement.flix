@@ -23,6 +23,7 @@ pub mod BasicDB.DBPreparedStatement {
     
     use EffectExtras.Fail.Fail
     use BasicDB.PreparedStatementSetter.PreparedStatementSetterWithAlt
+    use BasicDB.DBConnection.DBConnection
     use BasicDB.DBResultSet.DBResultSet
     use BasicDB.DBResultSet.ResultSetHandle
     use BasicDB.RowReader.RowReaderWithAlt
@@ -120,6 +121,14 @@ pub mod BasicDB.DBPreparedStatement {
     pub def runDBPreparedStatement(stmt: PreparedStatementHandle, 
                                     f: Unit -> a \ ef): a \ (ef + Fail - DBPreparedStatement) = 
         handle(stmt, f)()
+
+    pub def runDBPreparedStatement1(sql: String, 
+                                        f: Unit -> a \ ef): a \ {ef + Fail + DBConnection} - DBPreparedStatement = 
+        let stmt = DBConnection.prepareStatement(sql);
+        let ans = handle(stmt, f)();
+        DBConnection.closePreparedStatement(stmt);
+        ans
+
 
     // This is single row answer...
     pub def scalarQuery(f: Unit -> a \ {RowReaderWithAlt + ef}): a \ {Fail + ef + DBPreparedStatement} - RowReaderWithAlt =

@@ -1,3 +1,7 @@
+### v0.12.0
+   Major API changes.
+   Effects reworked for better nesting.
+
 ### v0.11.1
    Updated dependencies.
 
