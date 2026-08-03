@@ -23,6 +23,7 @@ pub mod BasicDB {
     use BasicDB.DBConnection.DBConnection
 
     import java.lang.{Class => JClass}
+    import java.sql.{PreparedStatement => JPreparedStatement}
     import java.sql.{Statement => JStatement}
 
     pub def runSQLite(path: String, 
@@ -56,6 +57,23 @@ pub mod BasicDB {
             ans
         } with BasicDB.DBDriverManager.runWithIOAndFail
     
+
+
+    pub enum PreparedStatement (JPreparedStatement)
+
+    instance ToJava[PreparedStatement] {
+        type Out = JPreparedStatement
+        pub def toJava(x: PreparedStatement): JPreparedStatement =
+            let PreparedStatement.PreparedStatement(x1) = x;
+            x1
+    }
+
+    instance ToFlix[PreparedStatement] {
+        type In = JPreparedStatement
+        pub def toFlix(x: JPreparedStatement): PreparedStatement = PreparedStatement.PreparedStatement(x)
+    }
+
+
     pub enum Statement (JStatement)
     
     instance ToJava[Statement] {

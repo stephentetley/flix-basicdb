@@ -18,8 +18,7 @@
 pub mod BasicDB.DBConnection {
 
     use EffectExtras.Fail.Fail
-    use BasicDB.{Statement}
-    use BasicDB.DBPreparedStatement.PreparedStatementHandle
+    use BasicDB.{PreparedStatement, Statement}
     use BasicDB.PreparedStatementSetter.PreparedStatementSetterWithAlt
     use BasicDB.DBPreparedStatement.DBPreparedStatement
     use BasicDB.DBStatement.DBStatement
@@ -36,8 +35,8 @@ pub mod BasicDB.DBConnection {
     pub eff DBConnection {
         def createStatement(): Statement
         def closeStatement(stmt: Statement): Unit
-        def prepareStatement(sql: String): PreparedStatementHandle
-        def closePreparedStatement(stmt: PreparedStatementHandle): Unit
+        def prepareStatement(sql: String): PreparedStatement
+        def closePreparedStatement(stmt: PreparedStatement): Unit
         def nativeSQL(sql: String): String
         def setAutoCommit(autoCommit: Bool): Unit
         def getAutoCommit(): Bool
@@ -81,14 +80,14 @@ pub mod BasicDB.DBConnection {
             def prepareStatement(sql, k) = 
                 try {
                     let ans = unsafe IO as {ef + Fail - DBConnection} { jconn.prepareStatement(sql) };
-                    k(PreparedStatementHandle.PreparedStatementHandle(ans))
+                    k(ToFlix.toFlix(ans))
                 } catch {
                     case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def closePreparedStatement(stmt, k) = 
                 try {
-                    let PreparedStatementHandle.PreparedStatementHandle(jstmt) = stmt;
+                    let jstmt = ToJava.toJava(stmt);
                     unsafe IO as {ef + Fail - DBConnection} { jstmt.close() };
                     k()
                 } catch {

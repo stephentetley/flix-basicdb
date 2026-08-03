@@ -18,10 +18,10 @@
 
 pub mod BasicDB.DBPreparedStatement {
     
-    use IoError.ErrorKind
-    use IoError.IoError
     
     use EffectExtras.Fail.Fail
+    
+    use BasicDB.{PreparedStatement}
     use BasicDB.PreparedStatementSetter.PreparedStatementSetterWithAlt
     use BasicDB.DBConnection.DBConnection
     use BasicDB.DBResultSet.DBResultSet
@@ -34,9 +34,9 @@ pub mod BasicDB.DBPreparedStatement {
     import java.sql.{PreparedStatement => JPreparedStatement}
 
     pub eff DBPreparedStatement {
-        // `askPreparedStatementHandle` should not be used in user code
+        // `askPreparedStatement` should not be used in user code
         // It is a hack until we can run local effects polymorphically
-        def askPreparedStatementHandle(): PreparedStatementHandle
+        def askPreparedStatement(): PreparedStatement
         def execute(): Bool
         def addBatch(): Unit
         def executeBatch(): Unit
@@ -46,16 +46,14 @@ pub mod BasicDB.DBPreparedStatement {
         def clearParameters(): Unit
     }
 
-    pub enum PreparedStatementHandle (JPreparedStatement)
-
-    pub def handle(stmt: PreparedStatementHandle, 
+    pub def handle(stmt: PreparedStatement, 
                     f: a -> b \ ef): a -> b \ {ef + Fail - DBPreparedStatement} = x -> {
-        let PreparedStatementHandle.PreparedStatementHandle(jstmt) = stmt;
+        let jstmt = ToJava.toJava(stmt);
         run {
             f(x)
         } with handler DBPreparedStatement {
         
-            def askPreparedStatementHandle(k) = k(stmt)
+            def askPreparedStatement(k) = k(stmt)
             
             def execute(k) = 
                 try {
@@ -118,7 +116,7 @@ pub mod BasicDB.DBPreparedStatement {
         }
     }
 
-    pub def runDBPreparedStatement(stmt: PreparedStatementHandle, 
+    pub def runDBPreparedStatement(stmt: PreparedStatement, 
                                     f: Unit -> a \ ef): a \ (ef + Fail - DBPreparedStatement) = 
         handle(stmt, f)()
 
@@ -149,7 +147,7 @@ pub mod BasicDB.DBPreparedStatement {
         ans
 
     pub def execPreparedStatementSetter(f: Unit -> a \ ef): a \ {Fail + ef + DBPreparedStatement} - PreparedStatementSetterWithAlt =
-        let stmt = DBPreparedStatement.askPreparedStatementHandle();
+        let stmt = DBPreparedStatement.askPreparedStatement();
         BasicDB.PreparedStatementSetter.runPreparedStatementSetter(stmt, f)
 
 }
