@@ -21,11 +21,10 @@ pub mod BasicDB.DBPreparedStatement {
     
     use EffectExtras.Fail.Fail
     
-    use BasicDB.{PreparedStatement}
+    use BasicDB.{PreparedStatement, ResultSet}
     use BasicDB.PreparedStatementSetter.PreparedStatementSetterWithAlt
     use BasicDB.DBConnection.DBConnection
     use BasicDB.DBResultSet.DBResultSet
-    use BasicDB.DBResultSet.ResultSetHandle
     use BasicDB.RowReader.RowReaderWithAlt
 
 
@@ -40,8 +39,8 @@ pub mod BasicDB.DBPreparedStatement {
         def execute(): Bool
         def addBatch(): Unit
         def executeBatch(): Unit
-        def executeQuery(): ResultSetHandle
-        def closeResultSet(results: ResultSetHandle): Unit
+        def executeQuery(): ResultSet
+        def closeResultSet(results: ResultSet): Unit
         def executeUpdate(): Int32
         def clearParameters(): Unit
     }
@@ -82,7 +81,7 @@ pub mod BasicDB.DBPreparedStatement {
             def executeQuery(k) = 
                 try { 
                     let ans = unsafe IO as {ef + Fail - DBPreparedStatement} { jstmt.executeQuery() };
-                    k(ResultSetHandle.ResultSetHandle(ans))
+                    k(ToFlix.toFlix(ans))
                 } catch {
                     case ex: JSQLException => Fail.report(ex.getMessage())
                 }
@@ -90,7 +89,7 @@ pub mod BasicDB.DBPreparedStatement {
 
             def closeResultSet(results, k) = 
                 try {
-                    let ResultSetHandle.ResultSetHandle(jresults) = results;
+                    let jresults = ToJava.toJava(results);
                     unsafe IO as {ef + Fail - DBPreparedStatement} { jresults.close() };
                     k()
                 } catch {

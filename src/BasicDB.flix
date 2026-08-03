@@ -26,6 +26,7 @@ pub mod BasicDB {
     import java.sql.{Connection => JConnection}
     import java.sql.{PreparedStatement => JPreparedStatement}
     import java.sql.{Statement => JStatement}
+    import java.sql.{ResultSet => JResultSet}
 
     pub def runSQLite(path: String, 
                         f: Unit -> a \ ef): Result[IoError, a] \ {ef + IO - Fail - DBConnection - DBDriverManager} = 
@@ -89,7 +90,7 @@ pub mod BasicDB {
 
 
     pub enum Statement (JStatement)
-    
+
     instance ToJava[Statement] {
         type Out = JStatement
         pub def toJava(x: Statement): JStatement =
@@ -100,6 +101,20 @@ pub mod BasicDB {
     instance ToFlix[Statement] {
         type In = JStatement
         pub def toFlix(x: JStatement): Statement = Statement.Statement(x)
+    }
+
+    pub enum ResultSet (JResultSet)
+
+    instance ToJava[ResultSet] {
+        type Out = JResultSet
+        pub def toJava(x: ResultSet): JResultSet =
+            let ResultSet.ResultSet(x1) = x;
+            x1
+    }
+
+    instance ToFlix[ResultSet] {
+        type In = JResultSet
+        pub def toFlix(x: JResultSet): ResultSet = ResultSet.ResultSet(x)
     }
 
 }

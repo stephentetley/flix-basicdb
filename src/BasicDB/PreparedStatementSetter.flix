@@ -22,7 +22,6 @@ pub mod BasicDB.PreparedStatementSetter {
     use EffectExtras.Fail.Fail
 
     use BasicDB.{PreparedStatement}
-    use BasicDB.DBResultSet.ResultSetHandle
 
 
     import java.sql.{SQLException => JSQLException}

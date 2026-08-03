@@ -22,10 +22,9 @@ pub mod BasicDB.DBStatement {
     use IoError.IoError
     use EffectExtras.Fail.Fail
     
-    use BasicDB.{Statement}
+    use BasicDB.{Statement, ResultSet}
     use BasicDB.DBConnection.DBConnection
     use BasicDB.DBResultSet.DBResultSet
-    use BasicDB.DBResultSet.ResultSetHandle
     use BasicDB.RowReader.RowReaderWithAlt
 
 
@@ -39,9 +38,9 @@ pub mod BasicDB.DBStatement {
         def execute(sql: String): Bool
         def executeUpdate(sql: String): Int32
         def executeLargeUpdate(sql: String): Int64
-        def executeQuery(sql: String): ResultSetHandle
-        def closeResultSet(results: ResultSetHandle): Unit
-        def getResultSet(): ResultSetHandle
+        def executeQuery(sql: String): ResultSet
+        def closeResultSet(results: ResultSet): Unit
+        def getResultSet(): ResultSet
         def enquoteLiteral(sql: String): String
         def isClosed(): Bool
         def isCloseOnCompletion(): Bool
@@ -106,7 +105,7 @@ pub mod BasicDB.DBStatement {
             def executeQuery(sql, k) = 
                 try {
                     let ans = unsafe IO as {ef + Fail - DBStatement} { jstmt.executeQuery(sql) };
-                    k(ResultSetHandle.ResultSetHandle(ans))
+                    k(ToFlix.toFlix(ans))
                 } catch {
                     case ex: JSQLException => Fail.report(ex.getMessage())
                 }
@@ -114,7 +113,7 @@ pub mod BasicDB.DBStatement {
 
             def closeResultSet(results, k) = 
                 try {
-                    let ResultSetHandle.ResultSetHandle(jresults) = results;
+                    let jresults = ToJava.toJava(results);
                     unsafe IO as {ef + Fail - DBStatement} { jresults.close() };
                     k()
                 } catch {
@@ -124,7 +123,7 @@ pub mod BasicDB.DBStatement {
             def getResultSet(k) = 
                 try {
                     let ans = unsafe IO as {ef + Fail - DBStatement} { jstmt.getResultSet() };
-                    k(ResultSetHandle.ResultSetHandle(ans))
+                    k(ToFlix.toFlix(ans))
                 } catch {
                     case ex: JSQLException => Fail.report(ex.getMessage())
                 }

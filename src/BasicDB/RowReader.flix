@@ -22,7 +22,7 @@ pub mod BasicDB.RowReader {
     use IoError.IoError
     use EffectExtras.Alt.Alt
     use EffectExtras.Fail.Fail
-    use BasicDB.DBResultSet.ResultSetHandle
+    use BasicDB.{ResultSet}
 
 
     import java.sql.{SQLException => JSQLException}
@@ -52,9 +52,9 @@ pub mod BasicDB.RowReader {
     pub type alias RowReaderWithAlt = RowReader + Alt
 
 
-    pub def handle(results: ResultSetHandle, 
+    pub def handle(results: ResultSet, 
                     f: a -> b \ ef): a -> b \ {ef + Fail - RowReaderWithAlt} = x -> {
-        let ResultSetHandle.ResultSetHandle(jresults) = results;
+        let jresults = ToJava.toJava(results);
         let result = run {
             Ok(f(x))
         } with handler RowReader {
@@ -207,14 +207,15 @@ pub mod BasicDB.RowReader {
 
     }
 
-    pub def runRowReader(rset: ResultSetHandle, 
+    pub def runRowReader(rset: ResultSet, 
                         f: Unit -> a \ ef): a \ {ef + Fail - RowReaderWithAlt}  = 
         handle(rset, f)()
 
-    pub def runRowReaderWithAlt(rset: ResultSetHandle, 
+    pub def runRowReaderWithAlt(rset: ResultSet, 
                         f: Unit -> a \ ef): Result[String, a] \ {ef - RowReaderWithAlt - Fail}  = 
         run { 
             runRowReader(rset, f)
         } with EffectExtras.Fail.runWithResult
 
 }
+
