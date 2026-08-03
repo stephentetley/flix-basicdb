@@ -18,9 +18,10 @@
 pub mod BasicDB.DBConnection {
 
     use EffectExtras.Fail.Fail
-    use BasicDB.{PreparedStatement, Statement}
+    use BasicDB.{Connection, PreparedStatement, Statement}
     use BasicDB.PreparedStatementSetter.PreparedStatementSetterWithAlt
     use BasicDB.DBPreparedStatement.DBPreparedStatement
+    use BasicDB.DBConnection
     use BasicDB.DBStatement.DBStatement
     use IoError.ErrorKind
     use IoError.IoError
@@ -52,10 +53,10 @@ pub mod BasicDB.DBConnection {
         def setTransactionIsolation(level: Int32): Unit
     }
 
-    pub enum ConnectionHandle (JConnection)
 
-    pub def handle(conn: ConnectionHandle, f: a -> b \ ef): a -> b \ {ef + Fail - DBConnection} = x -> {
-        let ConnectionHandle.ConnectionHandle(jconn) = conn;
+
+    pub def handle(conn: Connection, f: a -> b \ ef): a -> b \ {ef + Fail - DBConnection} = x -> {
+        let jconn = ToJava.toJava(conn);
         run {
             f(x)
         } with handler DBConnection {
@@ -203,7 +204,7 @@ pub mod BasicDB.DBConnection {
 
 
     
-    pub def runDBConnection(conn: ConnectionHandle, f: Unit -> a \ ef): a \ {ef + Fail - DBConnection} =
+    pub def runDBConnection(conn: Connection, f: Unit -> a \ ef): a \ {ef + Fail - DBConnection} =
         handle(conn, f)()
 
 

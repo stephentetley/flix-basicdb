@@ -23,6 +23,7 @@ pub mod BasicDB {
     use BasicDB.DBConnection.DBConnection
 
     import java.lang.{Class => JClass}
+    import java.sql.{Connection => JConnection}
     import java.sql.{PreparedStatement => JPreparedStatement}
     import java.sql.{Statement => JStatement}
 
@@ -57,6 +58,19 @@ pub mod BasicDB {
             ans
         } with BasicDB.DBDriverManager.runWithIOAndFail
     
+    pub enum Connection (JConnection)
+
+    instance ToJava[Connection] {
+        type Out = JConnection
+        pub def toJava(x: Connection): JConnection =
+            let Connection.Connection(x1) = x;
+            x1
+    }
+
+    instance ToFlix[Connection] {
+        type In = JConnection
+        pub def toFlix(x: JConnection): Connection = Connection.Connection(x)
+    }
 
 
     pub enum PreparedStatement (JPreparedStatement)

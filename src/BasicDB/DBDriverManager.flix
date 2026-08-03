@@ -19,8 +19,8 @@
 pub mod BasicDB.DBDriverManager {
     
     use EffectExtras.Fail.Fail
+    use BasicDB.{Connection}
     use BasicDB.DBConnection.DBConnection
-    use BasicDB.DBConnection.ConnectionHandle
     use IoError.ErrorKind
     use IoError.IoError
 
@@ -28,8 +28,8 @@ pub mod BasicDB.DBDriverManager {
     import java.sql.DriverManager
 
     pub eff DBDriverManager {
-        def getConnection(url: String): ConnectionHandle
-        def closeConnection(conn: ConnectionHandle): Unit
+        def getConnection(url: String): Connection
+        def closeConnection(conn: Connection): Unit
     }
 
     pub def handle(f: a -> b \ ef): a -> b \ {ef + IO + Fail} - DBDriverManager = x -> 
@@ -40,7 +40,7 @@ pub mod BasicDB.DBDriverManager {
             def getConnection(url, k) = 
                 try {
                     let ans = DriverManager.getConnection(url);
-                    k(ConnectionHandle.ConnectionHandle(ans))
+                    k(ToFlix.toFlix(ans))
                 } catch {
                     case ex: JSQLException => Fail.report(ex.getMessage())
                 }
@@ -48,7 +48,7 @@ pub mod BasicDB.DBDriverManager {
 
             def closeConnection(conn, k) = 
                 try {
-                    let ConnectionHandle.ConnectionHandle(jconn) = conn;
+                    let jconn = ToJava.toJava(conn);
                     jconn.close();
                     k()
                 } catch {
