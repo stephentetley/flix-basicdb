@@ -19,7 +19,6 @@ pub mod BasicDB.DBConnection {
 
     use EffectExtras.Fail.Fail
     use BasicDB.{Connection, PreparedStatement, Statement}
-    use BasicDB.PreparedStatementSetter.PreparedStatementSetterWithAlt
     use BasicDB.DBPreparedStatement.DBPreparedStatement
     use BasicDB.DBConnection
     use BasicDB.DBStatement.DBStatement

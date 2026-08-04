@@ -12,7 +12,6 @@ mod TestDuckDB {
     use BasicDB.DBStatement.DBStatement
     use BasicDB.DBPreparedStatement.DBPreparedStatement
     use BasicDB.DBResultSet.DBResultSet
-    use BasicDB.PreparedStatementSetter.PreparedStatementSetterWithAlt
     use BasicDB.PreparedStatementSetter.PreparedStatementSetter
     use BasicDB.RowReader.RowReader
 
@@ -54,10 +53,10 @@ mod TestDuckDB {
 
 
 
-     def setter(name: String, year: Int32): Unit \ PreparedStatementSetterWithAlt = checked_ecast({
+     def setter(name: String, year: Int32): Unit \ PreparedStatementSetter = {
         PreparedStatementSetter.setString(0, name);
         PreparedStatementSetter.setInt32(1, year)
-     })
+     }
 
      def reader(): (String, Int32) \ RowReader = {
         let name = RowReader.getStringByName("name");

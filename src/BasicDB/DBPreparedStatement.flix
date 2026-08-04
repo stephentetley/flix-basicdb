@@ -20,9 +20,10 @@ pub mod BasicDB.DBPreparedStatement {
     
     
     use EffectExtras.Fail.Fail
+    use EffectExtras.Alt.Alt
     
     use BasicDB.{PreparedStatement, ResultSet, ResultSetRow}
-    use BasicDB.PreparedStatementSetter.PreparedStatementSetterWithAlt
+    use BasicDB.PreparedStatementSetter.PreparedStatementSetter
     use BasicDB.DBConnection.DBConnection
     use BasicDB.DBResultSet.DBResultSet
 
@@ -145,7 +146,7 @@ pub mod BasicDB.DBPreparedStatement {
         DBPreparedStatement.closeResultSet(results);
         ans
 
-    pub def execPreparedStatementSetter(f: Unit -> a \ ef): a \ {Fail + ef + DBPreparedStatement} - PreparedStatementSetterWithAlt =
+    pub def execPreparedStatementSetter(f: Unit -> a \ ef): a \ {Fail + ef + DBPreparedStatement} - PreparedStatementSetter - Alt =
         let stmt = DBPreparedStatement.askPreparedStatement();
         BasicDB.PreparedStatementSetter.runPreparedStatementSetter(stmt, f)
 

@@ -26,8 +26,6 @@ pub mod BasicDB.DBResultSet {
     import java.sql.{ResultSet => JResultSet}
 
     pub eff DBResultSet {
-        // `askResultSet` should not be used in user code
-        // It is a hack until we can run local effects polymorphically
         def getResultSetRow(): ResultSetRow
         def next(): Bool
         def wasNull(): Bool
