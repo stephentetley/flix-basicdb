@@ -21,7 +21,7 @@ pub mod BasicDB.DBPreparedStatement {
     
     use EffectExtras.Fail.Fail
     
-    use BasicDB.{PreparedStatement, ResultSet}
+    use BasicDB.{PreparedStatement, ResultSet, ResultSetRow}
     use BasicDB.PreparedStatementSetter.PreparedStatementSetterWithAlt
     use BasicDB.DBConnection.DBConnection
     use BasicDB.DBResultSet.DBResultSet
@@ -128,9 +128,9 @@ pub mod BasicDB.DBPreparedStatement {
 
 
     // This is single row answer...
-    pub def scalarQuery(f: Unit -> a \ {RowReaderWithAlt + ef}): a \ {Fail + ef + DBPreparedStatement} - RowReaderWithAlt =
+    pub def scalarQuery(f: ResultSetRow -> a \ ef): a \ ef + Fail + DBPreparedStatement - DBResultSet =
         let results = DBPreparedStatement.executeQuery();
-        let ans = BasicDB.RowReader.runRowReader(results, f);
+        let ans = BasicDB.DBResultSet.firstResult(f, results);
         DBPreparedStatement.closeResultSet(results);
         ans
 

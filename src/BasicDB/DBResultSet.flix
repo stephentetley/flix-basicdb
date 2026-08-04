@@ -18,11 +18,9 @@
 
 pub mod BasicDB.DBResultSet {
     
-    use IoError.ErrorKind
-    use IoError.IoError
 
     use EffectExtras.Fail.Fail
-    use BasicDB.{ResultSet}
+    use BasicDB.{ResultSet, ResultSetRow}
     use BasicDB.RowReader.RowReaderWithAlt
 
     import java.sql.{SQLException => JSQLException}
@@ -31,7 +29,7 @@ pub mod BasicDB.DBResultSet {
     pub eff DBResultSet {
         // `askResultSet` should not be used in user code
         // It is a hack until we can run local effects polymorphically
-        def askResultSet(): ResultSet
+        def getResultSetRow(): ResultSetRow
         def next(): Bool
         def wasNull(): Bool
         def findColumn(label: String): Int32
@@ -57,7 +55,7 @@ pub mod BasicDB.DBResultSet {
             f(x)
         } with handler DBResultSet {
         
-            def askResultSet(k) = k(results)
+            def getResultSetRow(k) = k(ToFlix.toFlix(jresults))
 
 
             def next(k) = 
@@ -180,8 +178,8 @@ pub mod BasicDB.DBResultSet {
         handle(results, f)()
 
     pub def execRowReader(f: Unit -> a \ ef): a \ {ef + Fail + DBResultSet} - RowReaderWithAlt =
-        let rset = DBResultSet.askResultSet();
-        BasicDB.RowReader.runRowReader(rset, f)
+        let row = DBResultSet.getResultSetRow();
+        BasicDB.RowReader.runRowReader(row, f)
 
     // forEach
 
@@ -212,5 +210,15 @@ pub mod BasicDB.DBResultSet {
             } else sk(acc)
         };
         loop(st, e -> Fail.report(e), a -> a)
+
+    pub def firstResult(f: ResultSetRow -> a \ ef, results: ResultSet): a \ ef + Fail - DBResultSet = 
+        runDBResultSet(results, _ -> {
+            let more = DBResultSet.next();
+            if (more) {
+                let row = DBResultSet.getResultSetRow();
+                f(row)
+            } else Fail.report("firstResult - empty resultset")
+        })
+
 
 }

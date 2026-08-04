@@ -40,9 +40,10 @@ mod TestDuckDB {
                 def loop() = {
                     let more = DBResultSet.next();
                     if (more) {
-                        match BasicDB.RowReader.runRowReaderWithAlt(rs, reader) {
+                        let row = DBResultSet.getResultSetRow();
+                        match run { BasicDB.RowReader.runRowReader(row, reader) } with EffectExtras.Fail.runWithResult {
                             case Ok((n, y)) => println("DB: ${n}, year: ${y}")
-                            case Err(err) => println("error: ${err}")
+                            case Err(err)   => println("error: ${err}")
                         };
                         loop()
                     } else ()
@@ -59,11 +60,11 @@ mod TestDuckDB {
         PreparedStatementSetter.setInt32(1, year)
      })
 
-     def reader(): (String, Int32) \ RowReaderWithAlt = checked_ecast({
+     def reader(): (String, Int32) \ RowReader = {
         let name = RowReader.getStringByName("name");
         let year = RowReader.getInt32ByName("year");
         (name, year)
-     })
+     }
 
 
     @Test

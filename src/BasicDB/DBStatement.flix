@@ -22,7 +22,7 @@ pub mod BasicDB.DBStatement {
     use IoError.IoError
     use EffectExtras.Fail.Fail
     
-    use BasicDB.{Statement, ResultSet}
+    use BasicDB.{Statement, ResultSet, ResultSetRow}
     use BasicDB.DBConnection.DBConnection
     use BasicDB.DBResultSet.DBResultSet
     use BasicDB.RowReader.RowReaderWithAlt
@@ -168,9 +168,9 @@ pub mod BasicDB.DBStatement {
 
     // This is single row answer...
     pub def scalarQuery(sql: String, 
-                            f: Unit -> a \ ef): a \ {ef + Fail + DBStatement} - RowReaderWithAlt =
+                            f: ResultSetRow -> a \ ef): a \ ef + Fail + DBStatement - DBResultSet =
         let results = DBStatement.executeQuery(sql);
-        let ans = BasicDB.RowReader.runRowReader(results, f);
+        let ans = BasicDB.DBResultSet.firstResult(f, results);
         DBStatement.closeResultSet(results);
         ans
 

@@ -117,5 +117,19 @@ pub mod BasicDB {
         pub def toFlix(x: JResultSet): ResultSet = ResultSet.ResultSet(x)
     }
 
+    pub enum ResultSetRow(JResultSet)
+
+    instance ToJava[ResultSetRow] {
+        type Out = JResultSet
+        pub def toJava(x: ResultSetRow): JResultSet =
+            let ResultSetRow.ResultSetRow(x1) = x;
+            x1
+    }
+
+    instance ToFlix[ResultSetRow] {
+        type In = JResultSet
+        pub def toFlix(x: JResultSet): ResultSetRow = ResultSetRow.ResultSetRow(x)
+    }
+
 }
 
