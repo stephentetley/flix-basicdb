@@ -44,10 +44,10 @@ pub mod TestSQLite {
             let sql = "SELECT * FROM langs";
             run {
                 BasicDB.DBStatement.forEachQuery(sql, row -> 
-                        BasicDB.RowReader.runRowReader(row,  () -> {
-                            let lang = RowReader.getStringByName("name");
-                            println(lang)
-                        })
+                    BasicDB.RowReader.runRowReader(row,  () -> {
+                        let lang = RowReader.getStringByName("name");
+                        println(lang)
+                    })
                 )
             } with BasicDB.DBStatement.runDBStatement1
         };

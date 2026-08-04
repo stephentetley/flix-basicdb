@@ -66,13 +66,5 @@ pub mod BasicDB.DBDriverManager {
              runWithIO(f)
         } with EffectExtras.Fail.runWithResultOfIoError
 
-    pub def execDBConnection(url: String, 
-                                f: Unit -> a \ DBConnection + ef): a \ {Fail + ef + DBDriverManager} - DBConnection = 
-        let conn = DBDriverManager.getConnection(url);
-        let ans = run {
-            f()
-        } with BasicDB.DBConnection.runDBConnection(conn);
-        DBDriverManager.closeConnection(conn);
-        ans
 
 }

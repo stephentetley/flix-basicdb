@@ -24,6 +24,10 @@ pub mod TestDuckDB {
         })
 
     def insert_facts_data(): Unit \ Fail + DBConnection =
+        def setter(name: String, year: Int32): Unit \ PreparedStatementSetter = {
+            PreparedStatementSetter.setString(0, name);
+            PreparedStatementSetter.setInt32(1, year)
+        };
         let sql = "INSERT INTO facts.databases (name, year) VALUES (?,?);";
         BasicDB.DBPreparedStatement.runDBPreparedStatement1(sql, () -> {
             BasicDB.PreparedStatementSetter.runPreparedStatementSetter1(_ -> setter("SQLite", 2000));
@@ -34,43 +38,21 @@ pub mod TestDuckDB {
             ()
         })
 
-     def setter(name: String, year: Int32): Unit \ PreparedStatementSetter = {
-        PreparedStatementSetter.setString(0, name);
-        PreparedStatementSetter.setInt32(1, year)
-     }
 
 
-    def duckdb_action1(): Unit \ IO + ef + DBConnection + Fail - DBPreparedStatement - DBStatement - DBResultSet =
+    def duckdb_action1(): Unit \ IO + DBConnection + Fail =
         create_facts_table();
         insert_facts_data();
-        let stmt2 = DBConnection.createStatement();
-        let _ = run { 
-            let rs = DBStatement.executeQuery("SELECT * FROM facts.databases;");
-            run {
-                def loop() = {
-                    let more = DBResultSet.next();
-                    if (more) {
-                        let row = DBResultSet.getResultSetRow();
-                        match run { BasicDB.RowReader.runRowReader(row, reader) } with EffectExtras.Fail.runWithResult {
-                            case Ok((n, y)) => println("DB: ${n}, year: ${y}")
-                            case Err(err)   => println("error: ${err}")
-                        };
-                        loop()
-                    } else ()
-                };
-                loop()
-            } with BasicDB.DBResultSet.runDBResultSet(rs)
-        } with BasicDB.DBStatement.runDBStatement(stmt2);
-        DBConnection.closeStatement(stmt2)
+        run {
+            BasicDB.DBStatement.forEachQuery("SELECT * FROM facts.databases;", row -> {
+                BasicDB.RowReader.runRowReader(row,  () -> {
+                    let name = RowReader.getStringByName("name");
+                    let year = RowReader.getInt32ByName("year");
+                    println("DB: ${name}, year: ${year}")
+                })
+            })
+        } with BasicDB.DBStatement.runDBStatement1
 
-
-
-
-     def reader(): (String, Int32) \ RowReader = {
-        let name = RowReader.getStringByName("name");
-        let year = RowReader.getInt32ByName("year");
-        (name, year)
-     }
 
 
     @Test
