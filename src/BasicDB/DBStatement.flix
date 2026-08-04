@@ -158,7 +158,7 @@ pub mod BasicDB.DBStatement {
         handle(stmt, f)()
 
 
-    pub def runJDBCStatement1(f: Unit -> a \ ef): a \ {ef + Fail + DBConnection} - DBStatement = 
+    pub def runDBStatement1(f: Unit -> a \ ef): a \ {ef + Fail + DBConnection} - DBStatement = 
         let stmt = DBConnection.createStatement();
         let ans = handle(stmt, f)();
         DBConnection.closeStatement(stmt);

@@ -1,12 +1,7 @@
-// Previously this needed running with classpath pointing to the 
-// sqlite / duckDB jars, but it seems that is unnecessary now we
-// call `Class.forName("org.duckDB.DuckDBDriver");` in the run 
-// function. However we can avoid a warning by enabling native access: 
-// 
-// > java --enable-native-access=ALL-UNNAMED -jar ../bin/flix.0.61.0.jar test
 
 
-mod TestSQLite {
+
+pub mod TestSQLite {
 
     use Assert.{assertEq, assertOk}
     use Fs.FileRead
@@ -23,8 +18,8 @@ mod TestSQLite {
     use BasicDB.RowReader
 
 
-    def sqlite_action1(): Unit \ Fail + DBConnection =
-        BasicDB.DBConnection.execDBStatement(() -> { 
+    def create_facts_table(): Unit \ Fail + DBConnection =
+        BasicDB.DBStatement.runDBStatement1(() -> {
             discard DBStatement.execute("DROP TABLE IF EXISTS facts_databases;");
             discard DBStatement.execute("CREATE TABLE IF NOT EXISTS facts_databases (name VARCHAR PRIMARY KEY NOT NULL, year int);");
             ()
@@ -38,25 +33,28 @@ mod TestSQLite {
             forM (
                 dir <- FileWrite.mkTempDir("flix-sqlite");
                 path <- Ok("${dir}/test-DB-67890.sqlite");
-                ans <- BasicDB.runSQLite(path, sqlite_action1)
+                ans <- BasicDB.runSQLite(path, create_facts_table)
             ) yield ans
         } with WriteFile.runWithFileWrite;
         assertOk(ans)        
 
-    // @Test
-    // def test02(): Unit \ {Assert + IO} = 
-    //     def readLangs() = {
-    //         let stmt = DBConnection.createStatement();
-    //         let sql = "SELECT * FROM langs";
-    //         let rset = BasicDB.DBStatement.runDBStatement(stmt, DBStatement.executeQuery(sql));
-    //         BasicDB.DBResultSet.runDBResultSet(rset, BasicDB.DBResultSet.forEach(() -> {
-    //             let lang = RowReader.getStringByName("name");
-    //             println(lang)
-    //         }))
-    //     };
-    //     let path = "../data/langs.sqlite";
-    //     let _ans = BasicDB.runSQLite(path, readLangs );
-    //     assertOk(Ok(1))
+    @Test
+    def test02(): Unit \ {Assert + IO} = 
+        def readLangs() = {
+            let sql = "SELECT * FROM langs";
+            run {
+                BasicDB.DBStatement.forEachQuery(sql, row -> 
+                        BasicDB.RowReader.runRowReader(row,  () -> {
+                            let lang = RowReader.getStringByName("name");
+                            println(lang)
+                        })
+                )
+            } with BasicDB.DBStatement.runDBStatement1
+        };
+        let path = "./data/langs.sqlite";
+        let ans = BasicDB.runSQLite(path, readLangs);
+        println(ans);
+        assertOk(Ok())
 
 
 }

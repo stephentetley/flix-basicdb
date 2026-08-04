@@ -1,6 +1,6 @@
 
 
-mod TestDuckDB {
+pub mod TestDuckDB {
 
     use Assert.{assertEq}
     
