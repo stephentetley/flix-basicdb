@@ -33,9 +33,7 @@ pub mod BasicDB.DBPreparedStatement {
     import java.sql.{PreparedStatement => JPreparedStatement}
 
     pub eff DBPreparedStatement {
-        // `askPreparedStatement` should not be used in user code
-        // It is a hack until we can run local effects polymorphically
-        def askPreparedStatement(): PreparedStatement
+        def getPreparedStatement(): PreparedStatement
         def execute(): Bool
         def addBatch(): Unit
         def executeBatch(): Unit
@@ -52,7 +50,7 @@ pub mod BasicDB.DBPreparedStatement {
             f(x)
         } with handler DBPreparedStatement {
         
-            def askPreparedStatement(k) = k(stmt)
+            def getPreparedStatement(k) = k(stmt)
             
             def execute(k) = 
                 try {
@@ -146,8 +144,6 @@ pub mod BasicDB.DBPreparedStatement {
         DBPreparedStatement.closeResultSet(results);
         ans
 
-    pub def execPreparedStatementSetter(f: Unit -> a \ ef): a \ {Fail + ef + DBPreparedStatement} - PreparedStatementSetter - Alt =
-        let stmt = DBPreparedStatement.askPreparedStatement();
-        BasicDB.PreparedStatementSetter.runPreparedStatementSetter(stmt, f)
+
 
 }

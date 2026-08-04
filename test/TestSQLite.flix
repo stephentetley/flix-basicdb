@@ -53,8 +53,7 @@ pub mod TestSQLite {
         };
         let path = "./data/langs.sqlite";
         let ans = BasicDB.runSQLite(path, readLangs);
-        println(ans);
-        assertOk(Ok())
+        assertOk(ans)
 
 
 }
