@@ -25,7 +25,6 @@ pub mod BasicDB.DBPreparedStatement {
     use BasicDB.PreparedStatementSetter.PreparedStatementSetterWithAlt
     use BasicDB.DBConnection.DBConnection
     use BasicDB.DBResultSet.DBResultSet
-    use BasicDB.RowReader.RowReaderWithAlt
 
 
 
@@ -134,14 +133,15 @@ pub mod BasicDB.DBPreparedStatement {
         DBPreparedStatement.closeResultSet(results);
         ans
 
-    pub def forEachQuery(f: Unit -> Unit \ ef): Unit \ {ef + Fail + DBPreparedStatement} - DBResultSet - RowReaderWithAlt = 
+    pub def forEachQuery(f: ResultSetRow -> Unit \ ef): Unit \ ef + Fail + DBPreparedStatement - DBResultSet = 
         let results = DBPreparedStatement.executeQuery();
-        BasicDB.DBResultSet.runDBResultSet(results, _ -> BasicDB.DBResultSet.forEach(f));
-        DBPreparedStatement.closeResultSet(results)
+        let ans = BasicDB.DBResultSet.forEachRow(f, results);
+        DBPreparedStatement.closeResultSet(results);
+        ans
 
-    pub def foldQuery(f: s -> s \ ef, st: s): s \ {ef + Fail + DBPreparedStatement} - DBResultSet - RowReaderWithAlt = 
+    pub def foldQuery(f: ResultSetRow -> s -> s \ ef, st: s): s \ ef + Fail + DBPreparedStatement - DBResultSet = 
         let results = DBPreparedStatement.executeQuery();
-        let ans = BasicDB.DBResultSet.runDBResultSet(results, _ -> BasicDB.DBResultSet.fold(f, st));
+        let ans = BasicDB.DBResultSet.fold(f, st, results);
         DBPreparedStatement.closeResultSet(results);
         ans
 

@@ -14,7 +14,6 @@ mod TestDuckDB {
     use BasicDB.DBResultSet.DBResultSet
     use BasicDB.PreparedStatementSetter.PreparedStatementSetterWithAlt
     use BasicDB.PreparedStatementSetter.PreparedStatementSetter
-    use BasicDB.RowReader.RowReaderWithAlt
     use BasicDB.RowReader.RowReader
 
 

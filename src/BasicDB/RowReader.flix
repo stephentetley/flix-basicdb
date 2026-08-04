@@ -49,7 +49,6 @@ pub mod BasicDB.RowReader {
         def getBigDecimalByName(name: String): BigDecimal
     }
 
-    pub type alias RowReaderWithAlt = RowReader + Alt
 
 
     pub def handle(results: ResultSetRow, 
@@ -197,11 +196,6 @@ pub mod BasicDB.RowReader {
                         f: Unit -> a \ ef): a \ {ef + Fail - RowReader - Alt}  = 
         run { handle(rset, f)() } with EffectExtras.Alt.runWithFail
 
-    pub def runRowReaderWithAlt(rset: ResultSetRow, 
-                        f: Unit -> a \ ef): Result[String, a] \ {ef - RowReaderWithAlt - Fail}  = 
-        run { 
-            runRowReader(rset, f)
-        } with EffectExtras.Fail.runWithResult
 
 }
 

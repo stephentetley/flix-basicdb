@@ -25,7 +25,6 @@ pub mod BasicDB.DBStatement {
     use BasicDB.{Statement, ResultSet, ResultSetRow}
     use BasicDB.DBConnection.DBConnection
     use BasicDB.DBResultSet.DBResultSet
-    use BasicDB.RowReader.RowReaderWithAlt
 
 
     import java.sql.{SQLException => JSQLException}
@@ -175,15 +174,15 @@ pub mod BasicDB.DBStatement {
         ans
 
     pub def forEachQuery(sql: String, 
-                            f: Unit -> Unit \ ef): Unit \ {ef + Fail + DBStatement} - DBResultSet - RowReaderWithAlt = 
+                            f: ResultSetRow -> Unit \ ef): Unit \ ef + Fail + DBStatement - DBResultSet  = 
         let results = DBStatement.executeQuery(sql);
-        let ans = BasicDB.DBResultSet.runDBResultSet(results, _ -> BasicDB.DBResultSet.forEach(f));
+        let ans = BasicDB.DBResultSet.forEachRow(f, results);
         DBStatement.closeResultSet(results);
         ans
 
-    pub def foldQuery(sql: String, f: s -> s \ ef, st: s): s \ {ef + Fail + DBStatement} - DBResultSet - RowReaderWithAlt = 
+    pub def foldQuery(sql: String, f: ResultSetRow -> s -> s \ ef, st: s): s \ ef + Fail + DBStatement - DBResultSet = 
         let results = DBStatement.executeQuery(sql);
-        let ans = BasicDB.DBResultSet.runDBResultSet(results, _ -> BasicDB.DBResultSet.fold(f, st));
+        let ans = BasicDB.DBResultSet.fold(f, st, results);
         DBStatement.closeResultSet(results);
         ans
 

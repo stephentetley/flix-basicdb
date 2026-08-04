@@ -21,7 +21,6 @@ pub mod BasicDB.DBResultSet {
 
     use EffectExtras.Fail.Fail
     use BasicDB.{ResultSet, ResultSetRow}
-    use BasicDB.RowReader.RowReaderWithAlt
 
     import java.sql.{SQLException => JSQLException}
     import java.sql.{ResultSet => JResultSet}
@@ -177,39 +176,34 @@ pub mod BasicDB.DBResultSet {
     pub def runDBResultSet(results: ResultSet, f: Unit -> a \ ef):  a \ (ef + Fail - DBResultSet) = 
         handle(results, f)()
 
-    pub def execRowReader(f: Unit -> a \ ef): a \ {ef + Fail + DBResultSet} - RowReaderWithAlt =
-        let row = DBResultSet.getResultSetRow();
-        BasicDB.RowReader.runRowReader(row, f)
 
     // forEach
 
     // Note - doesn't close resultset even though it will be exhausted
-    pub def forEach(f: Unit -> Unit \ ef): Unit \ {ef + Fail + DBResultSet} - RowReaderWithAlt =
-        def loop(fk, sk) = {
+    // TODO - there is no failure detection so we can't short circuit...
+    pub def forEachRow(f: ResultSetRow -> Unit \ ef, results: ResultSet): Unit \ ef + Fail - DBResultSet =
+        @Tailrec
+        def loop() = {
             let more = DBResultSet.next();
             if (more) {
-                let rowAnswer = EffectExtras.Fail.runWithResult(_ -> execRowReader(f));
-                match rowAnswer {
-                    case Ok()     => loop(fk, sk)
-                    case Err(err) => fk(err)
-                }
-            } else sk()
+                let row = DBResultSet.getResultSetRow();
+                f(row);
+                loop()
+            } else ()
         };
-        loop(e -> Fail.report(e), a -> a)
+        runDBResultSet(results, loop)
 
     // fold
-    pub def fold(f: s -> s \ ef, st: s): s \ {ef + Fail + DBResultSet} - RowReaderWithAlt =
-        def loop(acc, fk, sk) = {
+    pub def fold(f: ResultSetRow -> s -> s \ ef, st: s, results: ResultSet): s \ ef + Fail - DBResultSet =
+        def loop(acc) = {
             let more = DBResultSet.next();
             if (more) {
-                let rowAnswer = EffectExtras.Fail.runWithResult(_ -> execRowReader(_ -> f(acc)));
-                match rowAnswer {
-                    case Ok(acc1) => loop(acc1, fk, sk)
-                    case Err(err) => fk(err)
-                }
-            } else sk(acc)
+                let row = DBResultSet.getResultSetRow();
+                let acc1 = f(row, acc);
+                loop(acc1)
+            } else acc
         };
-        loop(st, e -> Fail.report(e), a -> a)
+        runDBResultSet(results, _ -> loop(st))
 
     pub def firstResult(f: ResultSetRow -> a \ ef, results: ResultSet): a \ ef + Fail - DBResultSet = 
         runDBResultSet(results, _ -> {
