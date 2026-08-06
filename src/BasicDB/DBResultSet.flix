@@ -17,6 +17,7 @@
 
 
 pub mod BasicDB.DBResultSet {
+    use BasicDB.DBResultSet
     
 
     use EffectExtras.Fail.Fail
@@ -174,6 +175,29 @@ pub mod BasicDB.DBResultSet {
     pub def runDBResultSet(results: ResultSet, f: Unit -> a \ ef):  a \ (ef + Fail - DBResultSet) = 
         handle(results, f)()
 
+
+    // pub def rowIterator(rc: Region[r]): Iterator[ResultSetRow, DBResultSet , r ] = 
+    //     Iterator.unfoldWithIter(rc, () -> 
+    //         let more = DBResultSet.next();
+    //         if (more) {
+    //             let row = DBResultSet.getResultSetRow();
+    //             Some(row)
+    //         } else None
+    //     )
+
+    // We can write a row iterator but the `DBResultSet` effect and its machinery
+    // doesn't help...
+
+    pub def rowIterator(rc: Region[r], results: ResultSet): Iterator[ResultSetRow, ef , r] = 
+        let jresults = ToJava.toJava(results);
+        Iterator.unfoldWithIter(rc, () -> 
+            let more = unsafe IO as {ef} { jresults.next() };
+            if (more) {
+                let row = ToFlix.toFlix(jresults);
+                Some(row)
+            } else None
+        )
+        
 
     // forEach
 
