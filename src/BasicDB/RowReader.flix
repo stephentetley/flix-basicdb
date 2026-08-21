@@ -21,7 +21,11 @@ pub mod BasicDB.RowReader {
 
     use EffectExtras.Alt.Alt
     use EffectExtras.Fail.Fail
+    use InteropTime.LocalDate
+    use InteropTime.LocalDateTime
+    use InteropTime.LocalTime
     
+
     use BasicDB.{ResultSetRow}
 
 
@@ -47,6 +51,12 @@ pub mod BasicDB.RowReader {
         def getFloat64ByName(name: String): Float64
         def getBigDecimalByIndex(ix: Int32): BigDecimal
         def getBigDecimalByName(name: String): BigDecimal
+        def getLocalDateByIndex(ix: Int32): LocalDate
+        def getLocalDateByName(name: String): LocalDate
+        def getLocalDateTimeByIndex(ix: Int32): LocalDateTime
+        def getLocalDateTimeByName(name: String): LocalDateTime
+        def getLocalTimeByIndex(ix: Int32): LocalTime
+        def getLocalTimeByName(name: String): LocalTime
     }
 
 
@@ -189,6 +199,69 @@ pub mod BasicDB.RowReader {
             } catch {
                 case ex: JSQLException => Alt.failure(ex.getMessage())
             }
+
+
+            def getLocalDateByIndex(ix, k) = try {
+                let ans = unsafe IO as {ef + Alt - RowReader} 
+                                        { let d1 = jresults.getDate(ix + 1); 
+                                          let d2 = d1.toLocalDate(); 
+                                          ToFlix.toFlix(d2) };
+                k(ans)
+            } catch {
+                case ex: JSQLException => Alt.failure(ex.getMessage())
+            }
+            
+            def getLocalDateByName(name, k) = try {
+                let ans = unsafe IO as {ef + Alt - RowReader} 
+                                        { let d1 = jresults.getDate(name); 
+                                          let d2 = d1.toLocalDate();
+                                          ToFlix.toFlix(d2) };
+                k(ans)
+            } catch {
+                case ex: JSQLException => Alt.failure(ex.getMessage())
+            }
+
+
+            def getLocalDateTimeByIndex(ix, k) = try {
+                let ans = unsafe IO as {ef + Alt - RowReader} 
+                                        { let t1 = jresults.getTimestamp(ix + 1); 
+                                          let t2 = t1.toLocalDateTime(); 
+                                          ToFlix.toFlix(t2) };
+                k(ans)
+            } catch {
+                case ex: JSQLException => Alt.failure(ex.getMessage())
+            }
+            
+            def getLocalDateTimeByName(name, k) = try {
+                let ans = unsafe IO as {ef + Alt - RowReader} 
+                                        { let t1 = jresults.getTimestamp(name); 
+                                          let t2 = t1.toLocalDateTime();
+                                          ToFlix.toFlix(t2) };
+                k(ans)
+            } catch {
+                case ex: JSQLException => Alt.failure(ex.getMessage())
+            }
+
+            def getLocalTimeByIndex(ix, k) = try {
+                let ans = unsafe IO as {ef + Alt - RowReader} 
+                                        { let t1 = jresults.getTime(ix + 1); 
+                                          let t2 = t1.toLocalTime(); 
+                                          ToFlix.toFlix(t2) };
+                k(ans)
+            } catch {
+                case ex: JSQLException => Alt.failure(ex.getMessage())
+            }
+            
+            def getLocalTimeByName(name, k) = try {
+                let ans = unsafe IO as {ef + Alt - RowReader} 
+                                        { let t1 = jresults.getTime(name); 
+                                          let t2 = t1.toLocalTime();
+                                          ToFlix.toFlix(t2) };
+                k(ans)
+            } catch {
+                case ex: JSQLException => Alt.failure(ex.getMessage())
+            }
+        
         } 
     }
 
