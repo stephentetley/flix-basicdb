@@ -1,3 +1,6 @@
+### v0.13.0
+   Updared dependencies which bubbles up effect signature changes.
+
 ### v0.12.0
    Major API changes.
    Effects reworked for better nesting.

@@ -20,6 +20,7 @@ pub mod BasicDB.RowReader {
     
 
     use EffectExtras.Alt.Alt
+    use EffectExtras.Alt.Alternative
     use EffectExtras.Fail.Fail
     use InteropTime.LocalDate
     use InteropTime.LocalDateTime
@@ -62,7 +63,7 @@ pub mod BasicDB.RowReader {
 
 
     pub def handle(results: ResultSetRow, 
-                    f: a -> b \ ef): a -> b \ {ef + Alt - RowReader} = x -> {
+                    f: a -> b \ ef): a -> b \ {ef + Fail - RowReader} = x -> {
         let jresults = ToJava.toJava(results);
         run {
             f(x)
@@ -70,196 +71,196 @@ pub mod BasicDB.RowReader {
         
             def getStringByIndex(ix, k) = 
                 try {
-                    let ans = unsafe IO as {ef + Alt - RowReader} { jresults.getString(ix + 1) };
+                    let ans = unsafe IO as {ef + Fail - RowReader} { jresults.getString(ix + 1) };
                     k(ans)
                 } catch {
-                    case ex: JSQLException => Alt.failure(ex.getMessage())
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def getStringByName(name, k) = 
                 try {
-                    let ans = unsafe IO as {ef + Alt - RowReader} { jresults.getString(name) };
+                    let ans = unsafe IO as {ef + Fail - RowReader} { jresults.getString(name) };
                     k(ans)
                 } catch {
-                    case ex: JSQLException => Alt.failure(ex.getMessage())
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
             
             def getBoolByIndex(ix, k) = 
                 try {
-                    let ans = unsafe IO as {ef + Alt - RowReader} { jresults.getBoolean(ix + 1) };
+                    let ans = unsafe IO as {ef + Fail - RowReader} { jresults.getBoolean(ix + 1) };
                     k(ans)
                 } catch {
-                    case ex: JSQLException => Alt.failure(ex.getMessage())
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
             
             def getBoolByName(name, k) = 
                 try {
-                    let ans = unsafe IO as {ef + Alt - RowReader} { jresults.getBoolean(name) };
+                    let ans = unsafe IO as {ef + Fail - RowReader} { jresults.getBoolean(name) };
                     k(ans)
                 } catch {
-                    case ex: JSQLException => Alt.failure(ex.getMessage())
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def getInt8ByIndex(ix, k) = 
                 try {
-                    let ans = unsafe IO as {ef + Alt - RowReader} { jresults.getByte(ix + 1) };
+                    let ans = unsafe IO as {ef + Fail - RowReader} { jresults.getByte(ix + 1) };
                     k(ans)
                 } catch {
-                    case ex: JSQLException => Alt.failure(ex.getMessage())
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def getInt8ByName(name, k) = 
                 try {
-                    let ans = unsafe IO as {ef + Alt - RowReader} { jresults.getByte(name) };
+                    let ans = unsafe IO as {ef + Fail - RowReader} { jresults.getByte(name) };
                     k(ans)
                 } catch {
-                    case ex: JSQLException => Alt.failure(ex.getMessage())
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def getInt16ByIndex(ix, k) = try {
-                let ans = unsafe IO as {ef + Alt - RowReader} { jresults.getShort(ix + 1) };
+                let ans = unsafe IO as {ef + Fail - RowReader} { jresults.getShort(ix + 1) };
                 k(ans)
             } catch {
-                case ex: JSQLException => Alt.failure(ex.getMessage())
+                case ex: JSQLException => Fail.report(ex.getMessage())
             }
 
             def getInt16ByName(name, k) = try {
-                let ans = unsafe IO as {ef + Alt - RowReader} { jresults.getShort(name) };
+                let ans = unsafe IO as {ef + Fail - RowReader} { jresults.getShort(name) };
                 k(ans)
             } catch {
-                case ex: JSQLException => Alt.failure(ex.getMessage())
+                case ex: JSQLException => Fail.report(ex.getMessage())
             }
 
             def getInt32ByIndex(ix, k) = try {
-                let ans = unsafe IO as {ef + Alt - RowReader} { jresults.getInt(ix + 1) };
+                let ans = unsafe IO as {ef + Fail - RowReader} { jresults.getInt(ix + 1) };
                 k(ans)
             } catch {
-                case ex: JSQLException => Alt.failure(ex.getMessage())
+                case ex: JSQLException => Fail.report(ex.getMessage())
             }
 
             def getInt32ByName(name, k) = try {
-                let ans = unsafe IO as {ef + Alt - RowReader} { jresults.getInt(name) };
+                let ans = unsafe IO as {ef + Fail - RowReader} { jresults.getInt(name) };
                 k(ans)
             } catch {
-                case ex: JSQLException => Alt.failure(ex.getMessage())
+                case ex: JSQLException => Fail.report(ex.getMessage())
             }
 
             def getInt64ByIndex(ix, k) = try {
-                let ans = unsafe IO as {ef + Alt - RowReader} { jresults.getLong(ix + 1) };
+                let ans = unsafe IO as {ef + Fail - RowReader} { jresults.getLong(ix + 1) };
                 k(ans)
             } catch {
-                case ex: JSQLException => Alt.failure(ex.getMessage())
+                case ex: JSQLException => Fail.report(ex.getMessage())
             }
 
             def getInt64ByName(name, k) = try {
-                let ans = unsafe IO as {ef + Alt - RowReader} { jresults.getLong(name) };
+                let ans = unsafe IO as {ef + Fail - RowReader} { jresults.getLong(name) };
                 k(ans)
             } catch {
-                case ex: JSQLException => Alt.failure(ex.getMessage())
+                case ex: JSQLException => Fail.report(ex.getMessage())
             }
 
             def getFloat32ByIndex(ix, k) = try {
-                let ans = unsafe IO as {ef + Alt - RowReader} { jresults.getFloat(ix + 1) };
+                let ans = unsafe IO as {ef + Fail - RowReader} { jresults.getFloat(ix + 1) };
                 k(ans)
             } catch {
-                case ex: JSQLException => Alt.failure(ex.getMessage())
+                case ex: JSQLException => Fail.report(ex.getMessage())
             }
 
             def getFloat32ByName(name, k) = try {
-                let ans = unsafe IO as {ef + Alt - RowReader} { jresults.getFloat(name) };
+                let ans = unsafe IO as {ef + Fail - RowReader} { jresults.getFloat(name) };
                 k(ans)
             } catch {
-                case ex: JSQLException => Alt.failure(ex.getMessage())
+                case ex: JSQLException => Fail.report(ex.getMessage())
             }
 
             def getFloat64ByIndex(ix, k) = try {
-                let ans = unsafe IO as {ef + Alt - RowReader} { jresults.getDouble(ix + 1) };
+                let ans = unsafe IO as {ef + Fail - RowReader} { jresults.getDouble(ix + 1) };
                 k(ans)
             } catch {
-                case ex: JSQLException => Alt.failure(ex.getMessage())
+                case ex: JSQLException => Fail.report(ex.getMessage())
             }
 
             def getFloat64ByName(name, k) = try {
-                let ans = unsafe IO as {ef + Alt - RowReader} { jresults.getDouble(name) };
+                let ans = unsafe IO as {ef + Fail - RowReader} { jresults.getDouble(name) };
                 k(ans)
             } catch {
-                case ex: JSQLException => Alt.failure(ex.getMessage())
+                case ex: JSQLException => Fail.report(ex.getMessage())
             }
 
             def getBigDecimalByIndex(ix, k) = try {
-                let ans = unsafe IO as {ef + Alt - RowReader} { jresults.getBigDecimal(ix + 1) };
+                let ans = unsafe IO as {ef + Fail - RowReader} { jresults.getBigDecimal(ix + 1) };
                 k(ans)
             } catch {
-                case ex: JSQLException => Alt.failure(ex.getMessage())
+                case ex: JSQLException => Fail.report(ex.getMessage())
             }
 
             def getBigDecimalByName(name, k) = try {
-                let ans = unsafe IO as {ef + Alt - RowReader} { jresults.getBigDecimal(name) };
+                let ans = unsafe IO as {ef + Fail - RowReader} { jresults.getBigDecimal(name) };
                 k(ans)
             } catch {
-                case ex: JSQLException => Alt.failure(ex.getMessage())
+                case ex: JSQLException => Fail.report(ex.getMessage())
             }
 
 
             def getLocalDateByIndex(ix, k) = try {
-                let ans = unsafe IO as {ef + Alt - RowReader} 
+                let ans = unsafe IO as {ef + Fail - RowReader} 
                                         { let d1 = jresults.getDate(ix + 1); 
                                           let d2 = d1.toLocalDate(); 
                                           ToFlix.toFlix(d2) };
                 k(ans)
             } catch {
-                case ex: JSQLException => Alt.failure(ex.getMessage())
+                case ex: JSQLException => Fail.report(ex.getMessage())
             }
             
             def getLocalDateByName(name, k) = try {
-                let ans = unsafe IO as {ef + Alt - RowReader} 
+                let ans = unsafe IO as {ef + Fail - RowReader} 
                                         { let d1 = jresults.getDate(name); 
                                           let d2 = d1.toLocalDate();
                                           ToFlix.toFlix(d2) };
                 k(ans)
             } catch {
-                case ex: JSQLException => Alt.failure(ex.getMessage())
+                case ex: JSQLException => Fail.report(ex.getMessage())
             }
 
 
             def getLocalDateTimeByIndex(ix, k) = try {
-                let ans = unsafe IO as {ef + Alt - RowReader} 
+                let ans = unsafe IO as {ef + Fail - RowReader} 
                                         { let t1 = jresults.getTimestamp(ix + 1); 
                                           let t2 = t1.toLocalDateTime(); 
                                           ToFlix.toFlix(t2) };
                 k(ans)
             } catch {
-                case ex: JSQLException => Alt.failure(ex.getMessage())
+                case ex: JSQLException => Fail.report(ex.getMessage())
             }
             
             def getLocalDateTimeByName(name, k) = try {
-                let ans = unsafe IO as {ef + Alt - RowReader} 
+                let ans = unsafe IO as {ef + Fail - RowReader} 
                                         { let t1 = jresults.getTimestamp(name); 
                                           let t2 = t1.toLocalDateTime();
                                           ToFlix.toFlix(t2) };
                 k(ans)
             } catch {
-                case ex: JSQLException => Alt.failure(ex.getMessage())
+                case ex: JSQLException => Fail.report(ex.getMessage())
             }
 
             def getLocalTimeByIndex(ix, k) = try {
-                let ans = unsafe IO as {ef + Alt - RowReader} 
+                let ans = unsafe IO as {ef + Fail - RowReader} 
                                         { let t1 = jresults.getTime(ix + 1); 
                                           let t2 = t1.toLocalTime(); 
                                           ToFlix.toFlix(t2) };
                 k(ans)
             } catch {
-                case ex: JSQLException => Alt.failure(ex.getMessage())
+                case ex: JSQLException => Fail.report(ex.getMessage())
             }
             
             def getLocalTimeByName(name, k) = try {
-                let ans = unsafe IO as {ef + Alt - RowReader} 
+                let ans = unsafe IO as {ef + Fail - RowReader} 
                                         { let t1 = jresults.getTime(name); 
                                           let t2 = t1.toLocalTime();
                                           ToFlix.toFlix(t2) };
                 k(ans)
             } catch {
-                case ex: JSQLException => Alt.failure(ex.getMessage())
+                case ex: JSQLException => Fail.report(ex.getMessage())
             }
         
         } 
@@ -267,8 +268,14 @@ pub mod BasicDB.RowReader {
 
     pub def runRowReader(rset: ResultSetRow, 
                         f: Unit -> a \ ef): a \ {ef + Fail - RowReader - Alt}  = 
-        run { handle(rset, f)() } with EffectExtras.Alt.runWithFail
+        run { handle(rset, f)() } with runWithFail
 
+    // To be added to EffectExtras...
+    def runWithFail(f: Unit -> a \ ef): a \ ef - Alternative + Fail = 
+        match EffectExtras.Alt.runWithResult(f) {
+            case Ok(a)    => a
+            case Err(msg) => Fail.report(msg)
+        }
 
 }
 

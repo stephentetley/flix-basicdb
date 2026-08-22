@@ -20,6 +20,7 @@ pub mod BasicDB.PreparedStatementSetter {
 
 
     use EffectExtras.Alt.Alt
+    use EffectExtras.Alt.Alternative
     use EffectExtras.Fail.Fail
     
     use BasicDB.DBPreparedStatement
@@ -45,7 +46,7 @@ pub mod BasicDB.PreparedStatementSetter {
 
 
     pub def handle(stmt: PreparedStatement, 
-                    f: a -> b \ ef): a -> b \ ef + Alt - PreparedStatementSetter = x -> {
+                    f: a -> b \ ef): a -> b \ ef + Fail - PreparedStatementSetter = x -> {
         let jstmt = ToJava.toJava(stmt);
         run {
             f(x)
@@ -53,92 +54,99 @@ pub mod BasicDB.PreparedStatementSetter {
         
             def setNull(paramIx, sqlType, k) = 
                 try {
-                    unsafe IO as {ef + Alt - PreparedStatementSetter} { jstmt.setNull(paramIx + 1, sqlType) };
+                    unsafe IO as {ef + Fail - PreparedStatementSetter} { jstmt.setNull(paramIx + 1, sqlType) };
                     k()
                 } catch {
-                    case ex: JSQLException => Alt.failure(ex.getMessage())
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
             
             def setBool(paramIx, value, k) = 
                 try {
-                    unsafe IO as {ef + Alt - PreparedStatementSetter} { jstmt.setBoolean(paramIx + 1, value) };
+                    unsafe IO as {ef + Fail - PreparedStatementSetter} { jstmt.setBoolean(paramIx + 1, value) };
                     k()
                 } catch {
-                    case ex: JSQLException => Alt.failure(ex.getMessage())
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
             
             def setInt8(paramIx, value, k) = 
                 try {
-                    unsafe IO as {ef + Alt - PreparedStatementSetter} { jstmt.setByte(paramIx + 1, value) };
+                    unsafe IO as {ef + Fail - PreparedStatementSetter} { jstmt.setByte(paramIx + 1, value) };
                     k()
                 } catch {
-                    case ex: JSQLException => Alt.failure(ex.getMessage())
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
             
             def setInt16(paramIx, value, k) = 
                 try {
-                    unsafe IO as {ef + Alt - PreparedStatementSetter} { jstmt.setShort(paramIx + 1, value) };
+                    unsafe IO as {ef + Fail - PreparedStatementSetter} { jstmt.setShort(paramIx + 1, value) };
                     k()
                 } catch {
-                    case ex: JSQLException => Alt.failure(ex.getMessage())
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
             
             def setInt32(paramIx, value, k) = 
                 try {
-                    unsafe IO as {ef + Alt - PreparedStatementSetter} { jstmt.setInt(paramIx + 1, value) };
+                    unsafe IO as {ef + Fail - PreparedStatementSetter} { jstmt.setInt(paramIx + 1, value) };
                     k()
                 } catch {
-                    case ex: JSQLException => Alt.failure(ex.getMessage())
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
             
             def setInt64(paramIx, value, k) = 
                 try {
-                    unsafe IO as {ef + Alt - PreparedStatementSetter} { jstmt.setLong(paramIx + 1, value) };
+                    unsafe IO as {ef + Fail - PreparedStatementSetter} { jstmt.setLong(paramIx + 1, value) };
                     k()
                 } catch {
-                    case ex: JSQLException => Alt.failure(ex.getMessage())
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
             
             def setFloat32(paramIx, value, k) = 
                 try {
-                    unsafe IO as {ef + Alt - PreparedStatementSetter} { jstmt.setFloat(paramIx + 1, value) };
+                    unsafe IO as {ef + Fail - PreparedStatementSetter} { jstmt.setFloat(paramIx + 1, value) };
                     k()
                 } catch {
-                    case ex: JSQLException => Alt.failure(ex.getMessage())
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
                         
             def setFloat64(paramIx, value, k) = 
                 try {
-                    unsafe IO as {ef + Alt - PreparedStatementSetter} { jstmt.setDouble(paramIx + 1, value) };
+                    unsafe IO as {ef + Fail - PreparedStatementSetter} { jstmt.setDouble(paramIx + 1, value) };
                     k()
                 } catch {
-                    case ex: JSQLException => Alt.failure(ex.getMessage())
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def setBigDecimal(paramIx, value, k) = 
                 try {
-                    unsafe IO as {ef + Alt - PreparedStatementSetter} { jstmt.setBigDecimal(paramIx + 1, value) };
+                    unsafe IO as {ef + Fail - PreparedStatementSetter} { jstmt.setBigDecimal(paramIx + 1, value) };
                     k()
                 } catch {
-                    case ex: JSQLException => Alt.failure(ex.getMessage())
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
 
             def setString(paramIx, value, k) = 
                 try {
-                    unsafe IO as {ef + Alt - PreparedStatementSetter} { jstmt.setString(paramIx + 1, value) };
+                    unsafe IO as {ef + Fail - PreparedStatementSetter} { jstmt.setString(paramIx + 1, value) };
                     k()
                 } catch {
-                    case ex: JSQLException => Alt.failure(ex.getMessage())
+                    case ex: JSQLException => Fail.report(ex.getMessage())
                 }
         }
     }
 
     pub def runPreparedStatementSetter(stmt: PreparedStatement, 
                                         f: Unit -> a \ ef): a \ ef + Fail - PreparedStatementSetter - Alt = 
-        run { handle(stmt, f)() } with EffectExtras.Alt.runWithFail
+        run { handle(stmt, f)() } with runWithFail
 
     pub def runPreparedStatementSetter1(f: Unit -> a \ ef): a \ ef + Fail + DBPreparedStatement - PreparedStatementSetter - Alt = 
         let stmt = DBPreparedStatement.getPreparedStatement();
-        run { handle(stmt, f)() } with EffectExtras.Alt.runWithFail
+        run { handle(stmt, f)() } with runWithFail
+
+    // To be added to EffectExtras...
+    def runWithFail(f: Unit -> a \ ef): a \ ef - Alternative + Fail = 
+        match EffectExtras.Alt.runWithResult(f) {
+            case Ok(a)    => a
+            case Err(msg) => Fail.report(msg)
+        }
 
 }
