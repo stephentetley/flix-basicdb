@@ -9,7 +9,7 @@ authors     = ["Stephen Tetley <stephen.tetley@gmail.com>"]
 [dependencies]
 "github:stephentetley/charset-locale" = { version = "0.16.3", security = "unrestricted" }
 "github:stephentetley/effect-extras" = { version = "0.4.2", security = "unrestricted" }
-"github:stephentetley/flix-time" = { version = "0.22.0", security = "unrestricted" }
+"github:stephentetley/flix-time" = { version = "0.23.0", security = "unrestricted" }
 "github:stephentetley/adaptor-extras" = { version = "0.3.0", security = "unrestricted" }
 
 [mvn-dependencies]

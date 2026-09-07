@@ -19,7 +19,7 @@ pub mod TestSQLite {
 
 
     def create_facts_table(): Unit \ Fail + DBConnection =
-        BasicDB.DBStatement.runDBStatement1(() -> {
+        BasicDB.DBConnection.runDBStatement(() -> {
             discard DBStatement.execute("DROP TABLE IF EXISTS facts_databases;");
             discard DBStatement.execute("CREATE TABLE IF NOT EXISTS facts_databases (name VARCHAR PRIMARY KEY NOT NULL, year int);");
             ()
@@ -49,7 +49,7 @@ pub mod TestSQLite {
                         println(lang)
                     })
                 )
-            } with BasicDB.DBStatement.runDBStatement1
+            } with BasicDB.DBConnection.runDBStatement
         };
         let path = "./data/langs.sqlite";
         let ans = BasicDB.runSQLite(path, readLangs);

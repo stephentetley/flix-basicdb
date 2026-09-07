@@ -33,7 +33,6 @@ pub mod BasicDB.DBPreparedStatement {
     import java.sql.{PreparedStatement => JPreparedStatement}
 
     pub eff DBPreparedStatement {
-        def getPreparedStatement(): PreparedStatement
         def execute(): Bool
         def addBatch(): Unit
         def executeBatch(): Unit
@@ -43,18 +42,24 @@ pub mod BasicDB.DBPreparedStatement {
         def clearParameters(): Unit
     }
 
+    pub eff ReifyPreparedStatement { 
+        def getPreparedStatement(): PreparedStatement
+    }
+
     pub def handle(stmt: PreparedStatement, 
-                    f: a -> b \ ef): a -> b \ {ef + Fail - DBPreparedStatement} = x -> {
+                    f: a -> b \ ef): a -> b \ {ef + Fail - DBPreparedStatement - ReifyPreparedStatement} = x -> {
         let jstmt = ToJava.toJava(stmt);
         run {
             f(x)
-        } with handler DBPreparedStatement {
+        } with handler ReifyPreparedStatement {
         
             def getPreparedStatement(k) = k(stmt)
-            
+
+        } with handler DBPreparedStatement {
+        
             def execute(k) = 
                 try {
-                    let ans = unsafe IO as {ef + Fail - DBPreparedStatement} { jstmt.execute() };
+                    let ans = unsafe IO as {ef + Fail - DBPreparedStatement - ReifyPreparedStatement} { jstmt.execute() };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Fail.report(ex.getMessage())
@@ -62,7 +67,7 @@ pub mod BasicDB.DBPreparedStatement {
 
             def addBatch(k) = 
                 try {
-                    unsafe IO as {ef + Fail - DBPreparedStatement} { jstmt.addBatch() };
+                    unsafe IO as {ef + Fail - DBPreparedStatement - ReifyPreparedStatement} { jstmt.addBatch() };
                     k()
                 } catch {
                     case ex: JSQLException => Fail.report(ex.getMessage())
@@ -70,7 +75,7 @@ pub mod BasicDB.DBPreparedStatement {
 
             def executeBatch(k) = 
                 try {
-                    unsafe IO as {ef + Fail - DBPreparedStatement} { discard jstmt.executeBatch() };
+                    unsafe IO as {ef + Fail - DBPreparedStatement - ReifyPreparedStatement} { discard jstmt.executeBatch() };
                     k()
                 } catch {
                     case ex: JSQLException => Fail.report(ex.getMessage())
@@ -78,7 +83,7 @@ pub mod BasicDB.DBPreparedStatement {
 
             def executeQuery(k) = 
                 try { 
-                    let ans = unsafe IO as {ef + Fail - DBPreparedStatement} { jstmt.executeQuery() };
+                    let ans = unsafe IO as {ef + Fail - DBPreparedStatement - ReifyPreparedStatement} { jstmt.executeQuery() };
                     k(ToFlix.toFlix(ans))
                 } catch {
                     case ex: JSQLException => Fail.report(ex.getMessage())
@@ -88,7 +93,7 @@ pub mod BasicDB.DBPreparedStatement {
             def closeResultSet(results, k) = 
                 try {
                     let jresults = ToJava.toJava(results);
-                    unsafe IO as {ef + Fail - DBPreparedStatement} { jresults.close() };
+                    unsafe IO as {ef + Fail - DBPreparedStatement - ReifyPreparedStatement} { jresults.close() };
                     k()
                 } catch {
                     case ex: JSQLException => Fail.report(ex.getMessage())
@@ -97,7 +102,7 @@ pub mod BasicDB.DBPreparedStatement {
 
             def executeUpdate(k) = 
                 try {
-                    let ans = unsafe IO as {ef + Fail - DBPreparedStatement} { jstmt.executeUpdate() };
+                    let ans = unsafe IO as {ef + Fail - DBPreparedStatement - ReifyPreparedStatement} { jstmt.executeUpdate() };
                     k(ans)
                 } catch {
                     case ex: JSQLException => Fail.report(ex.getMessage())
@@ -105,7 +110,7 @@ pub mod BasicDB.DBPreparedStatement {
 
             def clearParameters(k) = 
                 try {
-                    unsafe IO as {ef + Fail - DBPreparedStatement} { jstmt.clearParameters() };
+                    unsafe IO as {ef + Fail - DBPreparedStatement - ReifyPreparedStatement} { jstmt.clearParameters() };
                     k()
                 } catch {
                     case ex: JSQLException => Fail.report(ex.getMessage())
@@ -114,15 +119,15 @@ pub mod BasicDB.DBPreparedStatement {
     }
 
     pub def runDBPreparedStatement(stmt: PreparedStatement, 
-                                    f: Unit -> a \ ef): a \ (ef + Fail - DBPreparedStatement) = 
+                                    f: Unit -> a \ ef): a \ ef + Fail - DBPreparedStatement - ReifyPreparedStatement = 
         handle(stmt, f)()
 
-    pub def runDBPreparedStatement1(sql: String, 
-                                        f: Unit -> a \ ef): a \ {ef + Fail + DBConnection} - DBPreparedStatement = 
-        let stmt = DBConnection.prepareStatement(sql);
-        let ans = handle(stmt, f)();
-        DBConnection.closePreparedStatement(stmt);
-        ans
+    // pub def runDBPreparedStatement1(sql: String, 
+    //                                     f: Unit -> a \ ef): a \ {ef + Fail + DBConnection} - DBPreparedStatement = 
+    //     let stmt = DBConnection.prepareStatement(sql);
+    //     let ans = handle(stmt, f)();
+    //     DBConnection.closePreparedStatement(stmt);
+    //     ans
 
 
     // This is single row answer...

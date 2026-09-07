@@ -16,6 +16,7 @@
 
 
 pub mod BasicDB.DBConnection {
+    use BasicDB.DBPreparedStatement.ReifyPreparedStatement
 
     use EffectExtras.Fail.Fail
     use BasicDB.{Connection, PreparedStatement, Statement}
@@ -205,6 +206,19 @@ pub mod BasicDB.DBConnection {
     pub def runDBConnection(conn: Connection, f: Unit -> a \ ef): a \ {ef + Fail - DBConnection} =
         handle(conn, f)()
 
+    pub def runDBPreparedStatement(sql: String, 
+                                        f: Unit -> a \ ef): a \ {ef + Fail + DBConnection} - ReifyPreparedStatement - DBPreparedStatement = 
+        let stmt = DBConnection.prepareStatement(sql);
+        let ans = run { f() } with BasicDB.DBPreparedStatement.runDBPreparedStatement(stmt);
+        DBConnection.closePreparedStatement(stmt);
+        ans
+
+
+    pub def runDBStatement(f: Unit -> a \ ef): a \ {ef + Fail + DBConnection} - DBStatement = 
+        let stmt = DBConnection.createStatement();
+        let ans = run { f() } with BasicDB.DBStatement.runDBStatement(stmt);
+        DBConnection.closeStatement(stmt);
+        ans
 
 }
 

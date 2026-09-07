@@ -158,11 +158,7 @@ pub mod BasicDB.DBStatement {
         handle(stmt, f)()
 
 
-    pub def runDBStatement1(f: Unit -> a \ ef): a \ {ef + Fail + DBConnection} - DBStatement = 
-        let stmt = DBConnection.createStatement();
-        let ans = handle(stmt, f)();
-        DBConnection.closeStatement(stmt);
-        ans
+
 
 
     // This is single row answer...

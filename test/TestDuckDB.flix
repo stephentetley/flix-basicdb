@@ -16,7 +16,7 @@ pub mod TestDuckDB {
     use BasicDB.RowReader.RowReader
 
     def create_facts_table(): Unit \ Fail + DBConnection =
-        BasicDB.DBStatement.runDBStatement1(() -> {
+        BasicDB.DBConnection.runDBStatement(() -> {
             discard DBStatement.execute("CREATE SCHEMA IF NOT EXISTS facts;");
             discard DBStatement.execute("CREATE TABLE IF NOT EXISTS facts.databases (name VARCHAR NOT NULL, year INTEGER, PRIMARY KEY(name));");
             discard DBStatement.execute("DELETE FROM facts.databases;");
@@ -29,7 +29,7 @@ pub mod TestDuckDB {
             PreparedStatementSetter.setInt32(1, year)
         };
         let sql = "INSERT INTO facts.databases (name, year) VALUES (?,?);";
-        BasicDB.DBPreparedStatement.runDBPreparedStatement1(sql, () -> {
+        BasicDB.DBConnection.runDBPreparedStatement(sql, () -> {
             BasicDB.PreparedStatementSetter.runPreparedStatementSetter1(_ -> setter("SQLite", 2000));
             DBPreparedStatement.addBatch();
             BasicDB.PreparedStatementSetter.runPreparedStatementSetter1(_ -> setter("DuckDB", 2019));
@@ -51,7 +51,7 @@ pub mod TestDuckDB {
                     println("DB: ${name}, year: ${year}")
                 })
             })
-        } with BasicDB.DBStatement.runDBStatement1
+        } with BasicDB.DBConnection.runDBStatement
 
 
 

@@ -24,6 +24,7 @@ pub mod BasicDB.PreparedStatementSetter {
     use EffectExtras.Fail.Fail
     
     use BasicDB.DBPreparedStatement
+    use BasicDB.DBPreparedStatement.ReifyPreparedStatement
     use BasicDB.{PreparedStatement}
 
 
@@ -138,8 +139,8 @@ pub mod BasicDB.PreparedStatementSetter {
                                         f: Unit -> a \ ef): a \ ef + Fail - PreparedStatementSetter - Alt = 
         run { handle(stmt, f)() } with runWithFail
 
-    pub def runPreparedStatementSetter1(f: Unit -> a \ ef): a \ ef + Fail + DBPreparedStatement - PreparedStatementSetter - Alt = 
-        let stmt = DBPreparedStatement.getPreparedStatement();
+    pub def runPreparedStatementSetter1(f: Unit -> a \ ef): a \ ef + Fail + ReifyPreparedStatement - PreparedStatementSetter - Alt = 
+        let stmt = ReifyPreparedStatement.getPreparedStatement();
         run { handle(stmt, f)() } with runWithFail
 
     // To be added to EffectExtras...
