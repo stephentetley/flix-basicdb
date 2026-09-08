@@ -29,6 +29,9 @@ pub mod BasicDB.DBDriverManager {
 
     pub eff DBDriverManager {
         def getConnection(url: String): Connection
+        def getConnectionWithUser(url: {url = String}, 
+                                    user: {user = String},
+                                    password: {password = String}): Connection
         def closeConnection(conn: Connection): Unit
     }
 
@@ -40,6 +43,14 @@ pub mod BasicDB.DBDriverManager {
             def getConnection(url, k) = 
                 try {
                     let ans = DriverManager.getConnection(url);
+                    k(ToFlix.toFlix(ans))
+                } catch {
+                    case ex: JSQLException => Fail.report(ex.getMessage())
+                }
+
+            def getConnectionWithUser(url, user, password, k) = 
+                try {
+                    let ans = DriverManager.getConnection(url#url, user#user, password#password);
                     k(ToFlix.toFlix(ans))
                 } catch {
                     case ex: JSQLException => Fail.report(ex.getMessage())
@@ -57,7 +68,7 @@ pub mod BasicDB.DBDriverManager {
 
         }
 
-    pub def runWithIO(f: Unit -> a \ ef): a \ {ef + Fail + IO} - DBDriverManager = 
+    pub def runWithIO(f: Unit -> a \ ef): a \ ef + IO + Fail - DBDriverManager = 
         handle(f)()
 
 
@@ -66,5 +77,19 @@ pub mod BasicDB.DBDriverManager {
              runWithIO(f)
         } with EffectExtras.Fail.runWithResultOfIoError
 
+
+    pub def withConnection(url: String, f: Connection -> a \ ef): a \ ef + DBDriverManager = 
+        let conn = DBDriverManager.getConnection(url);
+        let ans = f(conn);
+        DBDriverManager.closeConnection(conn);
+        ans
+
+    pub def withConnectionWithUser(url: {url = String}, 
+                                    user: {user = String},
+                                    password: {password = String}, f: Connection -> a \ ef): a \ ef + DBDriverManager = 
+        let conn = DBDriverManager.getConnectionWithUser(url, user, password);
+        let ans = f(conn);
+        DBDriverManager.closeConnection(conn);
+        ans
 
 }

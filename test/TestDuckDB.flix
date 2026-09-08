@@ -57,7 +57,7 @@ pub mod TestDuckDB {
 
     @Test
     def test01(): Unit \ {Assert + IO} = 
-        let ans = BasicDB.runDuckDBInMemory(duckdb_action1);
+        let ans = BasicDB.withDuckDBInMemory(duckdb_action1);
         assertOk(ans)
 
 

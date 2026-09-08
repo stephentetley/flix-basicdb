@@ -10,6 +10,7 @@ pub mod TestSQLite {
     use Fs.WriteFile
 
     use EffectExtras.Fail.Fail
+    use BasicDB.Connection
     use BasicDB.DBConnection.DBConnection
     use BasicDB.DBStatement.DBStatement
     use BasicDB.DBPreparedStatement
@@ -18,12 +19,14 @@ pub mod TestSQLite {
     use BasicDB.RowReader
 
 
-    def create_facts_table(): Unit \ Fail + DBConnection =
-        BasicDB.DBConnection.runDBStatement(() -> {
-            discard DBStatement.execute("DROP TABLE IF EXISTS facts_databases;");
-            discard DBStatement.execute("CREATE TABLE IF NOT EXISTS facts_databases (name VARCHAR PRIMARY KEY NOT NULL, year int);");
-            ()
-        })
+    def create_facts_table(conn: Connection): Unit \ Fail - DBConnection =
+        run {
+            BasicDB.DBConnection.runDBStatement(() -> {
+                discard DBStatement.execute("DROP TABLE IF EXISTS facts_databases;");
+                discard DBStatement.execute("CREATE TABLE IF NOT EXISTS facts_databases (name VARCHAR PRIMARY KEY NOT NULL, year int);");
+                ()
+            })
+        } with BasicDB.DBConnection.runDBConnection(conn)
 
 
 
@@ -33,7 +36,7 @@ pub mod TestSQLite {
             forM (
                 dir <- FileWrite.mkTempDir("flix-sqlite");
                 path <- Ok("${dir}/test-DB-67890.sqlite");
-                ans <- BasicDB.runSQLite(path, create_facts_table)
+                ans <- BasicDB.withSQLite(path, create_facts_table)
             ) yield ans
         } with WriteFile.runWithFileWrite;
         assertOk(ans)        
@@ -52,7 +55,7 @@ pub mod TestSQLite {
             } with BasicDB.DBConnection.runDBStatement
         };
         let path = "./data/langs.sqlite";
-        let ans = BasicDB.runSQLite(path, readLangs);
+        let ans = BasicDB.withSQLite(path, conn -> BasicDB.DBConnection.runDBConnection(conn, readLangs));
         assertOk(ans)
 
 

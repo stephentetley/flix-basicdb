@@ -21,6 +21,7 @@ pub mod BasicDB {
     use EffectExtras.Fail.Fail
     use BasicDB.DBDriverManager.DBDriverManager
     use BasicDB.DBConnection.DBConnection
+    
 
     import java.lang.{Class => JClass}
     import java.sql.{Connection => JConnection}
@@ -28,29 +29,36 @@ pub mod BasicDB {
     import java.sql.{Statement => JStatement}
     import java.sql.{ResultSet => JResultSet}
 
-    pub def runSQLite(path: String, 
-                        f: Unit -> a \ ef): Result[IoError, a] \ {ef + IO - Fail - DBConnection - DBDriverManager} = 
+    // TODO 
+    // Should the worker function take a resource handle or Unit?
+    // Taking Unit is a nice shorthand.
+    // Taking the resource handle is more flexible.
+    // What about allowing both at the cost of a bigger API?
+
+
+    pub def withSQLite(path: String, 
+                        f: Connection -> a \ ef): Result[IoError, a] \ {ef + IO - Fail - DBDriverManager} = 
         run {
             let url = "jdbc:sqlite:${path}";
             JClass.forName("org.sqlite.JDBC");
             let conn = DBDriverManager.getConnection(url);
-            let ans = BasicDB.DBConnection.runDBConnection(conn, f);
+            let ans = f(conn);
             DBDriverManager.closeConnection(conn);
             ans
         } with BasicDB.DBDriverManager.runWithIOAndFail
     
 
-    pub def runDuckDB(path: String, 
+    pub def withDuckDB(path: String, 
                     f: Unit -> a \ ef): Result[IoError, a] \ {ef + IO - Fail - DBConnection - DBDriverManager} = 
         let url = "jdbc:duckdb:${path}";
-        runDuckDBHelper(url, f)
+        withDuckDBHelper(url, f)
     
-    pub def runDuckDBInMemory(f: Unit -> a \ ef): Result[IoError, a] \ {ef + IO - Fail - DBConnection - DBDriverManager} = 
+    pub def withDuckDBInMemory(f: Unit -> a \ ef): Result[IoError, a] \ {ef + IO - Fail - DBConnection - DBDriverManager} = 
         let url = "jdbc:duckdb:";
-        runDuckDBHelper(url, f)
+        withDuckDBHelper(url, f)
 
 
-    def runDuckDBHelper(url: String, f: Unit -> a \ ef): Result[IoError, a] \ {ef + IO - Fail - DBConnection - DBDriverManager} = 
+    def withDuckDBHelper(url: String, f: Unit -> a \ ef): Result[IoError, a] \ {ef + IO - Fail - DBConnection - DBDriverManager} = 
         run {
             JClass.forName("org.duckdb.DuckDBDriver");
             let conn = DBDriverManager.getConnection(url);

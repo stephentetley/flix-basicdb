@@ -51,6 +51,7 @@ pub mod BasicDB.DBConnection {
         def setCatalog(catalog: String): Unit
         def getTransactionIsolation(): Int32
         def setTransactionIsolation(level: Int32): Unit
+        def setSchema(schema: String): Unit
     }
 
 
@@ -195,6 +196,14 @@ pub mod BasicDB.DBConnection {
             def setTransactionIsolation(l, k) = 
                 try {
                     unsafe IO as {ef + Fail - DBConnection} { jconn.setTransactionIsolation(l) };
+                    k()
+                } catch {
+                    case ex: JSQLException => Fail.report(ex.getMessage())
+                }
+            
+            def setSchema(schema, k) = 
+                try {
+                    unsafe IO as {ef + Fail - DBConnection} { jconn.setSchema(schema) };
                     k()
                 } catch {
                     case ex: JSQLException => Fail.report(ex.getMessage())
