@@ -16,6 +16,7 @@
 
 
 pub mod BasicDB {
+    use BasicDB.withSQLite
 
     use IoError.IoError
     use EffectExtras.Fail.Fail
@@ -46,7 +47,12 @@ pub mod BasicDB {
             DBDriverManager.closeConnection(conn);
             ans
         } with BasicDB.DBDriverManager.runWithIOAndFail
-    
+
+    // "Implicit" version of `withSQLite`.
+    pub def execSQLite(path: String, 
+                        f: Unit -> a \ ef): Result[IoError, a] \ ef + IO - Fail - DBDriverManager - DBConnection = 
+        withSQLite(path, conn -> BasicDB.DBConnection.runDBConnection(conn, f))
+
 
     pub def withDuckDB(path: String, 
                     f: Unit -> a \ ef): Result[IoError, a] \ {ef + IO - Fail - DBConnection - DBDriverManager} = 

@@ -19,27 +19,22 @@ pub mod TestSQLite {
     use BasicDB.RowReader
 
 
-    def create_facts_table(conn: Connection): Unit \ Fail - DBConnection =
+    def create_facts_table(): Unit \ Fail + DBConnection =
         run {
-            BasicDB.DBConnection.runDBStatement(() -> {
-                discard DBStatement.execute("DROP TABLE IF EXISTS facts_databases;");
-                discard DBStatement.execute("CREATE TABLE IF NOT EXISTS facts_databases (name VARCHAR PRIMARY KEY NOT NULL, year int);");
-                ()
-            })
-        } with BasicDB.DBConnection.runDBConnection(conn)
-
-
+            discard DBStatement.execute("DROP TABLE IF EXISTS facts_databases;");
+            discard DBStatement.execute("CREATE TABLE IF NOT EXISTS facts_databases (name VARCHAR PRIMARY KEY NOT NULL, year int);")
+        } with BasicDB.DBConnection.execDBStatement
+    
 
     @Test
-    def test01(): Unit \ {Assert + FileWrite + IO} = 
+    def test01(): Unit \ Assert + FileWrite + IO = 
         let ans = run {
-            forM (
-                dir <- FileWrite.mkTempDir("flix-sqlite");
-                path <- Ok("${dir}/test-DB-67890.sqlite");
-                ans <- BasicDB.withSQLite(path, create_facts_table)
-            ) yield ans
-        } with WriteFile.runWithFileWrite;
-        assertOk(ans)        
+            let dir = FileWrite.mkTempDir("flix-sqlite") |> Fail.fromResult;
+            let path = "${dir}/test-DB-67890.sqlite";
+            BasicDB.execSQLite(path, create_facts_table)
+        } with WriteFile.runWithFileWrite
+          with Fail.runWithIO;
+        assertOk(ans)
 
     @Test
     def test02(): Unit \ {Assert + IO} = 
@@ -52,13 +47,11 @@ pub mod TestSQLite {
                         println(lang)
                     })
                 )
-            } with BasicDB.DBConnection.runDBStatement
+            } with BasicDB.DBConnection.execDBStatement
         };
         let path = "./data/langs.sqlite";
-        let ans = BasicDB.withSQLite(path, conn -> BasicDB.DBConnection.runDBConnection(conn, readLangs));
+        let ans = BasicDB.execSQLite(path, readLangs);
         assertOk(ans)
-
 
 }
 
-    

@@ -223,7 +223,7 @@ pub mod BasicDB.DBConnection {
         ans
 
 
-    pub def runDBStatement(f: Unit -> a \ ef): a \ {ef + Fail + DBConnection} - DBStatement = 
+    pub def execDBStatement(f: Unit -> a \ ef): a \ {ef + Fail + DBConnection} - DBStatement = 
         let stmt = DBConnection.createStatement();
         let ans = run { f() } with BasicDB.DBStatement.runDBStatement(stmt);
         DBConnection.closeStatement(stmt);

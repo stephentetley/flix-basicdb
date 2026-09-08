@@ -16,12 +16,11 @@ pub mod TestDuckDB {
     use BasicDB.RowReader.RowReader
 
     def create_facts_table(): Unit \ Fail + DBConnection =
-        BasicDB.DBConnection.runDBStatement(() -> {
+        run {
             discard DBStatement.execute("CREATE SCHEMA IF NOT EXISTS facts;");
             discard DBStatement.execute("CREATE TABLE IF NOT EXISTS facts.databases (name VARCHAR NOT NULL, year INTEGER, PRIMARY KEY(name));");
-            discard DBStatement.execute("DELETE FROM facts.databases;");
-            ()
-        })
+            discard DBStatement.execute("DELETE FROM facts.databases;")
+        } with BasicDB.DBConnection.execDBStatement
 
     def insert_facts_data(): Unit \ Fail + DBConnection =
         def setter(name: String, year: Int32): Unit \ PreparedStatementSetter = {
@@ -29,14 +28,13 @@ pub mod TestDuckDB {
             PreparedStatementSetter.setInt32(1, year)
         };
         let sql = "INSERT INTO facts.databases (name, year) VALUES (?,?);";
-        BasicDB.DBConnection.runDBPreparedStatement(sql, () -> {
+        run {
             BasicDB.PreparedStatementSetter.runPreparedStatementSetter1(_ -> setter("SQLite", 2000));
             DBPreparedStatement.addBatch();
             BasicDB.PreparedStatementSetter.runPreparedStatementSetter1(_ -> setter("DuckDB", 2019));
             DBPreparedStatement.addBatch();
-            DBPreparedStatement.executeBatch();
-            ()
-        })
+            DBPreparedStatement.executeBatch()
+        } with BasicDB.DBConnection.runDBPreparedStatement(sql)
 
 
 
@@ -44,14 +42,14 @@ pub mod TestDuckDB {
         create_facts_table();
         insert_facts_data();
         run {
-            BasicDB.DBStatement.forEachQuery("SELECT * FROM facts.databases;", row -> {
-                BasicDB.RowReader.runRowReader(row,  () -> {
+            BasicDB.DBStatement.forEachQuery("SELECT * FROM facts.databases;", row ->
+                run {
                     let name = RowReader.getStringByName("name");
                     let year = RowReader.getInt32ByName("year");
                     println("DB: ${name}, year: ${year}")
-                })
-            })
-        } with BasicDB.DBConnection.runDBStatement
+                } with BasicDB.RowReader.runRowReader(row)
+            )
+        } with BasicDB.DBConnection.execDBStatement
 
 
 
